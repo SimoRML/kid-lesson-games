@@ -13,7 +13,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "create-game": "node scripts/create-game.js"
+    "create-game": "node scripts/create-game.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "education",
@@ -29,8 +31,10 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/matter-js": "^0.20.2",
     "@types/node": "^26.6.6",
+    "jsdom": "^26.1.0",
     "typescript": "^7.0.2",
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
