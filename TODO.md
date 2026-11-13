@@ -37,6 +37,10 @@
 - [x] ✅ Upgrade `scripts/create-game.js` to scaffold `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, `pause()`/`resume()`, and `AbortController` zero-leak teardown boilerplate.
 - [x] ✅ Bring `games/balance-scale` lifecycle teardown up to the strict zero-leak standard of the newer 5 cartridges (remove `window` mouse/touch listeners via `AbortController`, clear win `setTimeout`s in `destroy()`, implement `pause()`/`resume()`, and add `games/balance-scale/README.md`).
 - [x] ✅ Add missing `assets/thumb.svg` thumbnails for `balance-scale`, `buoyancy-tank`, `marble-run-angles`, and `pulley-lift` (all 6 games now have vector SVG thumbnails).
+- [x] ✅ Document the mandatory agent workflow (plan, branch, multi-agent safety, security, semver, PR, independent review/merge) in `AGENTS.md` §0 and add `CHANGELOG.md`.
+- [ ] 🗺️ Add a PR CI workflow (`.github/workflows/ci.yml`: `npm ci`, `tsc`, `npm test`, `npm run build`, `npm run build:pages`, `npm audit --omit=dev`) so PRs are tested before merge (today only `main` pushes deploy Pages).
+- [ ] 🗺️ Enable GitHub branch protection on `main` (require PR, require CI, block force-push/deletion) and add `.github/pull_request_template.md` mirroring AGENTS.md Gate 7.
+- [ ] 🗺️ Add a `release` workflow/script to bump versions and tag `vX.Y.Z` per AGENTS.md Gate 9.
 
 ---
 
