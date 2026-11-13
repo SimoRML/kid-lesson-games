@@ -41,7 +41,7 @@ Gear trains are among the foundational mechanisms of engineering and classical p
 - **Mechanics**: Calculate tooth ratios $\frac{N_{\text{motor}}}{N_{\text{target}}}$ and account for gear count parity across multiple intermediate pegs.
 - **Levels**:
   1. *Speed Halving 1:2*: 12T motor driving 24T target ($120 \to 60\text{ RPM CCW}$, $\text{LCM} = 24$).
-  2. *Speed Tripling 3:1*: 24T motor driving 8T target ($40 \to 120\text{ RPM CW}$, $\text{LCM} = 48$).
+  2. *Speed Tripling 3:1*: 24T motor driving 8T target ($40 \to 120\text{ RPM CW}$, $\text{LCM} = 24$).
   3. *Fractional Ratio 2:3 & LCM*: 16T motor driving 24T target ($60 \to 40\text{ RPM CCW}$, $\text{LCM} = 48$).
 
 ---
@@ -49,7 +49,7 @@ Gear trains are among the foundational mechanisms of engineering and classical p
 ## 3. Tactile Ergonomics & Visual Polish
 
 1. **Dual Input (Tap/Click & Drag-and-Drop)**:
-   - Tap any gear in the bottom tray to automatically drop it on the first available empty peg.
+   - Tap any gear in the bottom tray (movement under ~5 px) to drop it on the first available empty peg; drag it to choose a specific peg.
    - Alternatively, drag-and-drop pieces directly onto pegs with generous snap radius ($65\text{px}$) and clear visual highlights.
 2. **Granular Undo**:
    - Tapping or clicking any placed gear on a peg removes *only that gear* and returns it to the inventory tray.
