@@ -36,6 +36,7 @@ export interface GameContext {
   difficulty: Difficulty;
   sound: boolean;
   locale: string;
+  customLevels?: unknown;
   emit: <T extends GameEventType>(type: T, payload: GameEventPayloads[T]) => void;
 }
 

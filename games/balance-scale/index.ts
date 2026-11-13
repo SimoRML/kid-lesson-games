@@ -17,6 +17,20 @@ interface Level {
   leftNotch: 1 | 2 | 3 | 4;
   rightNotch: 1 | 2 | 3 | 4;
   leverMode: boolean;
+  customInstruction?: string;
+}
+
+export interface CustomLevelConfig {
+  left?: (number | string | { grams: number; label?: string; color?: string })[];
+  targetLeft?: (number | string | { grams: number; label?: string; color?: string })[];
+  right?: (number | string | { grams: number; label?: string; color?: string })[];
+  targetRight?: (number | string | { grams: number; label?: string; color?: string })[];
+  inventory?: (number | string | { grams: number; label?: string; color?: string })[];
+  weights?: (number | string | { grams: number; label?: string; color?: string })[];
+  leftNotch?: 1 | 2 | 3 | 4;
+  rightNotch?: 1 | 2 | 3 | 4;
+  leverMode?: boolean;
+  instruction?: string;
 }
 
 const PALETTE: Record<number, { label: string; color: string }> = {
@@ -210,6 +224,85 @@ function generateLevelsForAge(age: string): Level[] {
   });
 }
 
+function parseWeightItem(item: unknown): MetricWeight | null {
+  if (typeof item === 'number' && !isNaN(item) && item > 0) {
+    return createWeight(item);
+  }
+  if (typeof item === 'string') {
+    const trimmed = item.trim().toLowerCase();
+    const isKg = trimmed.includes('kg');
+    const cleaned = trimmed.replace(/k?g$/, '');
+    const num = parseFloat(cleaned);
+    if (!isNaN(num) && num > 0) {
+      return createWeight(isKg ? Math.round(num * 1000) : Math.round(num));
+    }
+  }
+  if (typeof item === 'object' && item !== null) {
+    const obj = item as Record<string, unknown>;
+    const grams = typeof obj.grams === 'number' ? obj.grams : typeof obj.weight === 'number' ? obj.weight : 0;
+    if (grams > 0) {
+      const w = createWeight(grams);
+      if (typeof obj.label === 'string') w.label = obj.label;
+      if (typeof obj.color === 'string') w.color = obj.color;
+      return w;
+    }
+  }
+  return null;
+}
+
+export function parseCustomLevels(input: unknown): Level[] | null {
+  if (!input) return null;
+  let data = input;
+  if (typeof data === 'string') {
+    try {
+      data = JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+
+  const rawList = Array.isArray(data) ? data : [data];
+  const validLevels: Level[] = [];
+
+  for (const raw of rawList) {
+    if (typeof raw !== 'object' || raw === null) continue;
+
+    const leftRaw = Array.isArray(raw.left) ? raw.left : (raw.targetLeft && Array.isArray(raw.targetLeft) ? raw.targetLeft : []);
+    const rightRaw = Array.isArray(raw.right) ? raw.right : (raw.targetRight && Array.isArray(raw.targetRight) ? raw.targetRight : []);
+    const invRaw = Array.isArray(raw.inventory) ? raw.inventory : (Array.isArray(raw.weights) ? raw.weights : []);
+
+    const targetLeft = leftRaw.map(parseWeightItem).filter((w: MetricWeight | null): w is MetricWeight => w !== null);
+    const targetRight = rightRaw.map(parseWeightItem).filter((w: MetricWeight | null): w is MetricWeight => w !== null);
+    const inventory = invRaw.map(parseWeightItem).filter((w: MetricWeight | null): w is MetricWeight => w !== null);
+
+    if (targetLeft.length === 0 || inventory.length === 0) {
+      continue;
+    }
+
+    const leftNotchVal = Number(raw.leftNotch);
+    const leftNotch: 1 | 2 | 3 | 4 = (leftNotchVal >= 1 && leftNotchVal <= 4) ? (leftNotchVal as 1 | 2 | 3 | 4) : 4;
+
+    const rightNotchVal = Number(raw.rightNotch);
+    const rightNotch: 1 | 2 | 3 | 4 = (rightNotchVal >= 1 && rightNotchVal <= 4) ? (rightNotchVal as 1 | 2 | 3 | 4) : 4;
+
+    const leverMode = typeof raw.leverMode === 'boolean'
+      ? raw.leverMode
+      : (leftNotch !== 4 || rightNotch !== 4);
+
+    validLevels.push({
+      targetLeft,
+      targetRight,
+      inventory,
+      leftNotch,
+      rightNotch,
+      leverMode,
+      customInstruction: typeof raw.instruction === 'string' && raw.instruction.trim().length > 0 ? raw.instruction.trim() : undefined
+    });
+  }
+
+  return validLevels.length > 0 ? validLevels : null;
+}
+
 export class BalanceScaleGame implements KidGame {
   private container!: HTMLElement;
   private context!: GameContext;
@@ -237,6 +330,16 @@ export class BalanceScaleGame implements KidGame {
   private angularVelocity = 0;
   private balancedTimer = 0;
   private isLevelComplete = false;
+
+  private initLevels(): Level[] {
+    if (this.context.customLevels) {
+      const parsed = parseCustomLevels(this.context.customLevels);
+      if (parsed && parsed.length > 0) {
+        return parsed;
+      }
+    }
+    return generateLevelsForAge(this.context.ageGroup);
+  }
 
   // Interaction
   private draggedWeight: MetricWeight | null = null;
@@ -493,7 +596,7 @@ export class BalanceScaleGame implements KidGame {
 
     const resetBtn = this.container.querySelector('#btn-reset') as HTMLButtonElement;
     resetBtn?.addEventListener('click', () => {
-      this.levels = generateLevelsForAge(this.context.ageGroup);
+      this.levels = this.initLevels();
       this.loadLevel(0);
       sound.playPop();
     });
@@ -501,11 +604,14 @@ export class BalanceScaleGame implements KidGame {
 
   private setAgeGroup(age: string) {
     this.context.ageGroup = (age as GameContext['ageGroup']) || '6-8';
-    this.levels = generateLevelsForAge(this.context.ageGroup);
+    this.levels = this.initLevels();
     this.loadLevel(0);
   }
 
   private getLevelInstruction(lvl: Level): string {
+    if (lvl.customInstruction) {
+      return lvl.customInstruction;
+    }
     const leftSum = lvl.targetLeft.reduce((a, b) => a + b.grams, 0);
     const rightStartSum = lvl.targetRight.reduce((a, b) => a + b.grams, 0);
     const leftDesc = lvl.targetLeft.map((w) => w.label).join(' + ');
@@ -728,7 +834,7 @@ export class BalanceScaleGame implements KidGame {
           summary: this.t.summary
         });
         setTimeout(() => {
-          this.levels = generateLevelsForAge(this.context.ageGroup);
+          this.levels = this.initLevels();
           this.loadLevel(0);
         }, 1800);
       }
@@ -963,6 +1069,7 @@ export class BalanceScaleGame implements KidGame {
   }
 
   updateConfig(newContext: Partial<GameContext>) {
+    let reloadLevels = false;
     if (newContext.sound !== undefined) {
       sound.enabled = newContext.sound;
     }
@@ -984,8 +1091,17 @@ export class BalanceScaleGame implements KidGame {
       const badge = this.container.querySelector('#level-badge');
       if (badge) badge.textContent = `${this.t.level} ${this.currentLevelIndex + 1}/${this.levels.length}`;
     }
-    if (newContext.ageGroup !== undefined) {
-      this.setAgeGroup(newContext.ageGroup);
+    if (newContext.ageGroup !== undefined && newContext.ageGroup !== this.context.ageGroup) {
+      this.context.ageGroup = newContext.ageGroup;
+      reloadLevels = true;
+    }
+    if ('customLevels' in newContext && newContext.customLevels !== this.context.customLevels) {
+      this.context.customLevels = newContext.customLevels;
+      reloadLevels = true;
+    }
+    if (reloadLevels) {
+      this.levels = this.initLevels();
+      this.loadLevel(0);
     }
   }
 

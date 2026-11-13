@@ -68,7 +68,7 @@ const STYLES = `
 
 export class KidGameElement extends HTMLElement {
   static get observedAttributes() {
-    return ['game', 'age', 'difficulty', 'sound', 'autostart', 'locale'];
+    return ['game', 'age', 'difficulty', 'sound', 'autostart', 'locale', 'levels'];
   }
 
   private root: ShadowRoot;
@@ -76,6 +76,7 @@ export class KidGameElement extends HTMLElement {
   private statusScreen: HTMLDivElement;
   private currentGame: KidGame | null = null;
   private isMounted = false;
+  private _customLevels: unknown = null;
 
   constructor() {
     super();
@@ -121,6 +122,35 @@ export class KidGameElement extends HTMLElement {
     return this.getAttribute('locale') || 'en';
   }
 
+  get levels(): unknown {
+    if (this._customLevels !== null && this._customLevels !== undefined) {
+      return this._customLevels;
+    }
+    const attr = this.getAttribute('levels');
+    if (attr) {
+      try {
+        return JSON.parse(attr);
+      } catch (e) {
+        console.warn('Failed to parse levels JSON attribute:', e);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  set levels(val: unknown) {
+    this._customLevels = val;
+    if (this.currentGame?.updateConfig) {
+      this.currentGame.updateConfig({
+        ageGroup: this.age,
+        difficulty: this.difficulty,
+        sound: this.sound,
+        locale: this.locale,
+        customLevels: val
+      });
+    }
+  }
+
   connectedCallback() {
     this.isMounted = true;
     if (this.gameId) {
@@ -143,7 +173,8 @@ export class KidGameElement extends HTMLElement {
         ageGroup: this.age,
         difficulty: this.difficulty,
         sound: this.sound,
-        locale: this.locale
+        locale: this.locale,
+        customLevels: this.levels
       });
     }
   }
@@ -205,6 +236,7 @@ export class KidGameElement extends HTMLElement {
         difficulty: this.difficulty,
         sound: this.sound,
         locale: this.locale,
+        customLevels: this.levels,
         emit: (type: GameEventType, payload: unknown) => {
           this.dispatchEvent(
             new CustomEvent(type, {

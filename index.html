@@ -169,6 +169,15 @@
         </div>
 
         <div class="control-row">
+          <span class="control-label">Levels Source</span>
+          <select id="select-levels">
+            <option value="auto" selected>Auto-Generate (Default)</option>
+            <option value="custom-addition">Custom: 1000g Addition</option>
+            <option value="custom-lever">Custom: Mechanical Lever</option>
+          </select>
+        </div>
+
+        <div class="control-row">
           <span class="control-label">Sound FX</span>
           <button id="btn-sound">Toggle Sound (ON)</button>
         </div>
@@ -189,8 +198,48 @@
       const log = document.getElementById('event-log');
       const selectLang = document.getElementById('select-lang');
       const selectAge = document.getElementById('select-age');
+      const selectLevels = document.getElementById('select-levels');
       const btnSound = document.getElementById('btn-sound');
       const btnRestart = document.getElementById('btn-restart');
+
+      const customPresets = {
+        'auto': null,
+        'custom-addition': [
+          {
+            left: [1000],
+            inventory: [500, 250, 250, 100],
+            instruction: "Custom Level 1: Decompose 1 kg (1000g) into metric parts!"
+          },
+          {
+            left: [750],
+            inventory: [500, 200, 50, 100],
+            instruction: "Custom Level 2: Balance 750g!"
+          }
+        ],
+        'custom-lever': [
+          {
+            left: [300],
+            leftNotch: 4,
+            rightNotch: 2,
+            inventory: [600, 200, 100],
+            leverMode: true,
+            instruction: "Custom Lever: 300g at Notch 4 (torque 1200). Balance at Notch 2 with 600g!"
+          }
+        ]
+      };
+
+      selectLevels.addEventListener('change', (e) => {
+        const val = e.target.value;
+        const config = customPresets[val];
+        if (config) {
+          game.levels = config;
+          appendLog('custom-levels-set', { preset: val, levelsCount: config.length });
+        } else {
+          game.removeAttribute('levels');
+          game.levels = null;
+          appendLog('custom-levels-cleared', { fallback: 'auto' });
+        }
+      });
 
       function appendLog(type, detail) {
         const entry = document.createElement('div');
