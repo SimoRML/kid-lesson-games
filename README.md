@@ -41,7 +41,7 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 | Universal `<kid-game>` Web Component (Shadow DOM) | ✅ | Implemented in [KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts); client-side ready (SSR requires dynamic client import ⚠️) |
 | Auto-Discovery & Lazy ES Chunking (`import.meta.glob`) | ✅ | `dist/kid-games.es.js` (~12.7 kB) lazily loads per-game ES chunks (`dist/<game-id>-*.js`) |
 | UMD Bundle (`dist/kid-games.umd.js`) | ⚠️ | Produced by `npm run build` (~236 kB), but UMD cannot code-split dynamic imports so all 6 games are bundled together |
-| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with 193 passing Vitest tests |
+| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with 271 passing Vitest tests |
 | `letters` Curriculum Category | 🗺️ | Taxonomy category `'letters'` exists in `src/core/types.ts`, no letter games built yet |
 | Configurable `levels` + Procedural Fallback | ✅ | All 6 cartridges export `parseCustomLevels()` and fall back to `generateLevelsForAge(ageGroup)` |
 | Multilingual UI (`en` & `fr`) | ✅ | Core `I18nManager` + all 6 cartridges provide full English (`en`) and French (`fr`) dictionaries |
@@ -62,7 +62,7 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 git clone https://github.com/simorml/kid-lesson-games.git
 cd kid-lesson-games
 npm install
-npm test          # Runs 193 Vitest unit & DOM lifecycle tests
+npm test          # Runs 271 Vitest unit & DOM lifecycle tests
 npm run build     # Type-checks & builds ES chunks + UMD bundle in dist/
 ```
 
@@ -385,7 +385,7 @@ gameEl.levels = [
 const gameEl = document.querySelector('kid-game') as KidGameElement;
 
 gameEl.start();    // Starts active gameplay round
-gameEl.pause();    // Pauses game timers/animations (supported in 5 of 6 games; no-op in balance-scale ⚠️)
+gameEl.pause();    // Pauses game timers/animations (supported in all 6 games)
 gameEl.resume();   // Resumes gameplay
 gameEl.restart();  // Tears down and reloads the active game
 ```

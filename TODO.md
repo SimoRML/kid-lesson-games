@@ -33,9 +33,9 @@
 - [x] ✅ Establish Git repository structure with `.brainstorm/` ignored for private ideation.
 - [x] ✅ Automatic cartridge discovery via Vite `import.meta.glob` (`games/*/{game,meta}.json` eagerly + `games/*/index.ts` lazily) with zero edits to `src/`.
 - [x] ✅ Contributor CLI scaffolding tool (`npm run create-game <game-id>` in [scripts/create-game.js](file:///home/simo/Documents/www/kid-lesson-games/scripts/create-game.js)).
-- [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, 13 test files / 193 tests passing).
+- [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, 13 test files / 271 tests passing).
 - [ ] 🚧 Upgrade `scripts/create-game.js` to also scaffold `i18n.ts`, `index.test.ts`, `pause()`/`resume()`, and `AbortController` zero-leak teardown boilerplate.
-- [ ] 🚧 Bring `games/balance-scale` lifecycle teardown up to the strict zero-leak standard of the newer 5 cartridges (remove `window` mouse/touch listeners via `AbortController`, clear win `setTimeout`s in `destroy()`, implement `pause()`/`resume()`, and add `games/balance-scale/README.md`).
+- [x] ✅ Bring `games/balance-scale` lifecycle teardown up to the strict zero-leak standard of the newer 5 cartridges (remove `window` mouse/touch listeners via `AbortController`, clear win `setTimeout`s in `destroy()`, implement `pause()`/`resume()`, and add `games/balance-scale/README.md`).
 - [ ] 🚧 Add missing `assets/thumb.svg` thumbnails for `balance-scale`, `buoyancy-tank`, `marble-run-angles`, and `pulley-lift` (already present for `gear-trains` and `pendulum-rhythm`).
 
 ---
@@ -70,3 +70,12 @@
 - [ ] 🗺️ Emit standalone TypeScript declaration files (`dist/index.d.ts`) during build (`tsconfig.json` currently sets `"noEmit": true`).
 - [ ] 🗺️ Publish `kid-lesson-games` to the public npm registry (remove `"private": true` once `.d.ts` generation and SSR guard are complete).
 - [ ] 🗺️ Add additional European locales (`es`, `de`, `it`, `nl`) to core `I18nManager` and cartridge dictionaries.
+
+---
+
+## 🧪 Theme 5: Playtest Quality Pass (issues #1–26)
+
+- [x] ✅ All 26 playtest issues (HUD/hints, tray input, layout on narrow cards, French strings, score reset on age change) fixed in PRs #27–#32, one per game.
+- [ ] 🚧 Not verified: exact 360px and 620px card widths; miss/stall paths in `marble-run-angles` are unit-tested only (browser pane throttles rAF).
+- [ ] 🚧 Score still carries across the automatic restart after the final level in some games; gear-trains does not reset score when `customLevels` changes.
+- [ ] 🗺️ Decide whether auto-restart after `game:complete` (3–3.5 s in gear-trains, pendulum-rhythm, pulley-lift) is desired.
