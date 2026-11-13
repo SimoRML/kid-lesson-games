@@ -50,10 +50,17 @@ Simple machines are fundamental to understanding how force, distance, and work i
   - **Continuous Drag & Drop**: Drag weights with a smooth $\sim 5$px threshold and generous snap radii.
 - **Granular Undo**:
   - Tapping any placed weight in the effort tray immediately pops that exact piece back into the inventory tray without resetting the level.
+- **Stable Trays**:
+  - Counterweights keep their slot (an empty placeholder is left behind) and the trays have a fixed height, so the scene never resizes or reflows while playing. Undo returns a piece to its original slot.
 - **Clear Tray Button**:
-  - Returns all placed weights back to the inventory tray.
-- **Dynamic Scaffolding HUD**:
-  - Center HUD prompt provides live dynamic readouts showing current mass, target mass, required force in Newtons ($N$), and work in Joules ($J$).
+  - Returns all placed weights back to the Counterweights tray.
+- **Guiding (not answer-giving) HUD**:
+  - `3-5`: matching prompt ("Tap a weight to balance the stone"), no Newtons.
+  - `6-8`: shows the load, the MA and what the rig does ("the effort is half the load"); the child works out the required effort. Live feedback is directional only ("not enough", "getting close", "too heavy").
+  - `9-11`: shows load and MA (with Newtons); the target effort and work are hidden until the level is balanced, when $W = F \times d$ is revealed.
+- **Scene Layout**: effort platform on the left, rig above the stone on the right; rope travel is scaled so the platform stays on screen and the stone stops below the crane arm.
+- **Pacing**: the lift is integrated at a fixed time step (frame-rate independent); the next level starts within ~3 s of balancing (lift, ~0.5 s settle window, short celebration), and a fresh round starts after the final level.
+- **Score convention**: changing `age` resets score, streak and elapsed time.
 
 ---
 

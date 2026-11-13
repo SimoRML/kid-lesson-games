@@ -1,7 +1,7 @@
 import confetti from 'canvas-confetti';
 import type { GameContext, KidGame, AgeGroup } from '../../src/core/types.js';
 import type { SoundEngine } from '../../src/core/audio.js';
-import { getTranslations, type PulleyTranslations } from './i18n.js';
+import { getTranslations, type HintState, type PulleyTranslations } from './i18n.js';
 
 // ============================================================================
 // 1. DATA TYPES & INTERFACES
@@ -347,7 +347,7 @@ export function generateRopePath(
       radius,
       startAngle: Math.PI,
       endAngle: 0,
-      counterClockwise: false
+      counterClockwise: true
     });
     segments.push({
       type: 'line',
@@ -403,7 +403,7 @@ export function generateRopePath(
       radius,
       startAngle: Math.PI,
       endAngle: 0,
-      counterClockwise: false
+      counterClockwise: true
     });
     segments.push({
       type: 'line',
@@ -446,7 +446,7 @@ export function generateRopePath(
       radius,
       startAngle: Math.PI,
       endAngle: 0,
-      counterClockwise: false
+      counterClockwise: true
     });
     segments.push({
       type: 'line',
@@ -477,7 +477,7 @@ export function generateRopePath(
       radius,
       startAngle: Math.PI,
       endAngle: 0,
-      counterClockwise: false
+      counterClockwise: true
     });
     segments.push({
       type: 'line',
@@ -515,9 +515,9 @@ export function simulatePulleyPhysics(
     placedWeights: CounterWeight[];
   },
   dt: number,
-  springK = 8.0,
-  dampingZ = 0.85,
-  settleFramesRequired = 36
+  springK = 24.0,
+  dampingZ = 0.95,
+  settleFramesRequired = 30
 ): PulleyPhysicsState {
   const totalEffortKg = config.placedWeights.reduce((acc, w) => acc + (w.kg ?? w.massKg), 0);
   const requiredKg = calculateRequiredEffort(config.loadKg, config.mechanicalAdvantage);
@@ -1051,8 +1051,255 @@ export function parseCustomLevels(raw: unknown): PulleyLevel[] | null {
   return levels.length > 0 ? levels : null;
 }
 
+
 // ============================================================================
-// 5. KIDGAME MAIN CLASS (PulleyLiftGame)
+// 5. SCENE LAYOUT (pure, virtual coordinates)
+// ============================================================================
+
+/** Reference virtual scene size (4:3). The canvas is scaled uniformly to fit. */
+export const VIRTUAL_W = 480;
+export const VIRTUAL_H = 360;
+
+const PULLEY_RADIUS = 16;
+const STONE_W = 84;
+const STONE_H = 48;
+const PLATFORM_W = 60;
+const PLATFORM_H = 20;
+const PLATFORM_CORD = 24;
+const SLING_GAP = 12;
+const MAX_LIFT_PX = 104;
+const EFFORT_START_Y = 112;
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface SceneLayout {
+  ma: MechanicalAdvantage;
+  vw: number;
+  vh: number;
+  radius: number;
+  groundY: number;
+  boomY: number;
+  pulleyY: number;
+  mastX: number;
+  /** Centre x of the effort platform (left of the rig). */
+  platformX: number;
+  /** Centre x of the guide pulley that redirects the rope to the platform. */
+  guideX: number;
+  /** Centre x of the lifted stone (right of the rig). */
+  stoneX: number;
+  effortStartY: number;
+  effortMaxY: number;
+  /** Maximum drawn lift of the stone in virtual px (scaled so the effort platform stays on screen). */
+  maxLiftPx: number;
+}
+
+export interface SceneState {
+  progress: number;
+  liftPx: number;
+  stoneCenterY: number;
+  stoneTopY: number;
+  hookY: number;
+  movableY: number;
+  effortY: number;
+  stoneBox: Box;
+  platformBox: Box;
+}
+
+export function clampLiftProgress(progress: number): number {
+  if (!Number.isFinite(progress)) return 0;
+  return Math.max(0, Math.min(1, progress));
+}
+
+export function computeSceneLayout(
+  ma: MechanicalAdvantage,
+  vw: number = VIRTUAL_W,
+  vh: number = VIRTUAL_H
+): SceneLayout {
+  const groundY = vh - 40;
+  const boomY = 56;
+  const platformX = Math.round(vw * 0.19);
+  const effortMaxY = groundY - PLATFORM_H - 6;
+  return {
+    ma,
+    vw,
+    vh,
+    radius: PULLEY_RADIUS,
+    groundY,
+    boomY,
+    pulleyY: boomY + 30,
+    mastX: 28,
+    platformX,
+    guideX: platformX + PULLEY_RADIUS,
+    stoneX: Math.round(vw * 0.72),
+    effortStartY: EFFORT_START_Y,
+    effortMaxY,
+    maxLiftPx: Math.min(MAX_LIFT_PX, (effortMaxY - EFFORT_START_Y) / ma)
+  };
+}
+
+export function getSceneState(layout: SceneLayout, progress: number): SceneState {
+  const p = clampLiftProgress(progress);
+  const liftPx = p * layout.maxLiftPx;
+  const stoneCenterY = layout.groundY - STONE_H / 2 - liftPx;
+  const stoneTopY = stoneCenterY - STONE_H / 2;
+  const hookY = stoneTopY - SLING_GAP;
+  const movableY = layout.ma === 1 ? hookY : hookY - (layout.radius + 2);
+  // Rope conservation: the effort end travels MA times the load displacement.
+  const effortY = layout.effortStartY + liftPx * layout.ma;
+  return {
+    progress: p,
+    liftPx,
+    stoneCenterY,
+    stoneTopY,
+    hookY,
+    movableY,
+    effortY,
+    stoneBox: { x: layout.stoneX - STONE_W / 2, y: stoneTopY, w: STONE_W, h: STONE_H },
+    platformBox: {
+      x: layout.platformX - PLATFORM_W / 2,
+      y: effortY - PLATFORM_CORD,
+      w: PLATFORM_W,
+      h: PLATFORM_CORD + PLATFORM_H
+    }
+  };
+}
+
+export function boxesOverlap(a: Box, b: Box): boolean {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+export interface RigGeometry {
+  segments: RopeSegment[];
+  pulleys: PulleyWheel[];
+  /** Vertical brackets joining fixed pulleys / the rope anchor to the crane jib. */
+  hangers: { x: number; y1: number; y2: number }[];
+  /** Slings and yokes joining the movable pulleys (or the rope end) to the stone. */
+  slings: { x1: number; y1: number; x2: number; y2: number }[];
+}
+
+/**
+ * Lays the rope and pulleys out across the scene: effort platform on the left, rig above the
+ * stone on the right, with a guide pulley carrying the rope along the jib to the platform.
+ */
+export function buildRig(layout: SceneLayout, state: SceneState): RigGeometry {
+  const r = layout.radius;
+  const ma = layout.ma;
+  const raw = generateRopePath(ma, 0, layout.pulleyY, state.movableY, state.effortY, r);
+
+  // Distance (in raw x) from the rope origin to the stone hook point.
+  const loadOffset = ma === 1 ? 0 : ma === 2 ? r : 3 * r;
+  const base = layout.stoneX + loadOffset;
+  const mx = (x: number | undefined): number => base - (x ?? 0);
+
+  const pulleys: PulleyWheel[] = raw.pulleys.map((p) => ({ ...p, centerX: mx(p.centerX) }));
+  const segments: RopeSegment[] = [];
+  const lastIdx = raw.segments.length - 1;
+  const lastArcIdx = lastIdx - 1;
+
+  raw.segments.forEach((s, i) => {
+    if (i === lastIdx) return; // the free effort strand is re-routed below
+    if (s.type === 'line') {
+      segments.push({ ...s, startX: mx(s.startX), endX: mx(s.endX) });
+    } else {
+      const arc: RopeSegment = {
+        ...s,
+        centerX: mx(s.centerX),
+        startAngle: Math.PI - (s.startAngle ?? 0),
+        endAngle: Math.PI - (s.endAngle ?? 0),
+        counterClockwise: !(s.counterClockwise ?? false)
+      };
+      if (i === lastArcIdx) arc.endAngle = -Math.PI / 2; // leave over the top of the last fixed pulley
+      segments.push(arc);
+    }
+  });
+
+  const lastFixedX = mx(raw.segments[lastArcIdx].centerX);
+  const ropeTopY = layout.pulleyY - r;
+  segments.push({
+    type: 'line',
+    startX: lastFixedX,
+    startY: ropeTopY,
+    endX: layout.guideX,
+    endY: ropeTopY
+  });
+  segments.push({
+    type: 'arc',
+    centerX: layout.guideX,
+    centerY: layout.pulleyY,
+    radius: r,
+    startAngle: -Math.PI / 2,
+    endAngle: Math.PI,
+    counterClockwise: true
+  });
+  segments.push({
+    type: 'line',
+    startX: layout.platformX,
+    startY: layout.pulleyY,
+    endX: layout.platformX,
+    endY: state.effortY
+  });
+  pulleys.push({
+    id: 'guide',
+    isMovable: false,
+    centerX: layout.guideX,
+    centerY: layout.pulleyY,
+    radius: r
+  });
+
+  const hangers: RigGeometry['hangers'] = [];
+  for (const p of pulleys) {
+    if (!p.isMovable) {
+      hangers.push({ x: p.centerX, y1: layout.boomY, y2: p.centerY - r - 2 });
+    }
+  }
+  if (ma === 2 || ma === 4) {
+    hangers.push({ x: base, y1: layout.boomY, y2: layout.pulleyY });
+  }
+
+  const slings: RigGeometry['slings'] = [];
+  if (ma === 1) {
+    slings.push({ x1: layout.stoneX, y1: state.hookY, x2: layout.stoneX, y2: state.stoneTopY });
+  } else {
+    for (const p of pulleys) {
+      if (p.isMovable) {
+        slings.push({ x1: p.centerX, y1: p.centerY + r + 2, x2: p.centerX, y2: state.stoneTopY });
+      }
+    }
+  }
+  if (ma === 3) {
+    // The rope's standing end is made fast to the movable block through a yoke.
+    const beamY = state.movableY + r + 2;
+    const movable = pulleys.find((p) => p.isMovable);
+    if (movable) {
+      slings.push({ x1: base, y1: state.movableY, x2: base, y2: beamY });
+      slings.push({ x1: base, y1: beamY, x2: movable.centerX, y2: beamY });
+    }
+  }
+
+  return { segments, pulleys, hangers, slings };
+}
+
+function hintStateFor(currentKg: number, requiredKg: number): HintState {
+  if (currentKg <= 0) return 'empty';
+  if (currentKg === requiredKg) return 'match';
+  if (currentKg > requiredKg) return 'over';
+  return currentKg / requiredKg >= 0.7 ? 'close' : 'low';
+}
+
+/** Fixed time step used to integrate the lift so pacing does not depend on the frame rate. */
+const PHYSICS_STEP = 1 / 60;
+/** Pause after the settle window so the child can see the result before the next level. */
+const LEVEL_ADVANCE_MS = 800;
+/** Pause on the final banner before a fresh round starts. */
+const NEW_ROUND_MS = 3500;
+
+// ============================================================================
+// 6. KIDGAME MAIN CLASS (PulleyLiftGame)
 // ============================================================================
 
 export class PulleyLiftGame implements KidGame {
@@ -1072,8 +1319,8 @@ export class PulleyLiftGame implements KidGame {
   private streak: number = 0;
   private startTime: number = 0;
 
-  // Active level inventory and placed effort tray
-  private inventory: CounterWeight[] = [];
+  // Level weights keep their original slot; placed ones leave a placeholder behind.
+  private levelWeights: CounterWeight[] = [];
   private placedWeights: CounterWeight[] = [];
 
   // Physics animation state
@@ -1093,6 +1340,7 @@ export class PulleyLiftGame implements KidGame {
 
   private isPaused: boolean = false;
   private lastTime: number = 0;
+  private accumulator: number = 0;
   private isRoundOver: boolean = false;
 
   // Drag-and-drop state
@@ -1154,6 +1402,7 @@ export class PulleyLiftGame implements KidGame {
     }
     this.isPaused = false;
     this.lastTime = performance.now();
+    this.accumulator = 0;
     this.tick(this.lastTime);
   }
 
@@ -1177,6 +1426,7 @@ export class PulleyLiftGame implements KidGame {
       this.context.locale = newContext.locale;
       this.t = getTranslations(newContext.locale);
       this.updateHUDStaticLabels();
+      this.draw();
     }
 
     if (newContext.sound !== undefined) {
@@ -1190,6 +1440,8 @@ export class PulleyLiftGame implements KidGame {
 
     if (newContext.ageGroup && newContext.ageGroup !== this.context.ageGroup) {
       this.context.ageGroup = newContext.ageGroup;
+      // Score convention: a new age bracket is a new run (score, streak and timer restart).
+      this.resetProgress();
       this.loadLevels();
       this.setupLevel(0);
     }
@@ -1238,46 +1490,91 @@ export class PulleyLiftGame implements KidGame {
     this.levels = generateLevelsForAge(this.context.ageGroup || '6-8');
   }
 
+  /** Resets score, streak and the elapsed-time origin, and refreshes the score HUD. */
+  private resetProgress(): void {
+    this.score = 0;
+    this.streak = 0;
+    this.startTime = Date.now();
+    this.updateScoreDisplay();
+  }
+
+  private updateScoreDisplay(): void {
+    const scoreEl = this.container?.querySelector('#score-display');
+    if (scoreEl) scoreEl.textContent = `⭐ ${this.score}`;
+  }
+
+  private clearPendingTimeouts(): void {
+    this.pendingTimeouts.forEach((id) => clearTimeout(id));
+    this.pendingTimeouts.clear();
+  }
+
   private renderDOM(): void {
     this.container.innerHTML = `
-      <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; background: radial-gradient(circle at 50% 20%, #1e293b, #090d16); color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; user-select: none; -webkit-user-select: none; overflow: hidden;">
+      <style>
+        .pl-root { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; background: radial-gradient(circle at 50% 20%, #1e293b, #090d16); color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; user-select: none; -webkit-user-select: none; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; }
+        .pl-root *, .pl-root *::before, .pl-root *::after { box-sizing: border-box; }
+        .pl-hud { display: flex; flex-direction: column; gap: 4px; padding: 8px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 10; }
+        .pl-hud-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .pl-hud-left, .pl-hud-right { display: flex; align-items: center; gap: 10px; }
+        .pl-btn { padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; min-height: 44px; display: flex; align-items: center; transition: transform 0.1s ease; }
+        .pl-btn:hover { transform: scale(1.04); }
+        #hud-instruction { min-height: 2.7em; display: flex; align-items: center; justify-content: center; font-size: 0.88rem; color: #cbd5e1; font-weight: 500; text-align: center; line-height: 1.35; }
+        .pl-stage { position: relative; flex: 1 1 0; min-height: 260px; display: flex; justify-content: center; overflow: hidden; touch-action: none; }
+        #pulley-canvas { display: block; width: 100%; max-width: 760px; height: 100%; }
+        #win-banner { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); padding: 6px 16px; border-radius: 9999px; background: rgba(251,191,36,0.18); border: 1px solid rgba(251,191,36,0.5); color: #fbbf24; font-weight: 800; font-size: 0.95rem; white-space: nowrap; opacity: 0; transition: opacity 0.25s ease; pointer-events: none; }
+        #win-banner.show { opacity: 1; }
+        .pl-panel { position: sticky; bottom: 0; z-index: 10; padding: 8px 16px 12px; background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); }
+        .pl-panel-inner { display: flex; align-items: flex-start; gap: 12px; max-width: 960px; margin: 0 auto; }
+        .pl-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        .pl-col-effort { flex: 0 0 36%; }
+        .pl-col-inventory { flex: 1 1 0; }
+        .pl-col-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pl-tray { display: grid; grid-template-rows: repeat(2, 44px); grid-auto-flow: column; grid-auto-columns: minmax(56px, max-content); gap: 6px; height: 112px; padding: 4px; border-radius: 8px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; align-content: start; }
+        #effort-tray { background: rgba(56, 189, 248, 0.08); border: 2px dashed rgba(56, 189, 248, 0.4); }
+        #inventory-tray { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+        .weight-item { display: inline-flex; align-items: center; justify-content: center; min-width: 56px; min-height: 44px; padding: 6px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); color: #0f172a; font-weight: 800; font-size: 0.8rem; white-space: nowrap; cursor: grab; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: transform 0.1s ease, filter 0.1s ease; touch-action: none; }
+        .weight-item:hover { transform: scale(1.05); filter: brightness(1.08); }
+        .weight-slot { min-width: 56px; min-height: 44px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.14); }
+        @media (max-width: 520px) {
+          .pl-panel-inner { gap: 8px; }
+          #hud-instruction { min-height: 4.05em; }
+          .pl-btn { padding: 6px 10px; font-size: 0.78rem; }
+        }
+      </style>
+      <div class="pl-root">
         <!-- Top HUD -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 10; min-height: 48px; gap: 12px; flex-wrap: wrap;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-weight: 800; font-size: 1.1rem; color: #38bdf8; letter-spacing: -0.02em;" id="hud-title">${this.t.title}</span>
-            <span id="level-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 700;">${this.t.level} 1/${this.levels.length}</span>
+        <div class="pl-hud">
+          <div class="pl-hud-row">
+            <div class="pl-hud-left">
+              <span style="font-weight: 800; font-size: 1.05rem; color: #38bdf8; letter-spacing: -0.02em;" id="hud-title">${this.t.title}</span>
+              <span id="level-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 700; white-space: nowrap;">${this.t.level} 1/${this.levels.length}</span>
+            </div>
+            <div class="pl-hud-right">
+              <div id="score-display" style="font-weight: 700; color: #fbbf24; font-size: 1.05rem;">⭐ 0</div>
+              <button id="btn-sound-toggle" class="pl-btn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1;">${this.audio.enabled ? this.t.soundOn : this.t.soundOff}</button>
+              <button id="btn-reset" class="pl-btn" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.25); color: #fca5a5;">${this.t.reset}</button>
+            </div>
           </div>
-
-          <div id="hud-instruction" style="flex: 1; min-width: 220px; font-size: 0.88rem; color: #cbd5e1; font-weight: 500; text-align: center; line-height: 1.35;"></div>
-
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div id="score-display" style="font-weight: 700; color: #fbbf24; font-size: 1.05rem;">⭐ 0</div>
-            <button id="btn-sound-toggle" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600;">${this.audio.enabled ? this.t.soundOn : this.t.soundOff}</button>
-            <button id="btn-reset" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.25); color: #fca5a5; padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; min-height: 44px;">${this.t.reset}</button>
-          </div>
+          <div id="hud-instruction" aria-live="polite"></div>
         </div>
 
         <!-- Canvas Middle Viewport -->
-        <div id="canvas-wrapper" style="flex: 1; position: relative; overflow: hidden; touch-action: none;">
-          <canvas id="pulley-canvas" style="display: block; width: 100%; height: 100%;"></canvas>
+        <div id="canvas-wrapper" class="pl-stage">
+          <canvas id="pulley-canvas"></canvas>
+          <div id="win-banner" aria-hidden="true">${this.t.wellDone}</div>
         </div>
 
         <!-- Bottom Controls & Manipulatives Tray -->
-        <div style="padding: 10px 20px 14px; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); z-index: 10;">
-          <div style="display: flex; align-items: center; justify-content: space-between; max-width: 960px; margin: 0 auto; gap: 16px; flex-wrap: wrap;">
-            
-            <!-- Effort Tray Container -->
-            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 200px;">
-              <span id="effort-tray-label" style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em;">${this.t.effortTrayLabel}:</span>
-              <div id="effort-tray" style="display: flex; gap: 8px; align-items: center; min-height: 52px; padding: 4px 8px; background: rgba(56, 189, 248, 0.08); border: 2px dashed rgba(56, 189, 248, 0.4); border-radius: 8px; flex-wrap: wrap;"></div>
+        <div class="pl-panel">
+          <div class="pl-panel-inner">
+            <div class="pl-col pl-col-effort">
+              <span id="effort-tray-label" class="pl-col-label" style="color: #38bdf8;">${this.t.effortTrayLabel}:</span>
+              <div id="effort-tray" class="pl-tray"></div>
             </div>
-
-            <!-- Inventory Available Weights -->
-            <div style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 260px;">
-              <span id="inventory-label" style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">${this.t.inventoryLabel}:</span>
-              <div id="inventory-tray" style="display: flex; gap: 8px; align-items: center; min-height: 52px; padding: 4px 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; flex-wrap: wrap;"></div>
+            <div class="pl-col pl-col-inventory">
+              <span id="inventory-label" class="pl-col-label" style="color: #94a3b8;">${this.t.inventoryLabel}:</span>
+              <div id="inventory-tray" class="pl-tray"></div>
             </div>
-
           </div>
         </div>
       </div>
@@ -1307,6 +1604,9 @@ export class PulleyLiftGame implements KidGame {
     const invLabel = this.container.querySelector('#inventory-label');
     if (invLabel) invLabel.textContent = `${this.t.inventoryLabel}:`;
 
+    const banner = this.container.querySelector('#win-banner');
+    if (banner) banner.textContent = this.t.wellDone;
+
     this.updateHUDPrompt();
   }
 
@@ -1324,9 +1624,7 @@ export class PulleyLiftGame implements KidGame {
       const height = rect.height || 500;
       this.canvas.width = Math.round(width * dpr);
       this.canvas.height = Math.round(height * dpr);
-      if (this.ctx) {
-        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      }
+      this.draw();
     };
 
     if (typeof ResizeObserver !== 'undefined') {
@@ -1337,13 +1635,17 @@ export class PulleyLiftGame implements KidGame {
   }
 
   private setupLevel(index: number): void {
+    // Any pending level-advance / new-round timer belongs to the previous setup.
+    this.clearPendingTimeouts();
     this.currentLevelIndex = index;
     const lvl = this.currentLevel;
 
     // Reset weights
-    this.inventory = [...lvl.availableWeights.map((w) => ({ ...w }))];
+    this.levelWeights = lvl.availableWeights.map((w) => ({ ...w }));
     this.placedWeights = [];
     this.isRoundOver = false;
+    this.accumulator = 0;
+    this.container.querySelector('#win-banner')?.classList.remove('show');
 
     // Reset physics state
     this.physicsState = {
@@ -1364,6 +1666,10 @@ export class PulleyLiftGame implements KidGame {
     this.renderTrays();
   }
 
+  private isPlaced(w: CounterWeight): boolean {
+    return this.placedWeights.some((p) => p.id === w.id);
+  }
+
   private renderTrays(): void {
     const invTray = this.container.querySelector('#inventory-tray');
     const effortTray = this.container.querySelector('#effort-tray');
@@ -1372,16 +1678,22 @@ export class PulleyLiftGame implements KidGame {
     invTray.innerHTML = '';
     effortTray.innerHTML = '';
 
-    // Render inventory pieces
-    this.inventory.forEach((w) => {
-      const btn = this.createWeightDOM(w, false);
-      invTray.appendChild(btn);
+    // Inventory keeps every weight in its original slot; placed ones leave an empty placeholder
+    // so the tray never reflows (and the canvas above never resizes).
+    this.levelWeights.forEach((w) => {
+      if (this.isPlaced(w)) {
+        const slot = document.createElement('div');
+        slot.className = 'weight-slot';
+        slot.setAttribute('aria-hidden', 'true');
+        invTray.appendChild(slot);
+      } else {
+        invTray.appendChild(this.createWeightDOM(w, false));
+      }
     });
 
-    // Render effort tray pieces
+    // Effort tray pieces, in placement order
     this.placedWeights.forEach((w) => {
-      const btn = this.createWeightDOM(w, true);
-      effortTray.appendChild(btn);
+      effortTray.appendChild(this.createWeightDOM(w, true));
     });
 
     this.updateHUDPrompt();
@@ -1392,25 +1704,7 @@ export class PulleyLiftGame implements KidGame {
     btn.className = 'weight-item';
     btn.dataset.id = w.id;
     btn.dataset.kg = String(w.kg);
-    btn.style.cssText = `
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      min-width: 48px;
-      min-height: 44px;
-      padding: 6px 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: ${w.color || '#38bdf8'};
-      color: #0f172a;
-      font-weight: 800;
-      font-size: 0.85rem;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      transition: transform 0.1s ease, filter 0.1s ease;
-      touch-action: none;
-    `;
+    btn.style.background = w.color || '#38bdf8';
     btn.textContent = w.label || `${w.kg} kg`;
 
     btn.addEventListener('pointerdown', (e) => {
@@ -1424,7 +1718,7 @@ export class PulleyLiftGame implements KidGame {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (inEffortTray) {
-        // Granular undo: move back to inventory
+        // Granular undo: the piece returns to its original slot in the counterweights tray
         this.removeWeightFromEffortTray(w);
       } else {
         // Tap to add to effort tray
@@ -1436,28 +1730,27 @@ export class PulleyLiftGame implements KidGame {
   }
 
   private addWeightToEffortTray(w: CounterWeight): void {
-    const idx = this.inventory.findIndex((item) => item.id === w.id);
-    if (idx !== -1) {
-      const [removed] = this.inventory.splice(idx, 1);
-      this.placedWeights.push(removed);
+    if (this.isRoundOver) return;
+    const weight = this.levelWeights.find((item) => item.id === w.id);
+    if (weight && !this.isPlaced(weight)) {
+      this.placedWeights.push(weight);
       this.audio.playDrop();
       this.renderTrays();
     }
   }
 
   private removeWeightFromEffortTray(w: CounterWeight): void {
+    if (this.isRoundOver) return;
     const idx = this.placedWeights.findIndex((item) => item.id === w.id);
     if (idx !== -1) {
-      const [removed] = this.placedWeights.splice(idx, 1);
-      this.inventory.push(removed);
+      this.placedWeights.splice(idx, 1);
       this.audio.playPop();
       this.renderTrays();
     }
   }
 
   private clearEffortTray(): void {
-    if (this.placedWeights.length === 0) return;
-    this.inventory.push(...this.placedWeights);
+    if (this.isRoundOver || this.placedWeights.length === 0) return;
     this.placedWeights = [];
     this.audio.playPop();
     this.renderTrays();
@@ -1469,31 +1762,26 @@ export class PulleyLiftGame implements KidGame {
 
     const lvl = this.currentLevel;
     const currentKg = this.placedWeights.reduce((sum, w) => sum + (w.kg ?? w.massKg), 0);
-    const targetKg = lvl.targetEffortKg;
     const loadKg = lvl.loadKg;
     const ma = lvl.mechanicalAdvantage;
+    // Only the coarse direction is derived from the hidden target; the target itself is never shown.
+    const state = hintStateFor(currentKg, lvl.targetEffortKg);
 
     let text = '';
     if (lvl.ageGroup === '3-5') {
-      text = this.t.formatPreschoolPrompt(loadKg, currentKg);
+      text = this.t.formatPreschoolPrompt(loadKg, currentKg, state);
     } else if (lvl.ageGroup === '6-8') {
-      text = this.t.formatElementaryPrompt(loadKg, targetKg, currentKg, ma);
+      text = this.t.formatElementaryPrompt(loadKg, currentKg, ma, state);
     } else {
-      const loadNewtons = Math.round(loadKg * GRAVITY_G);
-      const targetNewtons = Math.round(targetKg * GRAVITY_G);
-      const currentNewtons = Math.round(currentKg * GRAVITY_G);
-      const ropeDistM = lvl.ropeDistanceM;
-      const workJoules = lvl.targetWorkJoules;
       text = this.t.formatUpperElementaryPrompt(
         loadKg,
-        loadNewtons,
-        targetKg,
-        targetNewtons,
+        Math.round(loadKg * GRAVITY_G),
         currentKg,
-        currentNewtons,
+        Math.round(currentKg * GRAVITY_G),
         ma,
-        ropeDistM,
-        workJoules
+        state,
+        lvl.ropeDistanceM,
+        lvl.targetWorkJoules
       );
     }
 
@@ -1582,10 +1870,11 @@ export class PulleyLiftGame implements KidGame {
       // Ignored in test/headless env
     }
 
+    this.container.querySelector('#win-banner')?.classList.add('show');
+
     this.score += 100 + this.streak * 20;
     this.streak++;
-    const scoreEl = this.container.querySelector('#score-display');
-    if (scoreEl) scoreEl.textContent = `⭐ ${this.score}`;
+    this.updateScoreDisplay();
 
     this.context.emit('game:score', { points: this.score, streak: this.streak, delta: 100 });
     this.context.emit('game:progress', {
@@ -1598,17 +1887,36 @@ export class PulleyLiftGame implements KidGame {
       this.pendingTimeouts.delete(timeout);
       if (this.currentLevelIndex + 1 < this.levels.length) {
         this.setupLevel(this.currentLevelIndex + 1);
-      } else {
-        const timeElapsed = Math.round((Date.now() - this.startTime) / 1000);
-        this.context.emit('game:complete', {
-          stars: 3,
-          score: this.score,
-          timeElapsed,
-          summary: this.t.summary
-        });
+        return;
       }
-    }, 1200);
+
+      const timeElapsed = Math.round((Date.now() - this.startTime) / 1000);
+      this.context.emit('game:complete', {
+        stars: 3,
+        score: this.score,
+        timeElapsed,
+        summary: this.t.summary
+      });
+
+      // Do not leave the board frozen: after a short celebration a fresh round begins.
+      const replay = setTimeout(() => {
+        this.pendingTimeouts.delete(replay);
+        this.startNewRound();
+      }, NEW_ROUND_MS);
+      this.pendingTimeouts.add(replay);
+    }, LEVEL_ADVANCE_MS);
     this.pendingTimeouts.add(timeout);
+  }
+
+  private startNewRound(): void {
+    this.resetProgress();
+    this.loadLevels();
+    this.setupLevel(0);
+    this.context.emit('game:progress', {
+      step: 1,
+      total: this.levels.length,
+      detail: `Starting level 1: ${this.currentLevel.title}`
+    });
   }
 
   // ============================================================================
@@ -1618,10 +1926,15 @@ export class PulleyLiftGame implements KidGame {
   private tick = (timestamp: number): void => {
     if (this.isPaused) return;
 
-    const dt = Math.min(0.033, (timestamp - this.lastTime) / 1000 || 0.016);
+    const elapsed = Math.min(0.25, (timestamp - this.lastTime) / 1000 || PHYSICS_STEP);
     this.lastTime = timestamp;
 
-    this.updatePhysics(dt);
+    // Fixed-step integration keeps the pacing identical at any frame rate.
+    this.accumulator += elapsed;
+    while (this.accumulator >= PHYSICS_STEP) {
+      this.updatePhysics(PHYSICS_STEP);
+      this.accumulator -= PHYSICS_STEP;
+    }
     this.draw();
 
     this.animFrameId = requestAnimationFrame(this.tick);
@@ -1647,69 +1960,48 @@ export class PulleyLiftGame implements KidGame {
   private draw(): void {
     if (!this.ctx || !this.canvas) return;
     const ctx = this.ctx;
-    const width = this.canvas.width / (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
-    const height = this.canvas.height / (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+    const cssW = this.canvas.width / dpr;
+    const cssH = this.canvas.height / dpr;
 
-    ctx.clearRect(0, 0, width, height);
+    // Uniform scale of the 4:3 reference scene; extra room is used by re-laying out the scene.
+    const scale = Math.min(cssW / VIRTUAL_W, cssH / VIRTUAL_H) || 1;
+    const vw = cssW / scale;
+    const vh = cssH / scale;
 
-    // Layout coordinates
-    const groundY = height - 60;
-    const topBoomY = 70;
-    const craneMastX = 70;
-    const targetHeightPx = 180;
-    const targetPlatformY = groundY - targetHeightPx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
 
     const lvl = this.currentLevel;
-    const ma = lvl.mechanicalAdvantage;
+    const layout = computeSceneLayout(lvl.mechanicalAdvantage, vw, vh);
+    // Overshoot of the spring is clamped: the stone never rises past the target line.
+    const state = getSceneState(layout, this.physicsState.liftProgress);
+    const rig = buildRig(layout, state);
 
-    // Stone Load position
-    const liftProgress = this.physicsState.liftProgress;
-    const currentLoadY = groundY - liftProgress * targetHeightPx - 25;
-    const loadX = 240;
+    // Text never renders smaller than ~11 CSS px, whatever the scale.
+    const px = (n: number) => Math.max(n, 11 / scale);
 
-    // Movable pulley position
-    const movablePulleyY = currentLoadY - 30;
+    // 1. Crane, ground and target line
+    this.drawCrane(ctx, layout);
+    this.drawTargetLine(ctx, layout, px);
 
-    // Effort rope position
-    const effortDisplacementPx = liftProgress * targetHeightPx * ma;
-    const effortTrayBaseY = topBoomY + 120 + effortDisplacementPx;
-    const pulleyOriginX = 180;
-    const radius = 18;
-
-    // 1. Draw Construction Crane Background
-    this.drawCrane(ctx, craneMastX, topBoomY, groundY, width);
-
-    // 2. Draw Target Height Guide Line
-    this.drawTargetPlatform(ctx, loadX - 60, targetPlatformY, 140);
-
-    // 3. Generate Rope and Pulley Geometry
-    const effortX = pulleyOriginX + 2 * ma * radius;
-    const { segments, pulleys } = generateRopePath(
-      ma,
-      pulleyOriginX,
-      topBoomY,
-      movablePulleyY,
-      effortTrayBaseY,
-      radius
-    );
-
-    // 4. Draw Ropes
+    // 2. Rope, brackets, pulleys
     ctx.save();
     ctx.strokeStyle = '#d97706';
     ctx.lineWidth = 3.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-
-    for (const seg of segments) {
+    for (const seg of rig.segments) {
       ctx.beginPath();
       if (seg.type === 'line') {
         ctx.moveTo(seg.startX ?? 0, seg.startY ?? 0);
         ctx.lineTo(seg.endX ?? 0, seg.endY ?? 0);
-      } else if (seg.type === 'arc') {
+      } else {
         ctx.arc(
           seg.centerX ?? 0,
           seg.centerY ?? 0,
-          seg.radius ?? radius,
+          seg.radius ?? layout.radius,
           seg.startAngle ?? 0,
           seg.endAngle ?? Math.PI,
           seg.counterClockwise ?? false
@@ -1719,41 +2011,54 @@ export class PulleyLiftGame implements KidGame {
     }
     ctx.restore();
 
-    // 5. Draw Pulleys
-    for (const p of pulleys) {
+    ctx.save();
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 3;
+    for (const h of rig.hangers) {
+      ctx.beginPath();
+      ctx.moveTo(h.x, h.y1);
+      ctx.lineTo(h.x, h.y2);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 2.5;
+    for (const s of rig.slings) {
+      ctx.beginPath();
+      ctx.moveTo(s.x1, s.y1);
+      ctx.lineTo(s.x2, s.y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    for (const p of rig.pulleys) {
       this.drawPulley(ctx, p.centerX, p.centerY, p.radius, p.isMovable);
     }
 
-    // 6. Draw Stone Load Block
-    this.drawStoneBlock(ctx, loadX, currentLoadY, lvl.loadKg);
+    // 3. Stone load and effort platform
+    this.drawStoneBlock(ctx, layout.stoneX, state.stoneCenterY, lvl.loadKg, lvl.ageGroup !== '3-5', px);
+    this.drawEffortTray(ctx, layout.platformX, state.effortY, px);
 
-    // 7. Draw Effort Tray Hanging from free rope end
-    this.drawEffortTray(ctx, effortX, effortTrayBaseY);
-
-    // 8. Draw Ghost Weight while dragging
+    // 4. Ghost weight while dragging (pointer position converted to scene units)
     if (this.isDraggingBeyondThreshold && this.draggingWeight) {
+      const gx = this.dragCurrentPos.x / scale;
+      const gy = this.dragCurrentPos.y / scale;
       ctx.save();
       ctx.fillStyle = this.draggingWeight.color || '#38bdf8';
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
-      ctx.fillRect(this.dragCurrentPos.x - 28, this.dragCurrentPos.y - 16, 56, 32);
-      ctx.strokeRect(this.dragCurrentPos.x - 28, this.dragCurrentPos.y - 16, 56, 32);
+      ctx.fillRect(gx - 28, gy - 16, 56, 32);
+      ctx.strokeRect(gx - 28, gy - 16, 56, 32);
       ctx.fillStyle = '#0f172a';
-      ctx.font = '800 11px system-ui, sans-serif';
+      ctx.font = `800 ${px(11)}px system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`${this.draggingWeight.kg} kg`, this.dragCurrentPos.x, this.dragCurrentPos.y);
+      ctx.fillText(`${this.draggingWeight.kg} kg`, gx, gy);
       ctx.restore();
     }
   }
 
-  private drawCrane(
-    ctx: CanvasRenderingContext2D,
-    mastX: number,
-    boomY: number,
-    groundY: number,
-    width: number
-  ): void {
+  private drawCrane(ctx: CanvasRenderingContext2D, layout: SceneLayout): void {
+    const { vw, boomY, groundY, mastX } = layout;
     ctx.save();
 
     // Ground Line
@@ -1761,12 +2066,12 @@ export class PulleyLiftGame implements KidGame {
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(0, groundY);
-    ctx.lineTo(width, groundY);
+    ctx.lineTo(vw, groundY);
     ctx.stroke();
 
     // Ground safety hatching
     ctx.fillStyle = 'rgba(251, 191, 36, 0.2)';
-    for (let x = 10; x < width; x += 30) {
+    for (let x = 10; x < vw; x += 30) {
       ctx.fillRect(x, groundY, 14, 6);
     }
 
@@ -1791,8 +2096,8 @@ export class PulleyLiftGame implements KidGame {
     ctx.strokeStyle = '#64748b';
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(mastX - 30, boomY);
-    ctx.lineTo(width - 40, boomY);
+    ctx.moveTo(mastX - 20, boomY);
+    ctx.lineTo(vw - 16, boomY);
     ctx.stroke();
 
     // Boom top stay cable
@@ -1800,41 +2105,39 @@ export class PulleyLiftGame implements KidGame {
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(mastX, boomY - 30);
-    ctx.lineTo(width - 50, boomY);
+    ctx.lineTo(vw - 40, boomY);
     ctx.moveTo(mastX, boomY - 30);
-    ctx.lineTo(mastX - 25, boomY);
+    ctx.lineTo(mastX - 12, boomY);
     ctx.stroke();
 
     ctx.restore();
   }
 
-  private drawTargetPlatform(
+  /** Dotted target line at the stone's final resting height; the tag sits to the left of the line. */
+  private drawTargetLine(
     ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    width: number
+    layout: SceneLayout,
+    px: (n: number) => number
   ): void {
+    const y = layout.groundY - layout.maxLiftPx;
+    const x0 = layout.stoneX - 58;
+    const x1 = layout.vw - 8;
     ctx.save();
-
-    // Dotted target line
     ctx.setLineDash([6, 6]);
     ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + width, y);
+    ctx.moveTo(x0, y);
+    ctx.lineTo(x1, y);
     ctx.stroke();
 
-    // Target banner flag
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
-    ctx.fillRect(x, y - 22, width, 22);
-
     ctx.fillStyle = '#38bdf8';
-    ctx.font = '600 11px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`🎯 TARGET HEIGHT (${this.currentLevel.targetHeightM}m)`, x + width / 2, y - 7);
-
+    ctx.font = `600 ${px(11)}px system-ui, sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    // Left of the line start: clear of the stone, the pulleys and the rope path.
+    ctx.fillText(this.t.targetHeight(this.currentLevel.targetHeightM), x0 - 8, y + 4);
     ctx.restore();
   }
 
@@ -1884,88 +2187,93 @@ export class PulleyLiftGame implements KidGame {
     ctx: CanvasRenderingContext2D,
     centerX: number,
     centerY: number,
-    loadKg: number
+    loadKg: number,
+    showNewtons: boolean,
+    px: (n: number) => number
   ): void {
     ctx.save();
-    const width = 84;
-    const height = 52;
-    const x = centerX - width / 2;
-    const y = centerY - height / 2;
+    const x = centerX - STONE_W / 2;
+    const y = centerY - STONE_H / 2;
 
     // Stone body
     ctx.fillStyle = '#475569';
     ctx.strokeStyle = '#94a3b8';
     ctx.lineWidth = 2.5;
-    ctx.fillRect(x, y, width, height);
-    ctx.strokeRect(x, y, width, height);
+    ctx.fillRect(x, y, STONE_W, STONE_H);
+    ctx.strokeRect(x, y, STONE_W, STONE_H);
 
     // Stone chiseled bevel lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(x + 5, y + 5);
-    ctx.lineTo(x + width - 5, y + 5);
+    ctx.lineTo(x + STONE_W - 5, y + 5);
     ctx.moveTo(x + 5, y + 5);
-    ctx.lineTo(x + 5, y + height - 5);
+    ctx.lineTo(x + 5, y + STONE_H - 5);
     ctx.stroke();
 
     // Hoisting Straps
     ctx.strokeStyle = '#d97706';
     ctx.lineWidth = 3;
-    ctx.strokeRect(x + 14, y, 10, height);
-    ctx.strokeRect(x + width - 24, y, 10, height);
+    ctx.strokeRect(x + 8, y, 8, STONE_H);
+    ctx.strokeRect(x + STONE_W - 16, y, 8, STONE_H);
 
-    // Text Label
+    // Text Label (newtons are too advanced for preschoolers)
     ctx.fillStyle = '#f8fafc';
-    ctx.font = '800 13px system-ui, sans-serif';
+    ctx.font = `800 ${px(13)}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${loadKg} kg`, centerX, centerY - 4);
+    ctx.fillText(`${loadKg} kg`, centerX, showNewtons ? centerY - 7 : centerY);
 
-    const newtons = Math.round(loadKg * GRAVITY_G);
-    ctx.font = '600 10px system-ui, sans-serif';
-    ctx.fillStyle = '#cbd5e1';
-    ctx.fillText(`${newtons} N`, centerX, centerY + 11);
+    if (showNewtons) {
+      const newtons = Math.round(loadKg * GRAVITY_G);
+      ctx.font = `600 ${px(10)}px system-ui, sans-serif`;
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillText(`${newtons} N`, centerX, centerY + 10);
+    }
 
     ctx.restore();
   }
 
-  private drawEffortTray(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  private drawEffortTray(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    px: (n: number) => number
+  ): void {
     ctx.save();
-    const width = 76;
-    const height = 14;
 
     // Suspension cords
     ctx.strokeStyle = '#d97706';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(x, y - 24);
-    ctx.lineTo(x - width / 2, y);
-    ctx.moveTo(x, y - 24);
-    ctx.lineTo(x + width / 2, y);
+    ctx.moveTo(x, y - PLATFORM_CORD);
+    ctx.lineTo(x - PLATFORM_W / 2, y);
+    ctx.moveTo(x, y - PLATFORM_CORD);
+    ctx.lineTo(x + PLATFORM_W / 2, y);
     ctx.stroke();
 
     // Tray base platform
     ctx.fillStyle = '#38bdf8';
-    ctx.fillRect(x - width / 2, y, width, height);
+    ctx.fillRect(x - PLATFORM_W / 2, y, PLATFORM_W, PLATFORM_H);
     ctx.strokeStyle = '#f8fafc';
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(x - width / 2, y, width, height);
+    ctx.strokeRect(x - PLATFORM_W / 2, y, PLATFORM_W, PLATFORM_H);
 
     // Total effort label inside tray
     const totalEffort = this.placedWeights.reduce((s, w) => s + (w.kg ?? w.massKg), 0);
     ctx.fillStyle = '#0f172a';
-    ctx.font = '800 10px system-ui, sans-serif';
+    ctx.font = `800 ${Math.min(px(11), PLATFORM_H - 4)}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`${totalEffort} kg`, x, y + height / 2);
+    ctx.fillText(`${totalEffort} kg`, x, y + PLATFORM_H / 2);
 
     ctx.restore();
   }
 }
 
 // ============================================================================
-// 6. FACTORIES & EXPORTS
+// 7. FACTORIES & EXPORTS
 // ============================================================================
 
 export function createGame(): KidGame {
