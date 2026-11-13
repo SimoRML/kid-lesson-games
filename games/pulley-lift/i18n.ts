@@ -2,6 +2,12 @@ import { createI18nResolver } from '../../src/core/i18n.js';
 
 export type SupportedLocale = 'en' | 'fr';
 
+/**
+ * Coarse feedback state of the effort tray relative to the (hidden) required effort.
+ * The HUD only ever receives this direction, never the exact target or remainder.
+ */
+export type HintState = 'empty' | 'low' | 'close' | 'over' | 'match';
+
 export interface PulleyTranslations {
   title: string;
   level: string;
@@ -14,22 +20,27 @@ export interface PulleyTranslations {
   loadLabel: string;
   wellDone: string;
   summary: string;
-  formatPreschoolPrompt: (loadKg: number, currentKg: number) => string;
-  formatElementaryPrompt: (loadKg: number, targetKg: number, currentKg: number, ma: number) => string;
+  /** Canvas tag drawn next to the target line, e.g. "Target: 2 m". */
+  targetHeight: (meters: number) => string;
+  /** Plain-language description of what the rig does to the effort (6-8). */
+  maRule: (ma: number) => string;
+  formatPreschoolPrompt: (loadKg: number, currentKg: number, state: HintState) => string;
+  formatElementaryPrompt: (
+    loadKg: number,
+    currentKg: number,
+    ma: number,
+    state: HintState
+  ) => string;
   formatUpperElementaryPrompt: (
     loadKg: number,
     loadNewtons: number,
-    targetKg: number,
-    targetNewtons: number,
     currentKg: number,
     currentNewtons: number,
     ma: number,
+    state: HintState,
     ropeDistM: number,
     workJoules: number
   ) => string;
-  hintOverweight: (currentKg: number, targetKg: number) => string;
-  hintUnderweight: (remainingKg: number, remainingNewtons?: number) => string;
-  hintSuccess: (loadKg: number, effortKg: number, ma: number, workJoules?: number) => string;
   units: {
     kg: string;
     newtons: string;
@@ -38,6 +49,8 @@ export interface PulleyTranslations {
     ma: string;
   };
 }
+
+const frNum = (n: number): string => String(n).replace('.', ',');
 
 export const DICTIONARY: Record<SupportedLocale, PulleyTranslations> = {
   en: {
@@ -52,64 +65,70 @@ export const DICTIONARY: Record<SupportedLocale, PulleyTranslations> = {
     loadLabel: 'Stone Load',
     wellDone: '✨ Stone Block Hoisted!',
     summary: 'Mastered simple machines, mechanical advantage & work conservation!',
-    formatPreschoolPrompt: (loadKg, currentKg) => {
-      if (currentKg === 0) {
-        return `Pull down on the rope! Match the ${loadKg} kg stone block with a ${loadKg} kg weight.`;
+    targetHeight: (m) => `🎯 Target: ${m} m`,
+    maRule: (ma) => {
+      switch (ma) {
+        case 1:
+          return 'the effort is the same as the load';
+        case 2:
+          return 'the effort is half the load';
+        case 3:
+          return 'the effort is one third of the load';
+        default:
+          return 'the effort is one quarter of the load';
       }
-      if (currentKg < loadKg) {
-        return `Current: ${currentKg} kg / ${loadKg} kg. Add ${loadKg - currentKg} kg more!`;
-      }
-      if (currentKg > loadKg) {
-        return `Too heavy (${currentKg} kg > ${loadKg} kg)! Tap a weight in the tray to return it.`;
-      }
-      return `✨ Perfect match! ${loadKg} kg counterweight lifts the ${loadKg} kg load!`;
     },
-    formatElementaryPrompt: (loadKg, targetKg, currentKg, ma) => {
-      if (currentKg === 0) {
-        return `Movable pulley (MA = ${ma}) halves required force! Balance ${loadKg} kg with ${targetKg} kg. Combine weights!`;
+    formatPreschoolPrompt: (loadKg, currentKg, state) => {
+      switch (state) {
+        case 'empty':
+          return `Tap a weight to balance the ${loadKg} kg stone.`;
+        case 'low':
+          return `Your weights: ${currentKg} kg. The stone needs more!`;
+        case 'close':
+          return `Your weights: ${currentKg} kg. Almost! Add a little more.`;
+        case 'over':
+          return 'Too heavy! Tap a weight in the Effort tray to take it back.';
+        default:
+          return `✨ Perfect match! ${currentKg} kg lifts the ${loadKg} kg stone!`;
       }
-      if (currentKg < targetKg) {
-        return `Current: ${currentKg} kg / ${targetKg} kg. Need ${targetKg - currentKg} kg more to balance the load! (MA = ${ma})`;
+    },
+    formatElementaryPrompt: (loadKg, currentKg, ma, state) => {
+      switch (state) {
+        case 'empty':
+          return `MA = ${ma}: ${DICTIONARY.en.maRule(ma)}. The stone is ${loadKg} kg. Work out the effort you need, then tap weights!`;
+        case 'low':
+          return `Effort: ${currentKg} kg (MA = ${ma}). Not enough yet, keep adding.`;
+        case 'close':
+          return `Effort: ${currentKg} kg (MA = ${ma}). Getting close, a little more!`;
+        case 'over':
+          return `Effort: ${currentKg} kg. Too heavy! Tap a weight in the Effort tray to take it back.`;
+        default:
+          return `✨ Balance achieved! ${currentKg} kg on MA = ${ma} lifts the ${loadKg} kg stone!`;
       }
-      if (currentKg > targetKg) {
-        return `Too much weight! ${currentKg} kg > ${targetKg} kg needed. Tap a weight to remove it.`;
-      }
-      return `✨ Balance achieved! ${currentKg} kg on MA = ${ma} lifts the massive ${loadKg} kg stone!`;
     },
     formatUpperElementaryPrompt: (
       loadKg,
       loadNewtons,
-      targetKg,
-      targetNewtons,
       currentKg,
       currentNewtons,
       ma,
+      state,
       ropeDistM,
       workJoules
     ) => {
-      if (currentKg === 0) {
-        return `Block & Tackle (MA = ${ma}). Load: ${loadKg} kg (${loadNewtons} N). Target: ${targetKg} kg (${targetNewtons} N) over ${ropeDistM.toFixed(1)} m. Target Work: ${workJoules} J!`;
+      switch (state) {
+        case 'empty':
+          return `Block & Tackle (MA = ${ma}). Load: ${loadKg} kg (${loadNewtons} N). Find the effort that balances it.`;
+        case 'low':
+          return `Effort: ${currentKg} kg (${currentNewtons} N). Not enough to lift the load yet.`;
+        case 'close':
+          return `Effort: ${currentKg} kg (${currentNewtons} N). Almost there, a little more.`;
+        case 'over':
+          return `Effort: ${currentKg} kg (${currentNewtons} N). Too much force! Tap a weight in the Effort tray to take it back.`;
+        default:
+          return `✨ Work conserved! W = ${currentNewtons} N × ${ropeDistM.toFixed(1)} m = ${workJoules} J = W_load. Hoisting!`;
       }
-      if (currentKg < targetKg) {
-        const remKg = targetKg - currentKg;
-        const remN = targetNewtons - currentNewtons;
-        return `Effort: ${currentKg} kg (${currentNewtons} N) / ${targetKg} kg (${targetNewtons} N). Need +${remKg} kg (+${remN} N). Target Work: ${workJoules} J.`;
-      }
-      if (currentKg > targetKg) {
-        return `Force exceeded! ${currentKg} kg (${currentNewtons} N) > ${targetKg} kg (${targetNewtons} N). Tap a weight in the tray to adjust.`;
-      }
-      return `✨ Work Conserved! W = ${targetNewtons} N × ${ropeDistM.toFixed(1)} m = ${workJoules} J = W_load! Hoisting stone block!`;
     },
-    hintOverweight: (currentKg, targetKg) =>
-      `Too heavy! Current: ${currentKg} kg > ${targetKg} kg. Tap a weight to return it.`,
-    hintUnderweight: (remainingKg, remainingNewtons) =>
-      remainingNewtons !== undefined
-        ? `Add ${remainingKg} kg (${remainingNewtons} N) more to lift!`
-        : `Add ${remainingKg} kg more to lift!`,
-    hintSuccess: (loadKg, effortKg, ma, workJoules) =>
-      workJoules !== undefined
-        ? `✨ Hoisted! ${effortKg} kg lifts ${loadKg} kg via MA=${ma} (Work = ${workJoules} J)!`
-        : `✨ Hoisted! ${effortKg} kg lifts ${loadKg} kg via MA=${ma}!`,
     units: {
       kg: 'kg',
       newtons: 'N',
@@ -130,64 +149,70 @@ export const DICTIONARY: Record<SupportedLocale, PulleyTranslations> = {
     loadLabel: 'Charge de pierre',
     wellDone: '✨ Bloc de Pierre Soulevé !',
     summary: 'Poulies, avantage mécanique et conservation du travail maîtrisés !',
-    formatPreschoolPrompt: (loadKg, currentKg) => {
-      if (currentKg === 0) {
-        return `Tire la corde ! Associe le bloc de ${loadKg} kg avec un poids de ${loadKg} kg.`;
+    targetHeight: (m) => `🎯 Cible : ${frNum(m)} m`,
+    maRule: (ma) => {
+      switch (ma) {
+        case 1:
+          return "l'effort est égal à la charge";
+        case 2:
+          return "l'effort est la moitié de la charge";
+        case 3:
+          return "l'effort est le tiers de la charge";
+        default:
+          return "l'effort est le quart de la charge";
       }
-      if (currentKg < loadKg) {
-        return `Actuel : ${currentKg} kg / ${loadKg} kg. Ajoute encore ${loadKg - currentKg} kg !`;
-      }
-      if (currentKg > loadKg) {
-        return `Trop lourd (${currentKg} kg > ${loadKg} kg) ! Touche un poids pour le retirer.`;
-      }
-      return `✨ Équilibre parfait ! Le contrepoids de ${loadKg} kg soulève la charge de ${loadKg} kg !`;
     },
-    formatElementaryPrompt: (loadKg, targetKg, currentKg, ma) => {
-      if (currentKg === 0) {
-        return `La poulie mobile (AM = ${ma}) divise l'effort par 2 ! Équilibre ${loadKg} kg avec ${targetKg} kg. Combine des poids !`;
+    formatPreschoolPrompt: (loadKg, currentKg, state) => {
+      switch (state) {
+        case 'empty':
+          return `Touche un poids pour équilibrer la pierre de ${loadKg} kg.`;
+        case 'low':
+          return `Tes poids : ${currentKg} kg. La pierre a besoin de plus !`;
+        case 'close':
+          return `Tes poids : ${currentKg} kg. Presque ! Ajoute un petit peu.`;
+        case 'over':
+          return "Trop lourd ! Touche un poids du plateau d'effort pour le reprendre.";
+        default:
+          return `✨ Équilibre parfait ! ${currentKg} kg soulèvent la pierre de ${loadKg} kg !`;
       }
-      if (currentKg < targetKg) {
-        return `Actuel : ${currentKg} kg / ${targetKg} kg. Il manque ${targetKg - currentKg} kg pour équilibrer ! (AM = ${ma})`;
+    },
+    formatElementaryPrompt: (loadKg, currentKg, ma, state) => {
+      switch (state) {
+        case 'empty':
+          return `AM = ${ma} : ${DICTIONARY.fr.maRule(ma)}. La pierre fait ${loadKg} kg. Calcule l'effort nécessaire, puis touche des poids !`;
+        case 'low':
+          return `Effort : ${currentKg} kg (AM = ${ma}). Pas encore assez, continue.`;
+        case 'close':
+          return `Effort : ${currentKg} kg (AM = ${ma}). Tu y es presque, encore un peu !`;
+        case 'over':
+          return `Effort : ${currentKg} kg. Trop lourd ! Touche un poids du plateau d'effort pour le reprendre.`;
+        default:
+          return `✨ Équilibre réussi ! ${currentKg} kg avec AM = ${ma} soulèvent la pierre de ${loadKg} kg !`;
       }
-      if (currentKg > targetKg) {
-        return `Trop de poids ! ${currentKg} kg > ${targetKg} kg nécessaires. Touche un poids pour le retirer.`;
-      }
-      return `✨ Équilibre réussi ! ${currentKg} kg avec AM = ${ma} soulèvent le bloc géant de ${loadKg} kg !`;
     },
     formatUpperElementaryPrompt: (
       loadKg,
       loadNewtons,
-      targetKg,
-      targetNewtons,
       currentKg,
       currentNewtons,
       ma,
+      state,
       ropeDistM,
       workJoules
     ) => {
-      if (currentKg === 0) {
-        return `Palan composé (AM = ${ma}). Charge : ${loadKg} kg (${loadNewtons} N). Cible : ${targetKg} kg (${targetNewtons} N) sur ${ropeDistM.toFixed(1)} m. Travail cible : ${workJoules} J !`;
+      switch (state) {
+        case 'empty':
+          return `Palan composé (AM = ${ma}). Charge : ${loadKg} kg (${loadNewtons} N). Trouve l'effort qui l'équilibre.`;
+        case 'low':
+          return `Effort : ${currentKg} kg (${currentNewtons} N). Pas encore assez pour soulever la charge.`;
+        case 'close':
+          return `Effort : ${currentKg} kg (${currentNewtons} N). Presque, encore un peu.`;
+        case 'over':
+          return `Effort : ${currentKg} kg (${currentNewtons} N). Force trop grande ! Touche un poids du plateau d'effort pour le reprendre.`;
+        default:
+          return `✨ Travail conservé ! W = ${currentNewtons} N × ${frNum(Number(ropeDistM.toFixed(1)))} m = ${workJoules} J = W_charge. Levage !`;
       }
-      if (currentKg < targetKg) {
-        const remKg = targetKg - currentKg;
-        const remN = targetNewtons - currentNewtons;
-        return `Effort : ${currentKg} kg (${currentNewtons} N) / ${targetKg} kg (${targetNewtons} N). Reste +${remKg} kg (+${remN} N). Travail cible : ${workJoules} J.`;
-      }
-      if (currentKg > targetKg) {
-        return `Force dépassée ! ${currentKg} kg (${currentNewtons} N) > ${targetKg} kg (${targetNewtons} N). Touche un poids pour ajuster.`;
-      }
-      return `✨ Conservation du Travail ! W = ${targetNewtons} N × ${ropeDistM.toFixed(1)} m = ${workJoules} J = W_charge ! Levage en cours !`;
     },
-    hintOverweight: (currentKg, targetKg) =>
-      `Trop lourd ! Actuel : ${currentKg} kg > ${targetKg} kg. Touche un poids pour le retirer.`,
-    hintUnderweight: (remainingKg, remainingNewtons) =>
-      remainingNewtons !== undefined
-        ? `Ajoute encore ${remainingKg} kg (${remainingNewtons} N) pour soulever !`
-        : `Ajoute encore ${remainingKg} kg pour soulever !`,
-    hintSuccess: (loadKg, effortKg, ma, workJoules) =>
-      workJoules !== undefined
-        ? `✨ Soulevé ! ${effortKg} kg lèvent ${loadKg} kg grâce à AM=${ma} (Travail = ${workJoules} J) !`
-        : `✨ Soulevé ! ${effortKg} kg lèvent ${loadKg} kg grâce à AM=${ma} !`,
     units: {
       kg: 'kg',
       newtons: 'N',

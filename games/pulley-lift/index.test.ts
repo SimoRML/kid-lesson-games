@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameContext, AgeGroup } from '../../src/core/types.js';
 import { SoundEngine } from '../../src/core/audio.js';
 import { I18nManager } from '../../src/core/i18n.js';
@@ -17,6 +17,11 @@ import {
   parseCustomLevels,
   simulatePulleyLevel,
   verifyAntiMirroring,
+  computeSceneLayout,
+  getSceneState,
+  buildRig,
+  boxesOverlap,
+  clampLiftProgress,
   WEIGHT_PALETTE,
   type PulleySystemType
 } from './index.js';
@@ -463,6 +468,7 @@ describe('Pulley Lift Game & Mechanical Advantage Engine', () => {
     let emittedEvents: { type: string; payload?: any }[];
     let activeRafs: Set<number>;
     let nextRafId: number;
+    let dummyCtx: Record<string, any>;
 
     beforeEach(() => {
       container = document.createElement('div');
@@ -505,7 +511,7 @@ describe('Pulley Lift Game & Mechanical Advantage Engine', () => {
       });
 
       // Dummy Canvas 2D context
-      const dummyCtx = {
+      dummyCtx = {
         save: vi.fn(),
         restore: vi.fn(),
         beginPath: vi.fn(),
@@ -601,7 +607,10 @@ describe('Pulley Lift Game & Mechanical Advantage Engine', () => {
       document.body.removeChild(container);
     });
 
-    it('supports granular undo: tapping weight in inventory adds it, tapping on tray removes it', () => {
+    const weightButtons = (tray: Element) =>
+      Array.from(tray.children).map((el) => (el.classList.contains('weight-item') ? el.textContent : ''));
+
+    it('supports granular undo and keeps every weight in its original tray slot', () => {
       const game = createPulleyLiftGame() as PulleyLiftGame;
       game.mount(container, context);
 
@@ -610,24 +619,45 @@ describe('Pulley Lift Game & Mechanical Advantage Engine', () => {
       expect(invTray).toBeDefined();
       expect(effortTray).toBeDefined();
 
-      const initialInvCount = invTray.children.length;
-      expect(initialInvCount).toBeGreaterThan(0);
+      const initialLayout = weightButtons(invTray);
+      const slotCount = invTray.children.length;
+      expect(slotCount).toBeGreaterThan(0);
       expect(effortTray.children.length).toBe(0);
 
-      // Click first weight in inventory tray to add to effort tray
-      const firstPiece = invTray.firstElementChild as HTMLElement;
-      firstPiece.click();
-
-      expect(invTray.children.length).toBe(initialInvCount - 1);
+      // Place the SECOND weight: the tray must not reflow (placeholder keeps its slot)
+      (invTray.children[1] as HTMLElement).click();
+      expect(invTray.children.length).toBe(slotCount);
       expect(effortTray.children.length).toBe(1);
+      const afterPlace = weightButtons(invTray);
+      expect(afterPlace[1]).toBe('');
+      expect(afterPlace[0]).toBe(initialLayout[0]);
+      expect(afterPlace[2]).toBe(initialLayout[2]);
 
-      // Granular undo: click placed weight in effort tray to return it to inventory
-      const placedPiece = effortTray.firstElementChild as HTMLElement;
-      placedPiece.click();
-
-      expect(invTray.children.length).toBe(initialInvCount);
+      // Granular undo: the exact piece returns to its original slot (index 1), not the end
+      (effortTray.firstElementChild as HTMLElement).click();
       expect(effortTray.children.length).toBe(0);
+      expect(invTray.children.length).toBe(slotCount);
+      expect(weightButtons(invTray)).toEqual(initialLayout);
 
+      // Same for the Clear Tray button after placing several pieces out of order
+      (invTray.children[2] as HTMLElement).click();
+      (invTray.children[0] as HTMLElement).click();
+      (container.querySelector('#btn-reset') as HTMLButtonElement).click();
+      expect(weightButtons(invTray)).toEqual(initialLayout);
+
+      game.destroy();
+      document.body.removeChild(container);
+    });
+
+    it('renders the trays in fixed-height grids so the scene never resizes', () => {
+      const game = createPulleyLiftGame() as PulleyLiftGame;
+      game.mount(container, context);
+      const css = container.querySelector('style')?.textContent ?? '';
+      expect(css).toMatch(/\.pl-tray\s*\{[^}]*height:\s*\d+px/);
+      expect(css).toMatch(/\.pl-tray\s*\{[^}]*grid-template-rows:\s*repeat\(2,\s*44px\)/);
+      expect(css).toMatch(/\.pl-stage\s*\{[^}]*min-height:\s*260px/);
+      expect(container.querySelector('#inventory-tray')?.classList.contains('pl-tray')).toBe(true);
+      expect(container.querySelector('#effort-tray')?.classList.contains('pl-tray')).toBe(true);
       game.destroy();
       document.body.removeChild(container);
     });
@@ -661,20 +691,381 @@ describe('Pulley Lift Game & Mechanical Advantage Engine', () => {
       const fr = getTranslations('fr');
 
       // Preschool
-      expect(en.formatPreschoolPrompt(20, 0)).toContain('20 kg');
-      expect(fr.formatPreschoolPrompt(20, 0)).toContain('20 kg');
+      expect(en.formatPreschoolPrompt(20, 0, 'empty')).toContain('20 kg');
+      expect(fr.formatPreschoolPrompt(20, 0, 'empty')).toContain('20 kg');
 
       // Elementary
-      expect(en.formatElementaryPrompt(200, 100, 0, 2)).toContain('MA = 2');
-      expect(fr.formatElementaryPrompt(200, 100, 0, 2)).toContain('AM = 2');
+      expect(en.formatElementaryPrompt(200, 0, 2, 'empty')).toContain('MA = 2');
+      expect(en.formatElementaryPrompt(200, 0, 2, 'empty')).toContain('half the load');
+      expect(fr.formatElementaryPrompt(200, 0, 2, 'empty')).toContain('AM = 2');
+      expect(fr.formatElementaryPrompt(200, 0, 2, 'empty')).toContain('moitié');
 
-      // Upper Elementary
-      expect(en.formatUpperElementaryPrompt(300, 2940, 100, 980, 0, 0, 3, 6.0, 5880)).toContain(
+      // Upper Elementary: work is only revealed on success
+      expect(en.formatUpperElementaryPrompt(300, 2940, 100, 980, 3, 'match', 6.0, 5880)).toContain(
         '5880 J'
       );
-      expect(fr.formatUpperElementaryPrompt(300, 2940, 100, 980, 0, 0, 3, 6.0, 5880)).toContain(
+      expect(fr.formatUpperElementaryPrompt(300, 2940, 100, 980, 3, 'match', 6.0, 5880)).toContain(
         '5880 J'
       );
+      expect(en.formatUpperElementaryPrompt(300, 2940, 0, 0, 3, 'empty', 6.0, 5880)).not.toContain(
+        ' J'
+      );
+    });
+
+    it('never reveals the target effort or the exact remainder for ages 6-11 (EN + FR)', () => {
+      const states = ['empty', 'low', 'close', 'over'] as const;
+      for (const locale of ['en', 'fr'] as const) {
+        const t = getTranslations(locale);
+        for (const age of ['6-8', '9-11'] as AgeGroup[]) {
+          for (const lvl of generateLevelsForAge(age)) {
+            const target = lvl.targetEffortKg;
+            const samples: Record<string, number> = {
+              empty: 0,
+              low: 10,
+              close: Math.round(target * 0.8),
+              over: target + 10
+            };
+            for (const state of states) {
+              const cur = samples[state];
+              const text =
+                age === '6-8'
+                  ? t.formatElementaryPrompt(lvl.loadKg, cur, lvl.mechanicalAdvantage, state)
+                  : t.formatUpperElementaryPrompt(
+                      lvl.loadKg,
+                      Math.round(lvl.loadKg * 9.8),
+                      cur,
+                      Math.round(cur * 9.8),
+                      lvl.mechanicalAdvantage,
+                      state,
+                      lvl.ropeDistanceM,
+                      lvl.targetWorkJoules
+                    );
+              const forbidden = [target, Math.abs(target - cur), Math.round(target * 9.8)];
+              for (const n of forbidden) {
+                if (n === cur || n === lvl.loadKg || n === 0) continue;
+                expect(text, `${locale} ${lvl.id} ${state}: "${text}" leaks ${n}`).not.toMatch(
+                  new RegExp(`(^|[^0-9.,])${n}([^0-9]|$)`)
+                );
+              }
+              if (age === '9-11') {
+                expect(text, `${locale} ${lvl.id} ${state}`).not.toMatch(/\d+ J/);
+              }
+            }
+          }
+        }
+      }
+    });
+
+    it('shows no Newtons to preschoolers and uses unambiguous tray wording', () => {
+      for (const locale of ['en', 'fr'] as const) {
+        const t = getTranslations(locale);
+        for (const state of ['empty', 'low', 'close', 'over', 'match'] as const) {
+          expect(t.formatPreschoolPrompt(20, 10, state)).not.toMatch(/\bN\b/);
+        }
+        // 3-5 instruction matches the interaction: there is no rope to pull
+        expect(t.formatPreschoolPrompt(20, 0, 'empty').toLowerCase()).not.toMatch(
+          /rope|corde|pull|tire/
+        );
+      }
+      expect(getTranslations('en').formatPreschoolPrompt(20, 30, 'over')).toContain('Effort tray');
+      expect(getTranslations('fr').formatElementaryPrompt(100, 80, 2, 'over')).toContain(
+        "plateau d'effort"
+      );
+    });
+  });
+
+  // =========================================================================
+  // 8. SCENE LAYOUT (issues #18, #19, #21)
+  // =========================================================================
+  describe('Scene layout & clamped lift', () => {
+    const mas = [1, 2, 3, 4] as const;
+    const sizes: [number, number][] = [
+      [480, 360],
+      [640, 360],
+      [800, 400],
+      [480, 420]
+    ];
+
+    it('keeps effort platform left of the rig and the stone right, never overlapping', () => {
+      for (const ma of mas) {
+        for (const [vw, vh] of sizes) {
+          const layout = computeSceneLayout(ma, vw, vh);
+          for (let p = 0; p <= 1.0001; p += 0.05) {
+            const st = getSceneState(layout, p);
+            const rig = buildRig(layout, st);
+            expect(boxesOverlap(st.stoneBox, st.platformBox), `ma=${ma} p=${p}`).toBe(false);
+            // Clear horizontal gap of at least a platform + stone width
+            const gap = st.stoneBox.x - (st.platformBox.x + st.platformBox.w);
+            expect(gap).toBeGreaterThanOrEqual(140);
+            // Platform left of every rig pulley except its own guide; stone on the right half
+            const rigPulleys = rig.pulleys.filter((q) => q.id !== 'guide');
+            for (const q of rigPulleys) {
+              expect(q.centerX - q.radius).toBeGreaterThan(st.platformBox.x + st.platformBox.w);
+            }
+            expect(layout.stoneX).toBeGreaterThan(vw / 2);
+            // Everything stays on the canvas
+            expect(st.platformBox.y + st.platformBox.h).toBeLessThanOrEqual(layout.groundY);
+            expect(st.stoneBox.y + st.stoneBox.h).toBeLessThanOrEqual(layout.groundY + 0.001);
+            expect(st.stoneBox.x + st.stoneBox.w).toBeLessThanOrEqual(vw);
+          }
+        }
+      }
+    });
+
+    it('clamps the lifted stone below the arm and pulleys with a visible gap', () => {
+      for (const ma of mas) {
+        const layout = computeSceneLayout(ma);
+        // Spring overshoot (progress > 1) must not lift the stone any higher
+        const atTarget = getSceneState(layout, 1);
+        const overshoot = getSceneState(layout, 1.35);
+        expect(overshoot.liftPx).toBeCloseTo(atTarget.liftPx, 6);
+        expect(overshoot.stoneBox.y).toBeCloseTo(atTarget.stoneBox.y, 6);
+        expect(getSceneState(layout, -0.5).liftPx).toBe(0);
+        expect(clampLiftProgress(Number.NaN)).toBe(0);
+
+        const rig = buildRig(layout, overshoot);
+        for (const q of rig.pulleys) {
+          // stone top is clearly below every pulley frame and the arm
+          expect(overshoot.stoneBox.y).toBeGreaterThanOrEqual(q.centerY + q.radius + 2 + 8);
+        }
+        expect(overshoot.stoneBox.y).toBeGreaterThan(layout.boomY + 40);
+      }
+    });
+
+    it('scales rope travel so the platform stays inside the canvas for every MA', () => {
+      for (const ma of mas) {
+        const layout = computeSceneLayout(ma);
+        const end = getSceneState(layout, 1);
+        // Effort end travels MA x the load displacement (conservation of rope)
+        expect(end.effortY - layout.effortStartY).toBeCloseTo(end.liftPx * ma, 6);
+        expect(end.platformBox.y + end.platformBox.h).toBeLessThan(layout.groundY);
+      }
+    });
+
+    it('draws one supporting rope strand per unit of mechanical advantage', () => {
+      for (const ma of mas) {
+        const layout = computeSceneLayout(ma);
+        const rig = buildRig(layout, getSceneState(layout, 0.5));
+        const strands = rig.segments
+          .slice(0, -1) // last segment is the free end running to the effort platform
+          .filter((s) => s.type === 'line' && s.startX === s.endX);
+        expect(strands.length, `ma=${ma}`).toBe(ma);
+      }
+    });
+  });
+
+  // =========================================================================
+  // 9. FLOW, PACING, SCORE CONVENTION (issues #19, #20, #22)
+  // =========================================================================
+  describe('Win flow, pacing, replay and score convention', () => {
+    let container: HTMLElement;
+    let context: GameContext;
+    let emitted: { type: string; payload?: any }[];
+    let dummyCtx: Record<string, any>;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      container = document.createElement('div');
+      document.body.appendChild(container);
+      emitted = [];
+      const i18n = new I18nManager('en');
+      context = {
+        ageGroup: '6-8',
+        difficulty: 'medium',
+        sound: false,
+        locale: 'en',
+        audio: new SoundEngine(),
+        i18n,
+        t: (k, p) => i18n.t(k, p),
+        emit: (type, payload) => {
+          emitted.push({ type, payload });
+        }
+      };
+      globalThis.ResizeObserver = class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      } as any;
+      globalThis.requestAnimationFrame = vi.fn().mockReturnValue(1);
+      globalThis.cancelAnimationFrame = vi.fn();
+      dummyCtx = {
+        save: vi.fn(),
+        restore: vi.fn(),
+        beginPath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        stroke: vi.fn(),
+        fill: vi.fn(),
+        arc: vi.fn(),
+        fillRect: vi.fn(),
+        strokeRect: vi.fn(),
+        clearRect: vi.fn(),
+        fillText: vi.fn(),
+        setTransform: vi.fn(),
+        setLineDash: vi.fn()
+      };
+      HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(dummyCtx);
+      HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
+        width: 640,
+        height: 400,
+        top: 0,
+        left: 0,
+        right: 640,
+        bottom: 400
+      });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const events = (type: string) => emitted.filter((e) => e.type === type);
+    const badge = () => container.querySelector('#level-badge')?.textContent ?? '';
+    const scoreText = () => container.querySelector('#score-display')?.textContent ?? '';
+
+    /** Taps the weights of the intended solution of the given level. */
+    function placeSolution(age: AgeGroup, levelIndex: number): void {
+      const lvl = generateLevelsForAge(age)[levelIndex];
+      const wanted = [...lvl.solutionCombinations![0]];
+      const buttons = Array.from(
+        container.querySelectorAll<HTMLElement>('#inventory-tray .weight-item')
+      );
+      for (const kg of wanted) {
+        const idx = buttons.findIndex((b) => Number(b.dataset.kg) === kg);
+        expect(idx, `solution weight ${kg} kg present`).toBeGreaterThanOrEqual(0);
+        buttons.splice(idx, 1)[0].click();
+      }
+    }
+
+    /** Drives the render loop at a fixed fps until `done()`; returns simulated seconds. */
+    function runUntil(game: PulleyLiftGame, done: () => boolean, fps = 60, maxSeconds = 30): number {
+      const g = game as any;
+      const dt = 1000 / fps;
+      let t = g.lastTime as number;
+      let seconds = 0;
+      while (!done() && seconds < maxSeconds) {
+        t += dt;
+        seconds += dt / 1000;
+        g.tick(t);
+      }
+      return seconds;
+    }
+
+    it('advances to the next level within ~3 s of balancing, at any frame rate and age', () => {
+      for (const age of ['3-5', '6-8', '9-11'] as AgeGroup[]) {
+        for (const fps of [60, 30]) {
+          emitted = [];
+          context.ageGroup = age;
+          const game = createGame() as PulleyLiftGame;
+          game.mount(container, context);
+          game.start();
+          placeSolution(age, 0);
+          const winSeconds = runUntil(game, () => events('game:score').length > 0, fps);
+          expect(events('game:score').length, `${age}@${fps}`).toBe(1);
+          // lift + settle window, then the short celebration pause
+          expect(winSeconds + 0.8, `${age}@${fps} total ${winSeconds}`).toBeLessThanOrEqual(3);
+          expect(winSeconds).toBeGreaterThanOrEqual(0.5);
+          vi.advanceTimersByTime(900);
+          expect(badge()).toContain('2/3');
+          game.destroy();
+        }
+      }
+    });
+
+    it('starts a fresh round after the final level instead of freezing the board', () => {
+      const game = createGame() as PulleyLiftGame;
+      game.mount(container, context);
+      game.start();
+      for (let i = 0; i < 3; i++) {
+        placeSolution('6-8', i);
+        runUntil(game, () => events('game:score').length === i + 1);
+        vi.advanceTimersByTime(900);
+      }
+      expect(events('game:complete').length).toBe(1);
+      expect(events('game:complete')[0].payload.score).toBe(100 + 120 + 140);
+
+      vi.advanceTimersByTime(4000);
+      expect(badge()).toContain('1/3');
+      expect(scoreText()).toContain('0');
+      expect(container.querySelectorAll('#inventory-tray .weight-item').length).toBeGreaterThan(0);
+      expect(container.querySelectorAll('#effort-tray .weight-item').length).toBe(0);
+      // the new round is playable
+      placeSolution('6-8', 0);
+      runUntil(game, () => events('game:score').length === 4);
+      expect(events('game:score')[3].payload.points).toBe(100);
+      game.destroy();
+    });
+
+    it('resets score, streak and elapsed time when the age group changes (SCORE CONVENTION)', () => {
+      const game = createGame() as PulleyLiftGame;
+      game.mount(container, context);
+      game.start();
+      placeSolution('6-8', 0);
+      runUntil(game, () => events('game:score').length === 1);
+      expect(scoreText()).toContain('100');
+
+      // The level-advance timer is pending; switching age must cancel it
+      game.updateConfig({ ageGroup: '3-5' });
+      vi.advanceTimersByTime(30000);
+      expect(scoreText()).toContain('0');
+      expect(scoreText()).not.toContain('100');
+      expect((game as any).score).toBe(0);
+      expect((game as any).streak).toBe(0);
+      expect(badge()).toContain('1/3');
+      // Time origin restarted at the change
+      expect(Math.abs((game as any).startTime - Date.now())).toBeLessThan(31000);
+      const changeAt = Date.now();
+      game.updateConfig({ ageGroup: '9-11' });
+      expect(Math.abs((game as any).startTime - changeAt)).toBeLessThan(50);
+      game.updateConfig({ ageGroup: '3-5' });
+
+      // Streak restarted: next win is worth exactly 100 again
+      placeSolution('3-5', 0);
+      runUntil(game, () => events('game:score').length === 2);
+      expect(events('game:score')[1].payload).toMatchObject({ points: 100, streak: 1 });
+
+      // Same age group again does not reset
+      game.updateConfig({ ageGroup: '3-5' });
+      expect((game as any).score).toBe(100);
+      game.destroy();
+    });
+
+    it('keeps the live HUD free of the target effort at ages 6-11 while playing', () => {
+      const game = createGame() as PulleyLiftGame;
+      game.mount(container, context);
+      const hud = () => container.querySelector('#hud-instruction')?.textContent ?? '';
+      expect(hud()).toContain('MA = 2');
+      expect(hud()).not.toMatch(/\b50 kg\b/);
+      const buttons = Array.from(
+        container.querySelectorAll<HTMLElement>('#inventory-tray .weight-item')
+      );
+      buttons.find((b) => b.dataset.kg === '30')!.click(); // 30 placed, 50 needed
+      expect(hud()).not.toMatch(/\b(50|20)\b/);
+      game.destroy();
+    });
+
+    it('translates canvas text and redraws on locale change; no newtons for 3-5', () => {
+      context.ageGroup = '3-5';
+      const game = createGame() as PulleyLiftGame;
+      game.mount(container, context);
+      const drawn = () => dummyCtx.fillText.mock.calls.map((c: any[]) => String(c[0]));
+      expect(drawn().some((s: string) => s.includes('Target'))).toBe(true);
+      expect(drawn().some((s: string) => /\d+ N$/.test(s))).toBe(false);
+
+      dummyCtx.fillText.mockClear();
+      game.updateConfig({ locale: 'fr' });
+      expect(drawn().some((s: string) => s.includes('Cible'))).toBe(true);
+      expect(drawn().some((s: string) => s.includes('Target'))).toBe(false);
+      game.destroy();
+
+      // 6-8 keeps the load in newtons on the stone
+      dummyCtx.fillText.mockClear();
+      context.ageGroup = '6-8';
+      context.locale = 'en';
+      const g2 = createGame() as PulleyLiftGame;
+      g2.mount(container, context);
+      expect(drawn().some((s: string) => /\d+ N$/.test(s))).toBe(true);
+      g2.destroy();
     });
   });
 });
