@@ -1735,7 +1735,7 @@ export class GearTrainsGame implements KidGame {
   }
 
   private restartRound(): void {
-    this.levels = parseCustomLevels(this.context.customLevels) || generateLevelsForAge(this.context.ageGroup);
+    this.levels = parseCustomLevels(this.context.customLevels) || generateLevelsForAge(this.context.ageGroup, this.context.difficulty);
     this.currentLevelIndex = 0;
     this.placedGears.clear();
     this.gearRotations.clear();

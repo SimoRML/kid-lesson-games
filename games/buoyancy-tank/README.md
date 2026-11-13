@@ -63,7 +63,7 @@ The following pure math and domain functions are exported from `games/buoyancy-t
 - `calculateDisplacement(initialWaterMl: number, items: BuoyancyItem[], fluidDensity?: number, tankCapacityMl?: number): DisplacementResult`
 - `calculateSubmarineDensity(baseSub: SubmarineBase, modules: SubmarineModule[], fluidDensity?: number, tolerance?: number): SubmarineTrimResult`
 - `calculateWaterSurfaceLevel(tankHeightPx: number, waterVolumeMl: number, tankCapacityMl: number, padding?: { top: number; bottom: number }): number`
-- `generateLevelsForAge(ageGroup: AgeGroup): BuoyancyLevel[]`
+- `generateLevelsForAge(ageGroup: AgeGroup, difficulty?: Difficulty): BuoyancyLevel[]`
 - `verifyAntiMirroring(level: BuoyancyLevel): boolean`
 - `simulateBuoyancyLevel(level: BuoyancyLevel, placedItems: PlacedItem[], settlingTimeSeconds?: number): BuoyancySimulationResult`
 - `parseCustomLevels(raw: unknown): BuoyancyLevel[] | null`

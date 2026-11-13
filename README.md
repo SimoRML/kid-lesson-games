@@ -41,14 +41,14 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 | Universal `<kid-game>` Web Component (Shadow DOM) | ✅ | Implemented in [KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts); client-side ready (SSR requires dynamic client import ⚠️) |
 | Auto-Discovery & Lazy ES Chunking (`import.meta.glob`) | ✅ | `dist/kid-games.es.js` (~12.7 kB) lazily loads per-game ES chunks (`dist/<game-id>-*.js`) |
 | UMD Bundle (`dist/kid-games.umd.js`) | ⚠️ | Produced by `npm run build` (~236 kB), but UMD cannot code-split dynamic imports so all 6 games are bundled together |
-| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with 271 passing Vitest tests |
+| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with 277 passing Vitest tests |
 | `letters` Curriculum Category | 🗺️ | Taxonomy category `'letters'` exists in `src/core/types.ts`, no letter games built yet |
-| Configurable `levels` + Procedural Fallback | ✅ | All 6 cartridges export `parseCustomLevels()` and fall back to `generateLevelsForAge(ageGroup)` |
+| Configurable `levels` + Procedural Fallback | ✅ | All 6 cartridges export `parseCustomLevels()` and fall back to `generateLevelsForAge(ageGroup, difficulty)` |
 | Multilingual UI (`en` & `fr`) | ✅ | Core `I18nManager` + all 6 cartridges provide full English (`en`) and French (`fr`) dictionaries |
 | Zero-Asset Procedural Web Audio (`SoundEngine`) | ✅ | Synthesizes clicks, pops, drops, chimes, victory fanfares, error buzzes, and custom tones |
 | Telemetry Event Bridge (`game:*` CustomEvents) | ✅ | Dispatched on `<kid-game>` with `bubbles: true, composed: true` to cross Shadow DOM boundaries |
-| `difficulty` Attribute (`easy` \| `medium` \| `hard`) | 🚧 | Parsed on `<kid-game>` and passed in `context.difficulty`, but current cartridges only branch on `ageGroup` |
-| Scaffolding CLI (`npm run create-game <id>`) | 🚧 | Generates `game.json` (⚠️ old README said `meta.json`), `index.ts`, and `README.md`; `i18n.ts` and `index.test.ts` are added manually |
+| `difficulty` Attribute (`easy` \| `medium` \| `hard`) | ✅ | Parsed on `<kid-game>` and passed in `context.difficulty`; all 6 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)` |
+| Scaffolding CLI (`npm run create-game <id>`) | ✅ | Scaffolds `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md` with complete zero-leak lifecycle contracts |
 | Published npm Package (`npm i kid-lesson-games`) | 🗺️ | Not published to npm yet (`"private": true`); install via git dependency, local path, or built script bundle |
 
 ---
@@ -62,7 +62,7 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 git clone https://github.com/simorml/kid-lesson-games.git
 cd kid-lesson-games
 npm install
-npm test          # Runs 271 Vitest unit & DOM lifecycle tests
+npm test          # Runs 277 Vitest unit & DOM lifecycle tests
 npm run build     # Type-checks & builds ES chunks + UMD bundle in dist/
 ```
 
@@ -374,7 +374,7 @@ gameEl.levels = [
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `game` | `el.gameId` (⚠️) | *(use `setAttribute('game', id)`)* | `string` | `""` | ✅ Unique game ID (e.g. `"balance-scale"`, `"gear-trains"`). |
 | `age` | `el.age` | *(use `setAttribute('age', val)`)* | `'3-5' \| '6-8' \| '9-11'` | `'6-8'` | ✅ Target age bracket for curriculum scaling. |
-| `difficulty` | `el.difficulty` | *(use `setAttribute('difficulty', val)`)* | `'easy' \| 'medium' \| 'hard'` | `'medium'` | 🚧 Passed in `context.difficulty`; current games scale by `age` only. |
+| `difficulty` | `el.difficulty` | *(use `setAttribute('difficulty', val)`)* | `'easy' \| 'medium' \| 'hard'` | `'medium'` | ✅ Passed in `context.difficulty`; all 6 cartridges scale puzzles, tolerances, and distractors by difficulty. |
 | `locale` | `el.locale` | *(use `setAttribute('locale', val)`)* | `string` (`'en'`, `'fr'`) | `'en'` | ✅ UI language (`I18nManager` normalizes regional tags like `'fr-FR'` $\rightarrow$ `'fr'`). |
 | `sound` | `el.sound` | *(use `setAttribute('sound', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ Enables or mutes procedural Web Audio SFX (`el.audio.enabled`). |
 | `autostart` | `el.autostart` | *(use `setAttribute('autostart', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ Automatically calls `game.start()` and dispatches `game:start` after mount. |
@@ -409,7 +409,7 @@ Scaffold a new game cartridge with a single command ([scripts/create-game.js](fi
 npm run create-game <game-id>
 ```
 
-⚠️ **Discrepancy Note**: Earlier README text stated `create-game` generated `meta.json`. The script actually generates `games/<game-id>/game.json`, `index.ts`, and `README.md` (and `src/index.ts` accepts both `game.json` and `meta.json`). See [AGENTS.md](file:///home/simo/Documents/www/kid-lesson-games/AGENTS.md) for the full ✅ contribution contract, including adding `i18n.ts` and `index.test.ts`.
+The CLI generator automatically scaffolds all 6 production files (`game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md`) implementing the full zero-leak lifecycle contract (`AbortController`, `pendingTimeouts`, `ResizeObserver`, `pause()`/`resume()`), dual-curriculum `generateLevelsForAge(age, difficulty)` with `parseCustomLevels()`, and a passing Vitest suite. See [AGENTS.md](file:///home/simo/Documents/www/kid-lesson-games/AGENTS.md) for contribution rules.
 
 ---
 
@@ -429,6 +429,7 @@ kid-lesson-games/
 │       └── web-component-spec.md
 ├── games/
 │   ├── balance-scale/            # ✅ Numbers: Metric weights, decomposition & Archimedes lever
+│   │   ├── assets/thumb.svg
 │   │   ├── audio.ts
 │   │   ├── audio.test.ts
 │   │   ├── game.json
@@ -437,6 +438,7 @@ kid-lesson-games/
 │   │   ├── index.ts
 │   │   └── index.test.ts
 │   ├── buoyancy-tank/            # ✅ Logic: Sink/float, mL displacement & submarine density trim
+│   │   ├── assets/thumb.svg
 │   │   ├── README.md
 │   │   ├── game.json
 │   │   ├── i18n.ts
@@ -450,6 +452,7 @@ kid-lesson-games/
 │   │   ├── index.ts
 │   │   └── index.test.ts
 │   ├── marble-run-angles/        # ✅ Spatial: Ramp slopes, 15° angles & specular reflection
+│   │   ├── assets/thumb.svg
 │   │   ├── README.md
 │   │   ├── game.json
 │   │   ├── i18n.ts
@@ -463,13 +466,14 @@ kid-lesson-games/
 │   │   ├── index.ts
 │   │   └── index.test.ts
 │   └── pulley-lift/              # ✅ Logic: Simple machines, MA (1..4) & work conservation
+│       ├── assets/thumb.svg
 │       ├── README.md
 │       ├── game.json
 │       ├── i18n.ts
 │       ├── index.ts
 │       └── index.test.ts
 ├── scripts/
-│   └── create-game.js            # 🚧 CLI scaffolding tool (npm run create-game <id>)
+│   └── create-game.js            # ✅ CLI scaffolding tool (npm run create-game <id>)
 ├── src/
 │   ├── core/
 │   │   ├── KidGameElement.ts     # ✅ <kid-game> custom element & Shadow DOM host

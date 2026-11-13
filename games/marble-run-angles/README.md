@@ -73,6 +73,6 @@ An interactive educational physics cartridge for **kid-lesson-games** teaching s
 - **Zero Core Modifications**: Resides entirely in `games/marble-run-angles/`.
 - **Zero External Assets**: Pure Canvas 2D procedural rendering, procedural Web Audio via `context.audio`, and `canvas-confetti`.
 - **Zero-Leak Teardown**: Cleans up all `requestAnimationFrame` IDs, `Set<setTimeout>` handles, `ResizeObserver` instances, and uses `AbortController` signal for all DOM and window event listeners.
-- **Dual Curriculum**: Exports `parseCustomLevels(raw: unknown)` with automatic procedural fallback to `generateLevelsForAge(ageGroup)`.
+- **Dual Curriculum**: Exports `parseCustomLevels(raw: unknown)` with automatic procedural fallback to `generateLevelsForAge(ageGroup, difficulty)`.
 - **Localization**: Full English (`en`) and French (`fr`) dictionaries via `createI18nResolver`.
 - **Telemetry**: Emits `game:progress`, `game:score`, and `game:complete`.

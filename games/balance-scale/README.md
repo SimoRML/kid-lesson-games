@@ -17,11 +17,11 @@ Place metric weights on a scale to reach equilibrium. Bilingual (EN/FR), fully p
 
 ## Lifecycle
 
-Implements `mount`, `start`, `pause`, `resume`, `updateConfig` (locale, sound, ageGroup, customLevels) and a zero-leak `destroy` (AbortController window listeners, tracked timeouts, ResizeObserver, rAF). Shared `context.audio` is never closed by the cartridge.
+Implements `mount`, `start`, `pause`, `resume`, `updateConfig` (locale, sound, ageGroup, difficulty, customLevels) and a zero-leak `destroy` (AbortController window listeners, tracked timeouts, ResizeObserver, rAF). Shared `context.audio` is never closed by the cartridge.
 
 ## Custom levels
 
-`context.customLevels` / the `levels` attribute accepts an array validated by `parseCustomLevels` (invalid input falls back to `generateLevelsForAge`):
+`context.customLevels` / the `levels` attribute accepts an array validated by `parseCustomLevels` (invalid input falls back to `generateLevelsForAge(ageGroup, difficulty)`):
 
 ```json
 [

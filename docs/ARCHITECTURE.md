@@ -52,7 +52,7 @@ When [src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.t
 1. **Eager Metadata Discovery** (lines 6–9):
    - Uses `import.meta.glob(['../games/*/game.json', '../games/*/meta.json'], { eager: true })`.
    - ⚠️ **Known discrepancy**: Earlier README sections referred to `meta.json` while `balance-scale` used `game.json`. In reality, [scripts/create-game.js](file:///home/simo/Documents/www/kid-lesson-games/scripts/create-game.js) generates `game.json` and all 6 cartridges in `games/*/` use `game.json`. `src/index.ts` accepts both `game.json` (canonical) and `meta.json` (fallback alias).
-   - ⚠️ **Known discrepancy**: `src/index.ts` (lines 19–27) copies `{ id, title, version, description, category, ageGroups, skills }` into the registered `GameMetadata` object and currently omits `author` and `thumbnail`.
+   - ✅ **Resolved**: `src/index.ts` (lines 19–29) preserves `author` and `thumbnail` when constructing `GameMetadata`, and all 6 games feature `assets/thumb.svg` vector badges on disk.
 2. **Lazy Cartridge Code-Splitting** (lines 12–48):
    - Uses `import.meta.glob('../games/*/index.ts')` (lazy by default).
    - Registers an async factory with `registry.register(meta, async () => ...)` that resolves `mod.createGame || mod.default || mod.createBalanceScaleGame`.
@@ -87,7 +87,7 @@ When [src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.t
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `game` | `el.gameId` (⚠️ not `el.game`) | *(use `setAttribute('game', id)`)* | `string` | `""` | ✅ Changing `game` increments `currentLoadToken`, tears down the active game, and mounts the new cartridge. |
 | `age` | `el.age` | *(use `setAttribute('age', val)`)* | `'3-5' \| '6-8' \| '9-11'` | `'6-8'` | ✅ Invalid values fall back to `'6-8'`. Updates running game via `updateConfig()`. |
-| `difficulty` | `el.difficulty` | *(use `setAttribute('difficulty', val)`)* | `'easy' \| 'medium' \| 'hard'` | `'medium'` | 🚧 Parsed and forwarded in `context.difficulty`, but current cartridges only branch on `ageGroup`. |
+| `difficulty` | `el.difficulty` | *(use `setAttribute('difficulty', val)`)* | `'easy' \| 'medium' \| 'hard'` | `'medium'` | ✅ Parsed and forwarded in `context.difficulty`. All 6 cartridges scale distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)`. |
 | `sound` | `el.sound` | *(use `setAttribute('sound', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ Updates `el.audio.enabled` and calls `updateConfig()`. |
 | `autostart` | `el.autostart` | *(use `setAttribute('autostart', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ When `true`, automatically calls `game.start()` and emits `game:start` after `mount()`. |
 | `locale` | `el.locale` | *(use `setAttribute('locale', val)`)* | `string` | `'en'` | ✅ Updates `el.i18n.locale` and calls `updateConfig()`. Core & all 6 games bundle `'en'` and `'fr'`. |
@@ -192,6 +192,4 @@ The following items from the design specifications and roadmap are **not built y
 
 1. 🗺️ **SSR-Safe `KidGameElement` Definition**: Wrap or lazy-define `KidGameElement` so importing the package in a Node.js SSR environment (Next.js / Nuxt server pass) does not evaluate `extends HTMLElement` when `typeof HTMLElement === 'undefined'`.
 2. 🗺️ **TypeScript Declaration Emission (`dist/index.d.ts`)**: Add a dedicated build tsconfig (`tsconfig.build.json` with `"noEmit": false, "emitDeclarationOnly": true, "declaration": true, "outDir": "dist"`) before publishing to npm.
-3. 🗺️ **Cartridge Consumption of `context.difficulty`**: Wire `easy` / `medium` / `hard` into each cartridge's `generateLevelsForAge(ageGroup, difficulty)` to adjust distractor count, tolerance windows, or step count within each age bracket.
-4. 🗺️ **Preserve `author` and `thumbnail` in `src/index.ts`**: Pass through `raw.author` and `raw.thumbnail` when registering `GameMetadata` in `src/index.ts`, and add `assets/thumb.svg` for the remaining 4 cartridges.
-5. 🗺️ **Programmatic `mountGame(id, container, options)` Helper & Named Shadow DOM Slots**: Provide the standalone imperative helper and `<slot name="loading">` / `<slot name="error">` customization hooks originally sketched in `docs/design/`.
+3. 🗺️ **Programmatic `mountGame(id, container, options)` Helper & Named Shadow DOM Slots**: Provide the standalone imperative helper and `<slot name="loading">` / `<slot name="error">` customization hooks originally sketched in `docs/design/`.
