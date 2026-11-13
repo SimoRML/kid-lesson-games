@@ -14,21 +14,22 @@ interface Level {
   targetLeft: MetricWeight[];
   targetRight: MetricWeight[];
   inventory: MetricWeight[];
-  instructionKey: keyof Translations['instructions'];
-  leftNotch?: 1 | 2 | 3 | 4;
-  rightNotch?: 1 | 2 | 3 | 4;
-  leverMode?: boolean;
+  leftNotch: 1 | 2 | 3 | 4;
+  rightNotch: 1 | 2 | 3 | 4;
+  leverMode: boolean;
 }
 
 const PALETTE: Record<number, { label: string; color: string }> = {
   50: { label: '50g', color: '#f59e0b' },
   100: { label: '100g', color: '#06b6d4' },
+  150: { label: '150g', color: '#14b8a6' },
   200: { label: '200g', color: '#3b82f6' },
   250: { label: '250g', color: '#10b981' },
   300: { label: '300g', color: '#8b5cf6' },
   400: { label: '400g', color: '#6366f1' },
   500: { label: '500g', color: '#ec4899' },
   600: { label: '600g', color: '#f97316' },
+  750: { label: '750g', color: '#e11d48' },
   1000: { label: '1 kg', color: '#eab308' }
 };
 
@@ -42,84 +43,165 @@ function createWeight(grams: number): MetricWeight {
   };
 }
 
-const AGE_LEVELS: Record<string, Level[]> = {
-  '3-5': [
-    {
-      targetLeft: [createWeight(200)],
-      targetRight: [],
-      inventory: [createWeight(100), createWeight(100), createWeight(200)],
-      instructionKey: 'lvl1_3_5',
-      leftNotch: 4,
-      rightNotch: 4
-    },
-    {
-      targetLeft: [createWeight(300)],
-      targetRight: [createWeight(100)],
-      inventory: [createWeight(100), createWeight(200)],
-      instructionKey: 'lvl2_3_5',
-      leftNotch: 4,
-      rightNotch: 4
+function randomItem<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function findDecompositions(
+  targetSum: number,
+  forbiddenGrams: Set<number>,
+  pool: number[],
+  minParts: number,
+  maxParts: number
+): number[][] {
+  const allowed = pool.filter((g) => !forbiddenGrams.has(g) && g <= targetSum).sort((a, b) => b - a);
+  const results: number[][] = [];
+
+  function backtrack(remaining: number, current: number[], startIdx: number) {
+    if (remaining === 0) {
+      if (current.length >= minParts && current.length <= maxParts) {
+        results.push([...current]);
+      }
+      return;
     }
-  ],
-  '6-8': [
-    {
-      targetLeft: [createWeight(1000)],
-      targetRight: [],
-      inventory: [createWeight(500), createWeight(500), createWeight(250), createWeight(250)],
-      instructionKey: 'lvl1_6_8',
-      leftNotch: 4,
-      rightNotch: 4
-    },
-    {
-      targetLeft: [createWeight(500), createWeight(250)],
-      targetRight: [],
-      inventory: [createWeight(250), createWeight(500), createWeight(100), createWeight(100)],
-      instructionKey: 'lvl2_6_8',
-      leftNotch: 4,
-      rightNotch: 4
-    },
-    {
-      targetLeft: [createWeight(1000)],
-      targetRight: [createWeight(250)],
-      inventory: [createWeight(500), createWeight(250), createWeight(200)],
-      instructionKey: 'lvl3_6_8',
-      leftNotch: 4,
-      rightNotch: 4
+    if (current.length >= maxParts) return;
+
+    for (let i = startIdx; i < allowed.length; i++) {
+      const val = allowed[i];
+      if (val <= remaining) {
+        current.push(val);
+        backtrack(remaining - val, current, i);
+        current.pop();
+      }
     }
-  ],
-  '9-11': [
-    {
-      // 400g at notch 2 (torque 800) vs 200g at notch 4 (torque 800)
-      targetLeft: [createWeight(400)],
-      targetRight: [],
-      inventory: [createWeight(200), createWeight(300), createWeight(100)],
-      instructionKey: 'lvl1_9_11',
-      leftNotch: 2,
+  }
+
+  backtrack(targetSum, [], 0);
+  return results;
+}
+
+function generateLevelsForAge(age: string): Level[] {
+  if (age === '3-5') {
+    const pool = [50, 100, 150, 200, 250, 300, 400];
+    const leftCandidates: number[][] = [
+      [200],
+      [250],
+      [300],
+      [400],
+      [150, 100],
+      [200, 100],
+      [200, 150]
+    ];
+
+    const pickedLefts = shuffle(leftCandidates).slice(0, 3);
+    return pickedLefts.map((leftArr) => {
+      const leftSum = leftArr.reduce((a, b) => a + b, 0);
+      const forbidden = new Set<number>([...leftArr, leftSum]);
+      const decomps = findDecompositions(leftSum, forbidden, pool, 2, 3);
+      const solution = decomps.length > 0 ? randomItem(decomps) : [100, 100];
+
+      const distractorPool = pool.filter((g) => !forbidden.has(g));
+      const distractors = [randomItem(distractorPool)];
+
+      return {
+        targetLeft: leftArr.map((g) => createWeight(g)),
+        targetRight: [],
+        inventory: shuffle([...solution, ...distractors]).map((g) => createWeight(g)),
+        leftNotch: 4,
+        rightNotch: 4,
+        leverMode: false
+      };
+    });
+  }
+
+  if (age === '9-11') {
+    const pool = [50, 100, 150, 200, 250, 300, 400, 500, 600, 750, 1000];
+    const leverTemplates: Array<{
+      leftArr: number[];
+      leftNotch: 1 | 2 | 3 | 4;
+      solNotch: 1 | 2 | 3 | 4;
+    }> = [
+      { leftArr: [400], leftNotch: 2, solNotch: 4 }, // 400*2 = 800 -> at notch 4 needs 200g (or 150+50)
+      { leftArr: [300], leftNotch: 3, solNotch: 2 }, // 300*3 = 900 -> at notch 2 needs 450g (250+200)
+      { leftArr: [600], leftNotch: 2, solNotch: 3 }, // 600*2 = 1200 -> at notch 3 needs 400g (250+150)
+      { leftArr: [500], leftNotch: 3, solNotch: 3 }, // 500*3 = 1500 -> at notch 3 needs 500g (300+200)
+      { leftArr: [400, 200], leftNotch: 2, solNotch: 3 }, // 600*2 = 1200 -> at notch 3 needs 400g (250+150)
+      { leftArr: [750], leftNotch: 2, solNotch: 3 } // 750*2 = 1500 -> at notch 3 needs 500g (250+200+50)
+    ];
+
+    const picked = shuffle(leverTemplates).slice(0, 3);
+    return picked.map((tpl) => {
+      const leftSum = tpl.leftArr.reduce((a, b) => a + b, 0);
+      const targetTorque = leftSum * tpl.leftNotch;
+      const rightTargetGrams = targetTorque / tpl.solNotch;
+
+      // Forbid all left pan weights AND the total leftSum
+      const forbidden = new Set<number>([...tpl.leftArr, leftSum]);
+      const decomps = findDecompositions(rightTargetGrams, forbidden, pool, 1, 3);
+      const solution = decomps.length > 0 ? randomItem(decomps) : [200];
+
+      const distractorPool = pool.filter((g) => !forbidden.has(g) && !solution.includes(g));
+      const distractors = shuffle(distractorPool).slice(0, 2);
+
+      return {
+        targetLeft: tpl.leftArr.map((g) => createWeight(g)),
+        targetRight: [],
+        inventory: shuffle([...solution, ...distractors]).map((g) => createWeight(g)),
+        leftNotch: tpl.leftNotch,
+        rightNotch: tpl.solNotch, // Starts right at the solvable notch!
+        leverMode: true
+      };
+    });
+  }
+
+  // Default: Age '6-8'
+  const pool = [50, 100, 150, 200, 250, 300, 400, 500, 600, 750, 1000];
+  const templates68: Array<{ leftArr: number[]; rightArr: number[] }> = [
+    { leftArr: [1000], rightArr: [] },
+    { leftArr: [500, 250], rightArr: [] },
+    { leftArr: [600, 400], rightArr: [] },
+    { leftArr: [500, 300], rightArr: [] },
+    { leftArr: [400, 250], rightArr: [] },
+    { leftArr: [750], rightArr: [] },
+    { leftArr: [1000], rightArr: [250] },
+    { leftArr: [1000], rightArr: [300] }
+  ];
+
+  const picked = shuffle(templates68).slice(0, 3);
+  return picked.map((tpl) => {
+    const leftSum = tpl.leftArr.reduce((a, b) => a + b, 0);
+    const rightStartSum = tpl.rightArr.reduce((a, b) => a + b, 0);
+    const neededGrams = leftSum - rightStartSum;
+
+    const forbidden = new Set<number>([...tpl.leftArr, ...tpl.rightArr, leftSum, neededGrams]);
+    let decomps = findDecompositions(neededGrams, forbidden, pool, 2, 3);
+    if (decomps.length === 0) {
+      decomps = findDecompositions(neededGrams, new Set([...tpl.leftArr, leftSum]), pool, 2, 4);
+    }
+    const solution = decomps.length > 0 ? randomItem(decomps) : [250, 250];
+
+    const distractorPool = pool.filter((g) => !forbidden.has(g));
+    const distractors = shuffle(distractorPool).slice(0, 2);
+
+    return {
+      targetLeft: tpl.leftArr.map((g) => createWeight(g)),
+      targetRight: tpl.rightArr.map((g) => createWeight(g)),
+      inventory: shuffle([...solution, ...distractors]).map((g) => createWeight(g)),
+      leftNotch: 4,
       rightNotch: 4,
-      leverMode: true
-    },
-    {
-      // 600g at notch 2 (torque 1200) -> user can move right pan to notch 3 with 400g, or notch 4 with 300g
-      targetLeft: [createWeight(600)],
-      targetRight: [],
-      inventory: [createWeight(300), createWeight(400), createWeight(200)],
-      instructionKey: 'lvl2_9_11',
-      leftNotch: 2,
-      rightNotch: 3,
-      leverMode: true
-    },
-    {
-      // 500g at notch 3 (torque 1500) -> e.g. notch 3 with 500g, or notch 2 with 500g+250g (750*2=1500)
-      targetLeft: [createWeight(500)],
-      targetRight: [],
-      inventory: [createWeight(500), createWeight(250), createWeight(250)],
-      instructionKey: 'lvl3_9_11',
-      leftNotch: 3,
-      rightNotch: 2,
-      leverMode: true
-    }
-  ]
-};
+      leverMode: false
+    };
+  });
+}
 
 export class BalanceScaleGame implements KidGame {
   private container!: HTMLElement;
@@ -154,6 +236,7 @@ export class BalanceScaleGame implements KidGame {
   private dragStartPos = { x: 0, y: 0 };
   private hasDraggedBeyondThreshold = false;
   private hoveredRightWeightIndex: number = -1;
+  private hoveredRightNotch: number = -1;
   private mousePos = { x: 0, y: 0 };
 
   mount(container: HTMLElement, context: GameContext) {
@@ -165,16 +248,27 @@ export class BalanceScaleGame implements KidGame {
     this.container.innerHTML = `
       <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; background: radial-gradient(circle at 50% 25%, #1e293b, #090d16); color: #f8fafc; font-family: inherit;">
         <!-- Top HUD -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 10;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 10;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <span style="font-weight: 800; font-size: 1.15rem; color: #38bdf8; letter-spacing: -0.02em;" id="hud-title">${this.t.title}</span>
             <span id="level-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 3px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 700;"></span>
           </div>
 
           <div style="display: flex; align-items: center; gap: 14px;">
-            <div id="instruction" style="font-size: 0.95rem; color: #cbd5e1; font-weight: 500; max-width: 440px; text-align: center;"></div>
+            <div id="instruction" style="font-size: 0.92rem; color: #cbd5e1; font-weight: 500; max-width: 480px; text-align: center;"></div>
             <div id="score-display" style="font-weight: 700; color: #fbbf24; font-size: 1.1rem;">⭐ 0</div>
             <button id="btn-sound-toggle" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;">${sound.enabled ? this.t.soundOn : this.t.soundOff}</button>
+          </div>
+        </div>
+
+        <!-- Interactive Notch Selector Toolbar (Ages 9-11 Lever Mode) -->
+        <div id="notch-selector-row" style="display: none; align-items: center; justify-content: center; gap: 12px; padding: 6px 16px; background: rgba(15, 23, 42, 0.85); border-bottom: 1px solid rgba(255,255,255,0.06); z-index: 10;">
+          <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;" id="hud-hook-label">${this.t.rightHookLabel}</span>
+          <div style="display: flex; gap: 8px;" id="notch-button-group">
+            <button class="btn-notch" data-notch="1" style="min-width: 48px; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.15s;">Notch 1</button>
+            <button class="btn-notch" data-notch="2" style="min-width: 48px; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.15s;">Notch 2</button>
+            <button class="btn-notch" data-notch="3" style="min-width: 48px; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.15s;">Notch 3</button>
+            <button class="btn-notch" data-notch="4" style="min-width: 48px; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.15s;">Notch 4</button>
           </div>
         </div>
 
@@ -214,6 +308,46 @@ export class BalanceScaleGame implements KidGame {
     this.resizeObserver.observe(wrapper);
   }
 
+  private setRightNotch(n: 1 | 2 | 3 | 4) {
+    if (this.rightNotch === n) return;
+    this.rightNotch = n;
+    sound.playPop();
+    this.updateNotchButtonsUI();
+    this.updateInstructionText();
+  }
+
+  private updateNotchButtonsUI() {
+    const row = this.container.querySelector('#notch-selector-row') as HTMLElement;
+    if (!row) return;
+    row.style.display = this.leverMode ? 'flex' : 'none';
+
+    const buttons = this.container.querySelectorAll('.btn-notch');
+    buttons.forEach((btn) => {
+      const notchNum = Number(btn.getAttribute('data-notch'));
+      const htmlBtn = btn as HTMLButtonElement;
+      if (notchNum === this.rightNotch) {
+        htmlBtn.style.background = '#fbbf24';
+        htmlBtn.style.color = '#0f172a';
+        htmlBtn.style.borderColor = '#f59e0b';
+        htmlBtn.style.boxShadow = '0 0 12px rgba(251, 191, 36, 0.4)';
+        htmlBtn.textContent = `✓ Notch ${notchNum}`;
+      } else {
+        htmlBtn.style.background = '#1e293b';
+        htmlBtn.style.color = '#cbd5e1';
+        htmlBtn.style.borderColor = 'rgba(255,255,255,0.15)';
+        htmlBtn.style.boxShadow = 'none';
+        htmlBtn.textContent = `Notch ${notchNum}`;
+      }
+    });
+  }
+
+  private updateInstructionText() {
+    const instruction = this.container.querySelector('#instruction');
+    if (instruction && this.levels[this.currentLevelIndex]) {
+      instruction.textContent = this.getLevelInstruction(this.levels[this.currentLevelIndex]);
+    }
+  }
+
   private setupEvents() {
     const wrapper = this.container.querySelector('#canvas-wrapper') as HTMLElement;
 
@@ -225,16 +359,26 @@ export class BalanceScaleGame implements KidGame {
       };
     };
 
+    // Notch buttons click
+    const notchButtons = this.container.querySelectorAll('.btn-notch');
+    notchButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const n = Number(btn.getAttribute('data-notch')) as 1 | 2 | 3 | 4;
+        if (n >= 1 && n <= 4) {
+          this.setRightNotch(n);
+        }
+      });
+    });
+
     const handlePointerDown = (pos: { x: number; y: number }) => {
       this.mousePos = pos;
 
-      // In Lever Mode (9-11), check if user clicked a right-side notch (1, 2, 3, 4) to move the right pan hook!
+      // In Lever Mode, check canvas click on right-side notches with generous 38px radius
       if (this.leverMode) {
         for (const n of [1, 2, 3, 4] as const) {
           const anchor = this.getNotchPosition('right', n);
-          if (Math.hypot(pos.x - anchor.x, pos.y - anchor.y) < 22) {
-            this.rightNotch = n;
-            sound.playPop();
+          if (Math.hypot(pos.x - anchor.x, pos.y - anchor.y) < 38) {
+            this.setRightNotch(n);
             return;
           }
         }
@@ -258,24 +402,43 @@ export class BalanceScaleGame implements KidGame {
           this.hasDraggedBeyondThreshold = true;
         }
       }
+
       this.hoveredRightWeightIndex = this.draggedWeight === null ? this.getHitRightWeightIndex(pos) : -1;
-      this.canvas.style.cursor = this.hoveredRightWeightIndex !== -1 ? 'pointer' : 'default';
+
+      // Check hover on right notches
+      let foundNotch = -1;
+      if (this.leverMode && this.draggedWeight === null) {
+        for (const n of [1, 2, 3, 4] as const) {
+          const anchor = this.getNotchPosition('right', n);
+          if (Math.hypot(pos.x - anchor.x, pos.y - anchor.y) < 38) {
+            foundNotch = n;
+            break;
+          }
+        }
+      }
+      this.hoveredRightNotch = foundNotch;
+
+      if (this.hoveredRightWeightIndex !== -1 || this.hoveredRightNotch !== -1) {
+        this.canvas.style.cursor = 'pointer';
+      } else {
+        this.canvas.style.cursor = 'default';
+      }
     };
 
     const handlePointerUp = () => {
       if (this.draggedWeight !== null) {
         if (!this.hasDraggedBeyondThreshold) {
-          // Quick click/tap on an available weight -> add directly to right pan stack!
+          // Quick click on available weight -> adds to right pan
           this.rightWeights.push(this.draggedWeight);
           sound.playDrop();
         } else {
-          // Dragged weight -> check if dropped onto a right-side notch or right pan
+          // Dragged weight -> check if dropped onto a notch or pan
           let droppedOnNotch = false;
           if (this.leverMode) {
             for (const n of [1, 2, 3, 4] as const) {
               const anchor = this.getNotchPosition('right', n);
-              if (Math.hypot(this.mousePos.x - anchor.x, this.mousePos.y - anchor.y) < 36) {
-                this.rightNotch = n;
+              if (Math.hypot(this.mousePos.x - anchor.x, this.mousePos.y - anchor.y) < 42) {
+                this.setRightNotch(n);
                 this.rightWeights.push(this.draggedWeight);
                 sound.playDrop();
                 droppedOnNotch = true;
@@ -323,14 +486,27 @@ export class BalanceScaleGame implements KidGame {
 
     const resetBtn = this.container.querySelector('#btn-reset') as HTMLButtonElement;
     resetBtn?.addEventListener('click', () => {
-      this.loadLevel(this.currentLevelIndex);
+      this.levels = generateLevelsForAge(this.context.ageGroup);
+      this.loadLevel(0);
       sound.playPop();
     });
   }
 
   private setAgeGroup(age: string) {
-    this.levels = AGE_LEVELS[age] || AGE_LEVELS['6-8'];
+    this.context.ageGroup = (age as GameContext['ageGroup']) || '6-8';
+    this.levels = generateLevelsForAge(this.context.ageGroup);
     this.loadLevel(0);
+  }
+
+  private getLevelInstruction(lvl: Level): string {
+    const leftSum = lvl.targetLeft.reduce((a, b) => a + b.grams, 0);
+    const rightStartSum = lvl.targetRight.reduce((a, b) => a + b.grams, 0);
+    const leftDesc = lvl.targetLeft.map((w) => w.label).join(' + ');
+
+    if (lvl.leverMode) {
+      return this.t.formatLeverInstruction(leftSum, lvl.leftNotch, leftSum * lvl.leftNotch, this.rightNotch);
+    }
+    return this.t.formatStandardInstruction(leftDesc, leftSum, rightStartSum);
   }
 
   private loadLevel(index: number) {
@@ -350,15 +526,14 @@ export class BalanceScaleGame implements KidGame {
     const badge = this.container.querySelector('#level-badge');
     if (badge) badge.textContent = `${this.t.level} ${index + 1}/${this.levels.length}`;
 
-    const instruction = this.container.querySelector('#instruction');
-    const msg = this.t.instructions[lvl.instructionKey];
-    if (instruction) instruction.textContent = msg;
+    this.updateNotchButtonsUI();
+    this.updateInstructionText();
 
     this.renderInventory();
     this.context.emit('game:progress', {
       step: index + 1,
       total: this.levels.length,
-      detail: msg
+      detail: this.getLevelInstruction(lvl)
     });
   }
 
@@ -384,7 +559,7 @@ export class BalanceScaleGame implements KidGame {
         align-items: center;
         justify-content: center;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        cursor: grab;
+        cursor: pointer;
         user-select: none;
         transition: transform 0.15s, box-shadow 0.15s;
         border: ${isKg ? '2px solid #fef08a' : '1px solid rgba(255,255,255,0.2)'};
@@ -394,8 +569,8 @@ export class BalanceScaleGame implements KidGame {
         <span style="font-size: 0.65rem; opacity: 0.85; font-weight: 600;">${item.grams}g</span>
       `;
 
-      btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.08)');
-      btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
+      btn.addEventListener('mouseenter', () => (btn.style.transform = 'scale(1.08)'));
+      btn.addEventListener('mouseleave', () => (btn.style.transform = 'scale(1)'));
 
       const startDrag = (clientX: number, clientY: number) => {
         const rect = this.canvas.getBoundingClientRect();
@@ -487,7 +662,6 @@ export class BalanceScaleGame implements KidGame {
   private updatePhysics() {
     const { leftGrams, leftTorque, rightTorque } = this.calculateTorque();
 
-    // Torque comparison using actual visible notch positions (1..4)
     const torqueDiff = rightTorque - leftTorque;
     const maxAngle = 0.35;
     const targetAngle = Math.max(-maxAngle, Math.min(maxAngle, torqueDiff * 0.00025));
@@ -498,7 +672,6 @@ export class BalanceScaleGame implements KidGame {
     this.angularVelocity = (this.angularVelocity + force) * damping;
     this.angle += this.angularVelocity;
 
-    // Equilibrium condition: Left Torque === Right Torque
     const isBalanced = leftGrams > 0 && leftTorque === rightTorque;
 
     if (isBalanced && Math.abs(this.angle) < 0.02 && Math.abs(this.angularVelocity) < 0.005) {
@@ -543,6 +716,10 @@ export class BalanceScaleGame implements KidGame {
           timeElapsed: elapsed,
           summary: this.t.summary
         });
+        setTimeout(() => {
+          this.levels = generateLevelsForAge(this.context.ageGroup);
+          this.loadLevel(0);
+        }, 1800);
       }
     }, 1500);
   }
@@ -586,30 +763,44 @@ export class BalanceScaleGame implements KidGame {
       const leftX = -half * (n / 4);
       const rightX = half * (n / 4);
 
-      // Tick marks
       ctx.fillStyle = 'rgba(255,255,255,0.65)';
       ctx.fillRect(leftX - 1, -7, 2, 14);
       ctx.fillRect(rightX - 1, -7, 2, 14);
 
-      // Notch numbers above beam
+      // Notch numbers above beam inside circular pill
+      const isLeftActive = this.leftNotch === n;
+      const isRightActive = this.rightNotch === n;
+      const isRightHovered = this.hoveredRightNotch === n;
+
+      // Left pill
+      ctx.fillStyle = isLeftActive ? '#0284c7' : 'rgba(30, 41, 59, 0.8)';
+      ctx.beginPath();
+      ctx.arc(leftX, -16, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = isLeftActive ? '#ffffff' : '#94a3b8';
       ctx.font = 'bold 11px system-ui';
       ctx.textAlign = 'center';
-      ctx.fillStyle = this.leftNotch === n ? '#38bdf8' : '#94a3b8';
-      ctx.fillText(String(n), leftX, -15);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(n), leftX, -16);
 
-      ctx.fillStyle = this.rightNotch === n ? '#fbbf24' : '#94a3b8';
-      ctx.fillText(String(n), rightX, -15);
-
-      // Interactive clickable ring on right-side notches in leverMode
-      if (this.leverMode) {
-        ctx.beginPath();
-        ctx.arc(rightX, 0, this.rightNotch === n ? 8 : 5, 0, Math.PI * 2);
-        ctx.fillStyle = this.rightNotch === n ? '#fbbf24' : '#475569';
-        ctx.fill();
+      // Right pill (interactive)
+      ctx.fillStyle = isRightActive ? '#f59e0b' : isRightHovered ? '#334155' : 'rgba(30, 41, 59, 0.8)';
+      ctx.beginPath();
+      ctx.arc(rightX, -16, 10, 0, Math.PI * 2);
+      ctx.fill();
+      if (isRightHovered || isRightActive) {
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
       }
+      ctx.fillStyle = isRightActive ? '#0f172a' : '#f8fafc';
+      ctx.font = 'bold 11px system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(n), rightX, -16);
     }
 
-    // Active Attachment Eyelets at actual notch positions!
+    // Active Attachment Eyelets at actual notch positions
     const leftAnchorLocalX = -half * (this.leftNotch / 4);
     const rightAnchorLocalX = half * (this.rightNotch / 4);
 
@@ -620,12 +811,15 @@ export class BalanceScaleGame implements KidGame {
 
     ctx.fillStyle = '#fbbf24';
     ctx.beginPath();
-    ctx.arc(rightAnchorLocalX, 0, 7, 0, Math.PI * 2);
+    ctx.arc(rightAnchorLocalX, 0, 8, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
     ctx.restore();
 
-    // 3. Left & Right Pans (hanging from their actual notch positions!)
+    // 3. Left & Right Pans
     const leftPan = this.getLeftPanCenter();
     const rightPan = this.getRightPanCenter();
 
@@ -674,7 +868,6 @@ export class BalanceScaleGame implements KidGame {
     const ctx = this.ctx;
     const panWidth = 116;
 
-    // Suspension cords attached to the actual notch eyelet
     ctx.strokeStyle = '#94a3b8';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -684,7 +877,6 @@ export class BalanceScaleGame implements KidGame {
     ctx.lineTo(panX + panWidth / 2 - 10, panY);
     ctx.stroke();
 
-    // Pan plate
     ctx.fillStyle = '#1e293b';
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 3;
@@ -693,19 +885,17 @@ export class BalanceScaleGame implements KidGame {
     ctx.fill();
     ctx.stroke();
 
-    // Stacked weights inside the pan
     let currentY = panY - 4;
     weights.forEach((w, idx) => {
       this.drawWeightBlock(panX, currentY - 18, w, false, idx === hoveredIndex);
       currentY -= 38;
     });
 
-    // Metric Total / Torque Indicator below Pan
     let displayLabel: string;
     let badgeWidth = 76;
     if (this.leverMode) {
       displayLabel = `${totalGrams}g × ${notch} = ${totalGrams * notch}`;
-      badgeWidth = 114;
+      badgeWidth = 118;
     } else {
       const isKg = totalGrams >= 1000;
       displayLabel = isKg
@@ -752,7 +942,6 @@ export class BalanceScaleGame implements KidGame {
       ctx.stroke();
     }
 
-    // Value text
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 13px system-ui';
     ctx.textAlign = 'center';
@@ -767,6 +956,7 @@ export class BalanceScaleGame implements KidGame {
       sound.enabled = newContext.sound;
     }
     if (newContext.locale !== undefined) {
+      this.context.locale = newContext.locale;
       this.t = getTranslations(newContext.locale);
       const hudTitle = this.container.querySelector('#hud-title');
       if (hudTitle) hudTitle.textContent = this.t.title;
@@ -774,9 +964,14 @@ export class BalanceScaleGame implements KidGame {
       if (soundBtn) soundBtn.textContent = sound.enabled ? this.t.soundOn : this.t.soundOff;
       const weightsLabel = this.container.querySelector('#hud-weights-label');
       if (weightsLabel) weightsLabel.textContent = this.t.yourWeights;
+      const hookLabel = this.container.querySelector('#hud-hook-label');
+      if (hookLabel) hookLabel.textContent = this.t.rightHookLabel;
       const resetBtn = this.container.querySelector('#btn-reset');
       if (resetBtn) resetBtn.textContent = this.t.reset;
-      this.loadLevel(this.currentLevelIndex);
+
+      this.updateInstructionText();
+      const badge = this.container.querySelector('#level-badge');
+      if (badge) badge.textContent = `${this.t.level} ${this.currentLevelIndex + 1}/${this.levels.length}`;
     }
     if (newContext.ageGroup !== undefined) {
       this.setAgeGroup(newContext.ageGroup);
