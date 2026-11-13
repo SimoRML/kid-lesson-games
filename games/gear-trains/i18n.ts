@@ -30,6 +30,9 @@ export interface GearTranslations {
   wellDone: string;
   summary: string;
   jammedAlert: string;
+  overlapAlert: string;
+  gapHint: string;
+  gapBiggerHint: string;
   formatPreschoolPrompt: (connected: boolean, placedGears: number, totalSlots: number) => string;
   formatElementaryPrompt: (
     currentRpm: number,
@@ -79,7 +82,10 @@ export const DICTIONARY: Record<SupportedLocale, GearTranslations> = {
     },
     wellDone: '✨ Mechanism Whirring in Harmony!',
     summary: 'Mastered gear ratios, rotational directions & LCM speed mechanics!',
-    jammedAlert: '⚠️ Gears are jammed! Check for 3-way lock or conflicting rotation.',
+    jammedAlert: '⚠️ Gears are jammed! A closed loop with an odd number of gears cannot turn.',
+    overlapAlert: '⚠️ Too big: the gears collide! Try a smaller gear.',
+    gapHint: 'The gears do not touch. Try different sizes!',
+    gapBiggerHint: 'There is a gap between the gears: try a bigger gear!',
     formatPreschoolPrompt: (connected, placed, total) => {
       if (!connected && placed === 0) {
         return 'Place colorful gears on the pegs to spin the windmill!';
@@ -149,7 +155,10 @@ export const DICTIONARY: Record<SupportedLocale, GearTranslations> = {
     },
     wellDone: '✨ Mécanisme en Parfaite Harmonie !',
     summary: 'Engrenages, sens de rotation et rapports de vitesse maîtrisés !',
-    jammedAlert: '⚠️ Les engrenages sont bloqués ! Vérifie les boucles impaires.',
+    jammedAlert: '⚠️ Les engrenages sont bloqués ! Une boucle fermée avec un nombre impair d’engrenages ne peut pas tourner.',
+    overlapAlert: '⚠️ Trop grand : les engrenages se heurtent ! Essaie un plus petit engrenage.',
+    gapHint: 'Les engrenages ne se touchent pas. Essaie d’autres tailles !',
+    gapBiggerHint: 'Il y a un vide entre les engrenages : essaie un plus grand engrenage !',
     formatPreschoolPrompt: (connected, placed, total) => {
       if (!connected && placed === 0) {
         return 'Place des engrenages colorés sur les piquets pour faire tourner le moulin !';

@@ -27,6 +27,7 @@ import {
   generateLevelsForAge,
   parseCustomLevels,
   simulateGearTrain,
+  diagnoseGearTrain,
   verifyAntiMirroring,
   GEAR_MODULE,
   type GearLevel,
@@ -439,6 +440,62 @@ describe('Gear Trains Game & Kinematic Transmission Engine', () => {
   // =========================================================================
   // 5. CUSTOM LEVEL PARSER (parseCustomLevels)
   // =========================================================================
+  describe('diagnoseGearTrain (gap / overlap / odd-cycle)', () => {
+    const pre = generateLevelsForAge('3-5');
+    const el = generateLevelsForAge('6-8');
+    const pick = (lvl: GearLevel, teeth: number) => lvl.inventory.find((g) => g.teeth === teeth)!;
+
+    it('reports a gap when all pegs are filled but gears do not touch', () => {
+      expect(diagnoseGearTrain(pre[0], [{ pegId: 'p1', gear: pick(pre[0], 8) }])).toBe('gap-bigger');
+      const l2 = pre[1];
+      expect(
+        diagnoseGearTrain(l2, [
+          { pegId: 'p1', gear: pick(l2, 6) },
+          { pegId: 'p2', gear: pick(l2, 12) }
+        ])
+      ).toBe('gap-bigger');
+    });
+
+    it('gives no diagnosis while pegs remain empty or when solved', () => {
+      expect(diagnoseGearTrain(pre[1], [{ pegId: 'p1', gear: pick(pre[1], 12) }])).toBe('none');
+      expect(diagnoseGearTrain(pre[0], [{ pegId: 'p1', gear: pick(pre[0], 12) }])).toBe('none');
+    });
+
+    it('reports a plain overlap (not an odd-cycle) for an oversized gear', () => {
+      const lvl = el[0];
+      const placed: PlacedGear[] = [{ pegId: 'p1', gear: pick(lvl, 16) }];
+      const sim = simulateGearTrain(lvl, placed);
+      expect(sim.isJammed).toBe(true);
+      expect(sim.jamReason).toBe('overlap');
+      expect(diagnoseGearTrain(lvl, placed)).toBe('overlap');
+    });
+
+    it('reports an odd-cycle only for a real closed odd loop', () => {
+      const h = Math.sqrt(120 * 120 - 60 * 60);
+      const lvl: GearLevel = {
+        id: 'loop',
+        levelNumber: 1,
+        ageGroup: '6-8',
+        title: 'loop',
+        motor: { pegId: 'motor', x: 200, y: 300, teeth: 12, rpm: 30, direction: 'cw' },
+        target: { pegId: 'target', x: 700, y: 100, teeth: 12, type: 'dial' },
+        pegs: [
+          { id: 'p1', x: 320, y: 300 },
+          { id: 'p2', x: 260, y: 300 - h }
+        ],
+        inventory: [createGearItem(12, 'a'), createGearItem(12, 'b')]
+      };
+      const placed: PlacedGear[] = [
+        { pegId: 'p1', gear: lvl.inventory[0] },
+        { pegId: 'p2', gear: lvl.inventory[1] }
+      ];
+      const sim = simulateGearTrain(lvl, placed);
+      expect(sim.isJammed).toBe(true);
+      expect(sim.jamReason).toBe('odd-cycle');
+      expect(diagnoseGearTrain(lvl, placed)).toBe('odd-cycle');
+    });
+  });
+
   describe('Custom Level Parser (parseCustomLevels)', () => {
     it('parses valid custom levels from objects and JSON strings', () => {
       const raw = [
@@ -671,6 +728,116 @@ describe('Gear Trains Game & Kinematic Transmission Engine', () => {
       if (container.parentElement) {
         document.body.removeChild(container);
       }
+    });
+
+    const ptr = (target: EventTarget, type: string, x: number, y: number) =>
+      target.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, bubbles: true }));
+
+    it('places a tray gear on a real pointer tap (pointerdown + pointerup, no click)', () => {
+      const game = createGearTrainsGame() as GearTrainsGame;
+      game.mount(container, context);
+      const tray = container.querySelector('#gear-tray') as HTMLElement;
+      const before = tray.children.length;
+      ptr(tray.firstElementChild as HTMLElement, 'pointerdown', 20, 500);
+      ptr(window, 'pointerup', 22, 501); // 2px movement, below the 5px threshold
+      expect(tray.children.length).toBe(before - 1);
+      game.destroy();
+    });
+
+    it('drag from tray onto a peg places the gear, and tapping it returns it to the tray', () => {
+      const game = createGearTrainsGame() as GearTrainsGame;
+      game.mount(container, context);
+      const tray = container.querySelector('#gear-tray') as HTMLElement;
+      const before = tray.children.length;
+      ptr(tray.firstElementChild as HTMLElement, 'pointerdown', 20, 500);
+      ptr(window, 'pointermove', 300, 300);
+      ptr(window, 'pointermove', 455, 235);
+      ptr(window, 'pointerup', 455, 235);
+      expect(tray.children.length).toBe(before - 1);
+      expect((game as any).placedGears.has('p2')).toBe(true);
+      expect((game as any).placedGears.has('p1')).toBe(false);
+      ptr(container.querySelector('#gear-canvas')!, 'pointerdown', 460, 230);
+      ptr(window, 'pointerup', 460, 230);
+      expect(tray.children.length).toBe(before);
+      game.destroy();
+    });
+
+    it('a cancelled pointer gesture places nothing', () => {
+      const game = createGearTrainsGame() as GearTrainsGame;
+      game.mount(container, context);
+      const tray = container.querySelector('#gear-tray') as HTMLElement;
+      const before = tray.children.length;
+      ptr(tray.firstElementChild as HTMLElement, 'pointerdown', 20, 500);
+      ptr(window, 'pointercancel', 20, 500);
+      expect(tray.children.length).toBe(before);
+      game.destroy();
+    });
+
+    it('translates the tray label and updates it live on locale change', () => {
+      const game = createGearTrainsGame() as GearTrainsGame;
+      game.mount(container, context);
+      expect(container.querySelector('#tray-label')?.textContent).toBe(getTranslations('en').trayLabel);
+      game.updateConfig?.({ locale: 'fr' });
+      expect(container.querySelector('#tray-label')?.textContent).toBe(getTranslations('fr').trayLabel);
+      expect(getTranslations('fr').trayLabel).not.toBe(getTranslations('en').trayLabel);
+      game.destroy();
+    });
+
+    it('resets score, streak and elapsed time when the age bracket changes', () => {
+      const game = createGearTrainsGame() as GearTrainsGame;
+      game.mount(container, context);
+      game.start();
+      (game as any).score = 300;
+      (game as any).streak = 3;
+      (game as any).startTimeMs = 1;
+      game.updateConfig?.({ ageGroup: '9-11' });
+      expect((game as any).score).toBe(0);
+      expect((game as any).streak).toBe(0);
+      expect((game as any).startTimeMs).toBeGreaterThan(1);
+      expect(container.querySelector('#hud-score')?.textContent).toContain('0');
+      game.destroy();
+    });
+
+    it('starts a fresh round after the final level is won', () => {
+      vi.useFakeTimers();
+      try {
+        const game = createGearTrainsGame() as GearTrainsGame;
+        game.mount(container, context);
+        (game as any).currentLevelIndex = 2;
+        (game as any).handleLevelWin();
+        expect(emittedEvents.some((e) => e.type === 'game:complete')).toBe(true);
+        expect((game as any).hasWonLevel).toBe(true);
+        vi.advanceTimersByTime(3100);
+        expect((game as any).hasWonLevel).toBe(false);
+        expect((game as any).currentLevelIndex).toBe(0);
+        expect((game as any).score).toBe(0);
+        expect(container.querySelector('#level-badge')?.textContent).toContain('1/3');
+        game.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('HUD instruction spans the full row and reserves a min-height (stable layout)', () => {
+      const game = createGearTrainsGame() as GearTrainsGame;
+      game.mount(container, context);
+      const hudText = container.querySelector('#hud-instruction') as HTMLElement;
+      expect(hudText.style.flex).toContain('100%');
+      expect(container.innerHTML).toContain('.hud-instruction { min-height');
+      game.destroy();
+    });
+
+    it('shows a gap hint in the HUD in EN and FR', () => {
+      const game = createGearTrainsGame() as GearTrainsGame;
+      game.mount(container, context);
+      game.updateConfig?.({ ageGroup: '3-5' });
+      const tray = container.querySelector('#gear-tray') as HTMLElement;
+      const hud = () => container.querySelector('#hud-instruction')!.textContent;
+      (Array.from(tray.children).find((b) => b.textContent === '8T') as HTMLElement).click();
+      expect(hud()).toBe(getTranslations('en').gapBiggerHint);
+      game.updateConfig?.({ locale: 'fr' });
+      expect(hud()).toBe(getTranslations('fr').gapBiggerHint);
+      game.destroy();
     });
 
     it('handles sound toggle button click', () => {

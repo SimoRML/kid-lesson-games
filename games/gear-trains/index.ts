@@ -101,6 +101,8 @@ export interface GearTrainSimulationResult {
   speedCorrect: boolean;
   settlingTime: number;
   targetReached: boolean;
+  /** Why the train is jammed: plain tooth overlap vs. a closed odd loop (null when not jammed). */
+  jamReason?: 'overlap' | 'odd-cycle' | null;
 }
 
 // ============================================================================
@@ -329,7 +331,8 @@ export function simulateGearTrain(
     directionCorrect: false,
     speedCorrect: false,
     settlingTime: 0,
-    targetReached: false
+    targetReached: false,
+    jamReason: null
   };
 
   if (!placedGears || placedGears.length === 0) {
@@ -392,6 +395,7 @@ export function simulateGearTrain(
 
   // BFS from motor node with 2-coloring for rotational direction
   let isJammed = hasCollision;
+  let hasOddCycle = false;
   const kinematics = new Map<string, { rpm: number; direction: Direction; depth: number; parent: string | null }>();
   const queue: string[] = [motorId];
   kinematics.set(motorId, {
@@ -416,6 +420,7 @@ export function simulateGearTrain(
         const existing = kinematics.get(nbrId)!;
         if (existing.direction !== expectedDir) {
           isJammed = true;
+          hasOddCycle = true;
         }
       } else {
         kinematics.set(nbrId, {
@@ -472,8 +477,45 @@ export function simulateGearTrain(
     directionCorrect,
     speedCorrect,
     settlingTime,
-    targetReached
+    targetReached,
+    jamReason: isJammed ? (hasCollision ? 'overlap' : hasOddCycle ? 'odd-cycle' : null) : null
   };
+}
+
+export type GearDiagnosis = 'none' | 'overlap' | 'odd-cycle' | 'gap-bigger' | 'gap';
+
+/**
+ * Explains why a placed arrangement does not drive the target, so the HUD can give
+ * a specific hint (without revealing the answer).
+ * - overlap: teeth collide (a gear is too big)
+ * - odd-cycle: real closed loop with an odd number of gears
+ * - gap-bigger: all pegs are filled but neighbours do not touch (a gear is too small)
+ * - gap: all pegs filled, not connected, no single obvious gap
+ * - none: nothing to report (incomplete placement or connected)
+ */
+export function diagnoseGearTrain(level: GearLevel, placedGears: PlacedGear[]): GearDiagnosis {
+  const sim = simulateGearTrain(level, placedGears, 0.1);
+  if (sim.isJammed) return sim.jamReason === 'odd-cycle' ? 'odd-cycle' : 'overlap';
+  if (sim.connected) return 'none';
+  if (placedGears.length === 0 || placedGears.length < level.pegs.length) return 'none';
+
+  const pegLookup = new Map(level.pegs.map((p) => [p.id, p] as const));
+  const chain = [
+    { x: level.motor.x, y: level.motor.y, r: calculatePitchRadius(level.motor.teeth) },
+    ...placedGears
+      .map((pg) => {
+        const peg = pegLookup.get(pg.pegId);
+        return peg ? { x: peg.x, y: peg.y, r: calculatePitchRadius(pg.gear.teeth) } : null;
+      })
+      .filter((n): n is { x: number; y: number; r: number } => n !== null)
+      .sort((a, b) => a.x - b.x || a.y - b.y),
+    { x: level.target.x, y: level.target.y, r: calculatePitchRadius(level.target.teeth) }
+  ];
+  for (let i = 0; i < chain.length - 1; i++) {
+    const dist = Math.hypot(chain[i + 1].x - chain[i].x, chain[i + 1].y - chain[i].y);
+    if (dist - (chain[i].r + chain[i + 1].r) > 3) return 'gap-bigger';
+  }
+  return 'gap';
 }
 
 /**
@@ -960,6 +1002,7 @@ export class GearTrainsGame implements KidGame {
   private placedGears = new Map<string, GearItem>(); // pegId -> GearItem
   private gearRotations = new Map<string, number>(); // pegId -> current angle (rad)
   private score: number = 0;
+  private streak: number = 0;
   private startTimeMs: number = 0;
   private isPaused: boolean = false;
   private lastFrameTime: number = 0;
@@ -1034,7 +1077,7 @@ export class GearTrainsGame implements KidGame {
       this.canvas.addEventListener('pointerdown', (e) => this.onPointerDown(e), { signal });
       window.addEventListener('pointermove', (e) => this.onPointerMove(e), { signal });
       window.addEventListener('pointerup', (e) => this.onPointerUp(e), { signal });
-      window.addEventListener('pointercancel', (e) => this.onPointerUp(e), { signal });
+      window.addEventListener('pointercancel', (e) => this.onPointerUp(e, true), { signal });
     }
 
     // Initial HUD & tray rendering
@@ -1104,6 +1147,11 @@ export class GearTrainsGame implements KidGame {
       this.gearRotations.clear();
       this.hasWonLevel = false;
       this.settlingStartTime = null;
+      // Score convention: a new age bracket is a fresh run
+      this.score = 0;
+      this.streak = 0;
+      this.startTimeMs = Date.now();
+      this.clearPendingTimeouts();
       this.updateHUD();
       this.renderTray();
     }
@@ -1119,6 +1167,11 @@ export class GearTrainsGame implements KidGame {
       this.updateHUD();
       this.renderTray();
     }
+  }
+
+  private clearPendingTimeouts(): void {
+    this.pendingTimeouts.forEach((id) => clearTimeout(id));
+    this.pendingTimeouts.clear();
   }
 
   destroy(): void {
@@ -1142,20 +1195,25 @@ export class GearTrainsGame implements KidGame {
   private renderDOM(): void {
     const t = getTranslations(this.context.locale);
     this.container.innerHTML = `
-      <div class="gear-game-root" style="display:flex; flex-direction:column; width:100%; height:100%; background:#0f172a; color:#f8fafc; font-family:system-ui,-apple-system,sans-serif; user-select:none; position:relative; overflow:hidden;">
-        <!-- Header HUD -->
-        <div class="hud" style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:#1e293b; border-bottom:1px solid #334155; gap:12px; z-index:10;">
+      <style>
+          .gear-game-root { container-type: inline-size; }
+          .gear-game-root .hud-instruction { min-height: 6.5em; }
+          @container (min-width: 700px) { .gear-game-root .hud-instruction { min-height: 2.6em; } }
+        </style>
+        <div class="gear-game-root" style="display:flex; flex-direction:column; width:100%; height:100%; background:#0f172a; color:#f8fafc; font-family:system-ui,-apple-system,sans-serif; user-select:none; position:relative; overflow:hidden;">
+        <!-- Header HUD: fixed-height instruction row so the canvas never resizes when the text changes -->
+        <div class="hud" style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:8px 12px; background:#1e293b; border-bottom:1px solid #334155; gap:6px 12px; z-index:10; flex:none;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span id="hud-title" style="font-size:1.15rem; font-weight:800; color:#38bdf8;">${t.title}</span>
             <span id="level-badge" style="background:#0f172a; border:1px solid #475569; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:600; color:#fbbf24;">${t.level} 1/${this.levels.length}</span>
           </div>
-          <div id="hud-instruction" style="flex:1; text-align:center; font-size:0.875rem; font-weight:600; color:#f8fafc; padding:0 8px;">
-            ...
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <span id="hud-score" style="font-size:0.875rem; font-weight:700; color:#fbbf24;">⭐ ${this.score}</span>
-            <button id="btn-sound-toggle" style="background:#334155; color:#f8fafc; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:0.8rem; font-weight:600;">${this.context.sound ? t.soundOn : t.soundOff}</button>
-            <button id="btn-reset" style="background:#ef4444; color:#ffffff; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:0.8rem; font-weight:600;">${t.reset}</button>
+            <button id="btn-sound-toggle" style="background:#334155; color:#f8fafc; border:none; border-radius:6px; padding:6px 10px; min-height:32px; cursor:pointer; font-size:0.8rem; font-weight:600;">${this.context.sound ? t.soundOn : t.soundOff}</button>
+            <button id="btn-reset" style="background:#ef4444; color:#ffffff; border:none; border-radius:6px; padding:6px 12px; min-height:32px; cursor:pointer; font-size:0.8rem; font-weight:600;">${t.reset}</button>
+          </div>
+          <div id="hud-instruction" class="hud-instruction" style="flex:1 1 100%; order:3; box-sizing:border-box; text-align:center; font-size:0.875rem; line-height:1.3; font-weight:600; color:#f8fafc; padding:0 4px; display:flex; align-items:center; justify-content:center; overflow-wrap:anywhere;">
+            ...
           </div>
         </div>
 
@@ -1166,7 +1224,7 @@ export class GearTrainsGame implements KidGame {
 
         <!-- Inventory Tray -->
         <div id="inventory-tray-bar" style="background:#1e293b; border-top:1px solid #334155; padding:8px 16px; display:flex; flex-direction:column; align-items:center; gap:6px; z-index:10;">
-          <div style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em;">${t.trayLabel}</div>
+          <div id="tray-label" style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em;">${t.trayLabel}</div>
           <div id="gear-tray" style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center; min-height:56px;">
           </div>
         </div>
@@ -1194,6 +1252,9 @@ export class GearTrainsGame implements KidGame {
     const resetEl = this.container.querySelector('#btn-reset');
     if (resetEl) resetEl.textContent = t.reset;
 
+    const trayLabelEl = this.container.querySelector('#tray-label');
+    if (trayLabelEl) trayLabelEl.textContent = t.trayLabel;
+
     const instructionEl = this.container.querySelector('#hud-instruction') as HTMLElement | null;
     if (!instructionEl) return;
 
@@ -1201,9 +1262,15 @@ export class GearTrainsGame implements KidGame {
     const placedList = this.getPlacedGearList();
     const sim = simulateGearTrain(lvl, placedList, 0.1);
 
-    if (sim.isJammed) {
-      instructionEl.textContent = t.jammedAlert;
+    const diagnosis = diagnoseGearTrain(lvl, placedList);
+    if (diagnosis === 'overlap' || diagnosis === 'odd-cycle') {
+      instructionEl.textContent = diagnosis === 'overlap' ? t.overlapAlert : t.jammedAlert;
       instructionEl.style.color = '#ef4444';
+      return;
+    }
+    if (diagnosis === 'gap-bigger' || diagnosis === 'gap') {
+      instructionEl.textContent = diagnosis === 'gap-bigger' ? t.gapBiggerHint : t.gapHint;
+      instructionEl.style.color = '#fbbf24';
       return;
     }
     instructionEl.style.color = '#f8fafc';
@@ -1269,12 +1336,15 @@ export class GearTrainsGame implements KidGame {
       button.style.transition = 'transform 0.15s ease, border-color 0.15s ease';
       button.textContent = gear.label || `${gear.teeth}T`;
 
-      // Tap in tray places onto first empty peg
-      button.addEventListener('click', () => {
-        this.placeFirstAvailable(gear);
+      button.style.touchAction = 'none';
+
+      // Keyboard / assistive activation (detail === 0). Real mouse/touch taps are handled by
+      // pointerdown + pointerup (tap vs drag threshold) because the tray is rebuilt on pointerup.
+      button.addEventListener('click', (e) => {
+        if (e.detail === 0) this.placeFirstAvailable(gear);
       });
 
-      // Pointer down starts drag
+      // Pointer down arms either a tap (place on first empty peg) or a drag
       button.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
         this.startDragFromTray(gear, e.clientX, e.clientY);
@@ -1326,7 +1396,10 @@ export class GearTrainsGame implements KidGame {
   private startDragFromTray(gear: GearItem, clientX: number, clientY: number): void {
     this.draggedGear = gear;
     this.dragOriginPegId = null;
-    this.isDragging = true;
+    this.isPointerDown = true;
+    this.isDragging = false; // becomes true only after moving past the tap threshold
+    this.pointerStartX = clientX;
+    this.pointerStartY = clientY;
     this.dragCurrentX = clientX;
     this.dragCurrentY = clientY;
   }
@@ -1382,8 +1455,13 @@ export class GearTrainsGame implements KidGame {
     }
   }
 
-  private onPointerUp(e: PointerEvent): void {
-    if (this.isDragging && this.draggedGear) {
+  private onPointerUp(e: PointerEvent, cancelled: boolean = false): void {
+    if (cancelled) {
+      // Interrupted gesture: drop nothing, place nothing
+    } else if (this.isPointerDown && !this.isDragging && this.draggedGear && this.dragOriginPegId === null) {
+      // Tap (movement below threshold) on a tray gear: place on the first empty peg
+      this.placeFirstAvailable(this.draggedGear);
+    } else if (this.isDragging && this.draggedGear) {
       const logical = this.clientToLogical(e.clientX, e.clientY);
       const snapPegId = this.findNearestSnapPeg(logical.x, logical.y);
 
@@ -1542,6 +1620,7 @@ export class GearTrainsGame implements KidGame {
   private handleLevelWin(): void {
     this.hasWonLevel = true;
     this.score += 100;
+    this.streak += 1;
     this.updateHUD();
 
     this.context.audio.playSuccess();
@@ -1563,7 +1642,7 @@ export class GearTrainsGame implements KidGame {
     });
     this.context.emit('game:score', {
       points: 100,
-      streak: 1,
+      streak: this.streak,
       delta: 100
     });
 
@@ -1575,6 +1654,13 @@ export class GearTrainsGame implements KidGame {
         timeElapsed,
         summary: 'All levels completed!'
       });
+
+      // Start a fresh round after the celebration so the board is never left stuck on the banner
+      const tid = setTimeout(() => {
+        this.pendingTimeouts.delete(tid);
+        this.restartRound();
+      }, 3000);
+      this.pendingTimeouts.add(tid);
     } else {
       const tid = setTimeout(() => {
         this.pendingTimeouts.delete(tid);
@@ -1588,6 +1674,25 @@ export class GearTrainsGame implements KidGame {
       }, 1500);
       this.pendingTimeouts.add(tid);
     }
+  }
+
+  private restartRound(): void {
+    this.levels = parseCustomLevels(this.context.customLevels) || generateLevelsForAge(this.context.ageGroup);
+    this.currentLevelIndex = 0;
+    this.placedGears.clear();
+    this.gearRotations.clear();
+    this.hasWonLevel = false;
+    this.settlingStartTime = null;
+    this.score = 0;
+    this.streak = 0;
+    this.startTimeMs = Date.now();
+    this.updateHUD();
+    this.renderTray();
+    this.context.emit('game:progress', {
+      step: 1,
+      total: this.levels.length,
+      detail: `Started level 1 of ${this.levels.length}`
+    });
   }
 
   // ==========================================================================
