@@ -1,4 +1,6 @@
 import { registry } from './registry.js';
+import { SoundEngine } from './audio.js';
+import { I18nManager } from './i18n.js';
 import type { AgeGroup, Difficulty, GameContext, GameEventType, KidGame } from './types.js';
 
 const STYLES = `
@@ -77,6 +79,10 @@ export class KidGameElement extends HTMLElement {
   private currentGame: KidGame | null = null;
   private isMounted = false;
   private _customLevels: unknown = null;
+  private currentLoadToken = 0;
+
+  public readonly audio: SoundEngine;
+  public readonly i18n: I18nManager;
 
   constructor() {
     super();
@@ -91,6 +97,9 @@ export class KidGameElement extends HTMLElement {
 
     this.container = this.root.getElementById('slot') as HTMLDivElement;
     this.statusScreen = this.root.getElementById('status') as HTMLDivElement;
+
+    this.audio = new SoundEngine(this.sound);
+    this.i18n = new I18nManager(this.locale);
   }
 
   // Attributes getters
@@ -140,19 +149,13 @@ export class KidGameElement extends HTMLElement {
 
   set levels(val: unknown) {
     this._customLevels = val;
-    if (this.currentGame?.updateConfig) {
-      this.currentGame.updateConfig({
-        ageGroup: this.age,
-        difficulty: this.difficulty,
-        sound: this.sound,
-        locale: this.locale,
-        customLevels: val
-      });
-    }
+    this.propagateConfigUpdate();
   }
 
   connectedCallback() {
     this.isMounted = true;
+    this.audio.enabled = this.sound;
+    this.i18n.locale = this.locale;
     if (this.gameId) {
       this.loadAndMountGame();
     }
@@ -161,20 +164,36 @@ export class KidGameElement extends HTMLElement {
   disconnectedCallback() {
     this.isMounted = false;
     this.cleanupGame();
+    this.audio.close();
   }
 
   attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
     if (oldVal === newVal || !this.isMounted) return;
 
+    if (name === 'sound') {
+      this.audio.enabled = this.sound;
+    } else if (name === 'locale') {
+      this.i18n.locale = this.locale;
+    }
+
     if (name === 'game') {
       this.loadAndMountGame();
-    } else if (this.currentGame?.updateConfig) {
+    } else {
+      this.propagateConfigUpdate();
+    }
+  }
+
+  private propagateConfigUpdate() {
+    if (this.currentGame?.updateConfig) {
       this.currentGame.updateConfig({
         ageGroup: this.age,
         difficulty: this.difficulty,
         sound: this.sound,
         locale: this.locale,
-        customLevels: this.levels
+        customLevels: this.levels,
+        audio: this.audio,
+        i18n: this.i18n,
+        t: (key, params) => this.i18n.t(key, params)
       });
     }
   }
@@ -221,15 +240,27 @@ export class KidGameElement extends HTMLElement {
     const id = this.gameId;
     if (!id) return;
 
+    // Increment load token to invalidate any previous in-flight asynchronous operations
+    const loadToken = ++this.currentLoadToken;
+
     this.cleanupGame();
     this.showStatus(`
       <div class="spinner"></div>
-      <div>Loading game...</div>
+      <div>${this.i18n.t('loading')}</div>
     `);
 
     try {
       const { game } = await registry.create(id);
+
+      // Race condition check: user changed game or unmounted while import was resolving
+      if (this.currentLoadToken !== loadToken || !this.isMounted) {
+        game.destroy?.();
+        return;
+      }
+
       this.currentGame = game;
+      this.audio.enabled = this.sound;
+      this.i18n.locale = this.locale;
 
       const context: GameContext = {
         ageGroup: this.age,
@@ -237,7 +268,11 @@ export class KidGameElement extends HTMLElement {
         sound: this.sound,
         locale: this.locale,
         customLevels: this.levels,
+        audio: this.audio,
+        i18n: this.i18n,
+        t: (key, params) => this.i18n.t(key, params),
         emit: (type: GameEventType, payload: unknown) => {
+          if (this.currentLoadToken !== loadToken || !this.isMounted) return;
           this.dispatchEvent(
             new CustomEvent(type, {
               detail: payload,
@@ -249,6 +284,12 @@ export class KidGameElement extends HTMLElement {
       };
 
       await game.mount(this.container, context);
+
+      // Race condition check after mount completes
+      if (this.currentLoadToken !== loadToken || !this.isMounted) {
+        return;
+      }
+
       this.hideStatus();
 
       this.dispatchEvent(
@@ -270,9 +311,11 @@ export class KidGameElement extends HTMLElement {
         );
       }
     } catch (err: unknown) {
+      if (this.currentLoadToken !== loadToken || !this.isMounted) return;
+
       const message = err instanceof Error ? err.message : String(err);
       this.showStatus(`
-        <div class="error-title">Unable to Load Game</div>
+        <div class="error-title">${this.i18n.t('error')}</div>
         <div>${message}</div>
       `);
       this.dispatchEvent(

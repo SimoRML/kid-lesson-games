@@ -16,13 +16,13 @@ Designed with an **AI-first contributor vibe**: developers or AI coding agents c
 ## ✨ Key Highlights
 
 - 🧩 **Universal Web Component (`<kid-game>`)**: Framework-agnostic Shadow DOM element. Drop it anywhere with `<kid-game game="balance-scale"></kid-game>`.
-- 🤖 **AI-Friendly Pluggable Architecture**: Drop new games directly into `games/<game-id>/`. The core engine automatically discovers them via `import.meta.glob`. Zero core file edits needed!
+- 🤖 **AI-Friendly Pluggable Architecture**: Drop new games directly into `games/<game-id>/`. The core engine automatically discovers them via lazy dynamic imports (`import.meta.glob`), splitting each game cartridge into its own on-demand chunk. Zero core file edits needed!
 - 📐 **Grounded European Math & Physics**: 
   - Standard metric units ($50\text{g}$, $100\text{g}$, $250\text{g}$, $500\text{g}$, $1\text{ kg}$).
   - Archimedes lever physics for upper elementary ($Torque = Weight \times Distance$), complete with spring-damper beam physics and interactive sliding hooks.
 - 🎯 **Configurable Levels + Auto-Generate Fallback**: Pass explicit lesson levels via attributes/properties for curriculum alignment, or omit them to let procedural puzzle generation take over.
-- 🌐 **Multilingual (i18n)**: Built-in English (`en`) and French (`fr`) with dynamic pedagogical equation guidance.
-- 🔊 **Zero-Asset Web Audio API**: Procedural sound effects (pops, thuds, gentle balance chimes, celebratory fanfares) synthesized on the fly—zero external audio files to fetch or fail loading.
+- 🌐 **Multilingual (i18n)**: Shared core `I18nManager` with English (`en`) and French (`fr`) UI tokens, parameter interpolation, and type-safe cartridge dictionary resolution.
+- 🔊 **Zero-Asset Web Audio API**: Procedural sound engine (`SoundEngine`) injected via `GameContext` (pops, thuds, clicks, chimes, celebratory fanfares, and custom tones)—zero external audio files to fetch or fail loading.
 - 📡 **Telemetry Event Bridge**: Dispatches standard DOM events (`game:ready`, `game:start`, `game:progress`, `game:score`, `game:complete`, `game:error`) for platform gamification, star ratings, and analytics.
 
 ---
@@ -269,7 +269,14 @@ export interface KidGame {
 }
 ```
 
-Because Vite discovers all games dynamically via `import.meta.glob('/games/*/index.ts')`, **no changes are needed in `src/`**. Just code your game in its folder and test it immediately!
+The injected `context: GameContext` delivers:
+- `ageGroup`, `difficulty`, `sound`, `locale`, `customLevels`
+- `audio`: The shared procedural `SoundEngine` (`playPop`, `playDrop`, `playClick`, `playChime`, `playSuccess`, `playError`, `playTone`)
+- `i18n`: The core `I18nManager`
+- `t(key, params)`: Helper for core translated tokens
+- `emit(eventType, payload)`: Standard telemetry dispatcher
+
+Because Vite discovers all games dynamically via `import.meta.glob('../games/*/index.ts')`, **no changes are needed in `src/`**. Each cartridge is code-split into its own ES module chunk and loaded lazily only when requested!
 
 ---
 
@@ -279,14 +286,16 @@ Because Vite discovers all games dynamically via `import.meta.glob('/games/*/ind
 kid-lesson-games/
 ├── games/
 │   └── balance-scale/           # MVP Balance & Lever physics game
-│       ├── audio.ts             # Procedural Web Audio API sound synthesizer
-│       ├── i18n.ts              # English and French translations
+│       ├── audio.ts             # SoundFx wrapper extending core SoundEngine
+│       ├── i18n.ts              # English and French translations with core resolver
 │       ├── index.ts             # Core canvas game, spring physics & interactions
-│       └── meta.json            # Game metadata & curriculum taxonomy
+│       └── game.json            # Game metadata & curriculum taxonomy
 ├── src/
 │   ├── core/
+│   │   ├── audio.ts             # Shared procedural Web Audio engine (SoundEngine)
+│   │   ├── i18n.ts              # Core i18n resolver & dictionaries (I18nManager)
 │   │   ├── KidGameElement.ts    # <kid-game> custom element & Shadow DOM host
-│   │   ├── registry.ts          # Dynamic game registry
+│   │   ├── registry.ts          # Dynamic game registry with lazy factory support
 │   │   └── types.ts             # TypeScript interfaces & event contracts
 │   └── index.ts                 # Main library entry point & auto-discovery
 ├── docs/

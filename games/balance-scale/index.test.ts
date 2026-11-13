@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameContext } from '../../src/core/types.js';
+import { SoundEngine } from '../../src/core/audio.js';
+import { I18nManager } from '../../src/core/i18n.js';
 import {
   BalanceScaleGame,
   createBalanceScaleGame,
@@ -160,11 +162,17 @@ describe('Balance Scale Game & Helpers', () => {
       document.body.appendChild(container);
       emittedEvents = [];
 
+      const audio = new SoundEngine(false);
+      const i18n = new I18nManager('en');
+
       context = {
         ageGroup: '9-11',
         difficulty: 'medium',
         sound: false,
         locale: 'en',
+        audio,
+        i18n,
+        t: (k, p) => i18n.t(k, p),
         emit: (type, payload) => {
           emittedEvents.push({ type, payload });
         }

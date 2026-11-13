@@ -131,4 +131,131 @@ describe('KidGameElement', () => {
 
     document.body.removeChild(element);
   });
+
+  it('injects audio and i18n into GameContext and propagates sound and locale dynamically', async () => {
+    const uniqueId = `audio-i18n-test-${Date.now()}`;
+    const metadata: GameMetadata = {
+      id: uniqueId,
+      title: 'Context Audio Test',
+      version: '1.0.0',
+      description: 'Tests audio and i18n context injection',
+      category: 'numbers',
+      ageGroups: ['6-8'],
+      skills: ['math']
+    };
+
+    let receivedContext: any = null;
+    let updatedConfig: any = null;
+
+    const fakeGame: KidGame = {
+      mount: async (_container, context) => {
+        receivedContext = context;
+      },
+      updateConfig: (ctx) => {
+        updatedConfig = ctx;
+      },
+      start: () => undefined,
+      destroy: () => undefined
+    };
+
+    registry.register(metadata, async () => fakeGame);
+
+    const element = document.createElement('kid-game') as KidGameElement;
+    element.setAttribute('game', uniqueId);
+    element.setAttribute('sound', 'true');
+    element.setAttribute('locale', 'en');
+    document.body.appendChild(element);
+
+    await new Promise((resolve) => setTimeout(resolve, 15));
+
+    expect(receivedContext).toBeDefined();
+    expect(receivedContext.audio).toBeDefined();
+    expect(receivedContext.audio.enabled).toBe(true);
+    expect(receivedContext.i18n).toBeDefined();
+    expect(receivedContext.t('soundOn')).toBe('🔊 Sound ON');
+
+    // Dynamically toggle sound off and change locale to fr
+    element.setAttribute('sound', 'false');
+    expect(element.audio.enabled).toBe(false);
+    expect(updatedConfig?.sound).toBe(false);
+
+    element.setAttribute('locale', 'fr');
+    expect(element.i18n.locale).toBe('fr');
+    expect(updatedConfig?.locale).toBe('fr');
+    expect(updatedConfig?.t('soundOn')).toBe('🔊 Son ACTIF');
+
+    document.body.removeChild(element);
+  });
+
+  it('prevents race conditions when game attribute changes rapidly', async () => {
+    const slowGameId = `slow-game-${Date.now()}`;
+    const fastGameId = `fast-game-${Date.now()}`;
+
+    let slowDestroyed = false;
+    let slowMounted = false;
+    let fastMounted = false;
+
+    registry.register(
+      {
+        id: slowGameId,
+        title: 'Slow Game',
+        version: '1.0.0',
+        description: 'Simulates slow lazy loading',
+        category: 'logic',
+        ageGroups: ['6-8'],
+        skills: []
+      },
+      async () => {
+        // Introduce artificial network latency
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return {
+          mount: async () => {
+            slowMounted = true;
+          },
+          start: () => undefined,
+          destroy: () => {
+            slowDestroyed = true;
+          }
+        };
+      }
+    );
+
+    registry.register(
+      {
+        id: fastGameId,
+        title: 'Fast Game',
+        version: '1.0.0',
+        description: 'Fast game load',
+        category: 'logic',
+        ageGroups: ['6-8'],
+        skills: []
+      },
+      async () => {
+        return {
+          mount: async () => {
+            fastMounted = true;
+          },
+          start: () => undefined,
+          destroy: () => undefined
+        };
+      }
+    );
+
+    const element = document.createElement('kid-game') as KidGameElement;
+    document.body.appendChild(element);
+
+    // Rapid switch: slow game requested first, fast game immediately after
+    element.setAttribute('game', slowGameId);
+    element.setAttribute('game', fastGameId);
+
+    // Wait for all async loads to finish
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    // The fast game should have mounted successfully, while slow game was aborted/destroyed
+    expect(fastMounted).toBe(true);
+    expect(slowMounted).toBe(false);
+    expect(slowDestroyed).toBe(true);
+
+    document.body.removeChild(element);
+  });
 });

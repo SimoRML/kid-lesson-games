@@ -5,7 +5,7 @@ interface RegisteredGame {
   load: GameFactory;
 }
 
-class GameRegistry {
+export class GameRegistry {
   private games = new Map<string, RegisteredGame>();
 
   register(metadata: GameMetadata, load: GameFactory) {
@@ -22,6 +22,10 @@ class GameRegistry {
 
   list(): GameMetadata[] {
     return Array.from(this.games.values()).map((g) => g.metadata);
+  }
+
+  clear() {
+    this.games.clear();
   }
 
   async create(id: string): Promise<{ game: KidGame; metadata: GameMetadata }> {

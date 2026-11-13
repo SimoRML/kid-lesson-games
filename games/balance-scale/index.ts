@@ -1,5 +1,6 @@
 import confetti from 'canvas-confetti';
 import type { GameContext, KidGame } from '../../src/core/types.js';
+import type { SoundEngine } from '../../src/core/audio.js';
 import { sound } from './audio.js';
 import { getTranslations, type Translations } from './i18n.js';
 
@@ -350,6 +351,7 @@ export class BalanceScaleGame implements KidGame {
   private isDraggingRightNotch = false;
   private isHoveringRightLever = false;
   private mousePos = { x: 0, y: 0 };
+  private audio: SoundEngine = sound;
 
   private getNotchFromPointer(pos: { x: number; y: number }): 1 | 2 | 3 | 4 {
     const { centerX, centerY, beamLength } = this.getDimensions();
@@ -366,7 +368,8 @@ export class BalanceScaleGame implements KidGame {
     this.container = container;
     this.context = context;
     this.t = getTranslations(context.locale);
-    sound.enabled = context.sound;
+    this.audio = context.audio || sound;
+    this.audio.enabled = context.sound;
 
     this.container.innerHTML = `
       <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; background: radial-gradient(circle at 50% 25%, #1e293b, #090d16); color: #f8fafc; font-family: inherit;">
@@ -380,7 +383,7 @@ export class BalanceScaleGame implements KidGame {
           <div style="display: flex; align-items: center; gap: 14px;">
             <div id="instruction" style="font-size: 0.92rem; color: #cbd5e1; font-weight: 500; max-width: 480px; text-align: center;"></div>
             <div id="score-display" style="font-weight: 700; color: #fbbf24; font-size: 1.1rem;">⭐ 0</div>
-            <button id="btn-sound-toggle" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;">${sound.enabled ? this.t.soundOn : this.t.soundOff}</button>
+            <button id="btn-sound-toggle" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;">${this.audio.enabled ? this.t.soundOn : this.t.soundOff}</button>
           </div>
         </div>
 
@@ -434,7 +437,7 @@ export class BalanceScaleGame implements KidGame {
   private setRightNotch(n: 1 | 2 | 3 | 4) {
     if (this.rightNotch === n) return;
     this.rightNotch = n;
-    sound.playPop();
+    this.audio.playPop();
     this.updateNotchButtonsUI();
     this.updateInstructionText();
   }
@@ -502,7 +505,7 @@ export class BalanceScaleGame implements KidGame {
         const [removed] = this.rightWeights.splice(hitIdx, 1);
         this.inventory.push(removed);
         this.hoveredRightWeightIndex = -1;
-        sound.playPop();
+        this.audio.playPop();
         this.renderInventory();
         return;
       }
@@ -613,14 +616,14 @@ export class BalanceScaleGame implements KidGame {
     const handlePointerUp = () => {
       if (this.isDraggingRightNotch) {
         this.isDraggingRightNotch = false;
-        sound.playDrop();
+        this.audio.playDrop();
       }
 
       if (this.draggedWeight !== null) {
         if (!this.hasDraggedBeyondThreshold) {
           // Quick click on available weight -> adds to right pan
           this.rightWeights.push(this.draggedWeight);
-          sound.playDrop();
+          this.audio.playDrop();
         } else {
           // Dragged weight -> check if dropped onto a notch or pan
           let droppedOnNotch = false;
@@ -630,7 +633,7 @@ export class BalanceScaleGame implements KidGame {
               if (Math.hypot(this.mousePos.x - anchor.x, this.mousePos.y - anchor.y) < 42) {
                 this.setRightNotch(n);
                 this.rightWeights.push(this.draggedWeight);
-                sound.playDrop();
+                this.audio.playDrop();
                 droppedOnNotch = true;
                 break;
               }
@@ -643,7 +646,7 @@ export class BalanceScaleGame implements KidGame {
 
             if (dist < 90) {
               this.rightWeights.push(this.draggedWeight);
-              sound.playDrop();
+              this.audio.playDrop();
             } else {
               this.inventory.push(this.draggedWeight);
             }
@@ -670,15 +673,15 @@ export class BalanceScaleGame implements KidGame {
 
     const soundBtn = this.container.querySelector('#btn-sound-toggle') as HTMLButtonElement;
     soundBtn?.addEventListener('click', () => {
-      sound.enabled = !sound.enabled;
-      soundBtn.textContent = sound.enabled ? this.t.soundOn : this.t.soundOff;
+      this.audio.enabled = !this.audio.enabled;
+      soundBtn.textContent = this.audio.enabled ? this.t.soundOn : this.t.soundOff;
     });
 
     const resetBtn = this.container.querySelector('#btn-reset') as HTMLButtonElement;
     resetBtn?.addEventListener('click', () => {
       this.levels = this.initLevels();
       this.loadLevel(0);
-      sound.playPop();
+      this.audio.playPop();
     });
   }
 
@@ -775,7 +778,7 @@ export class BalanceScaleGame implements KidGame {
         this.hasDraggedBeyondThreshold = false;
         this.draggedWeight = item;
         this.inventory.splice(idx, 1);
-        sound.playPop();
+        this.audio.playPop();
         this.renderInventory();
       };
 
@@ -885,7 +888,7 @@ export class BalanceScaleGame implements KidGame {
 
   private handleLevelWin() {
     this.isLevelComplete = true;
-    sound.playSuccess();
+    this.audio.playSuccess();
 
     this.score += 100;
     this.streak++;
@@ -1184,8 +1187,11 @@ export class BalanceScaleGame implements KidGame {
 
   updateConfig(newContext: Partial<GameContext>) {
     let reloadLevels = false;
+    if (newContext.audio) {
+      this.audio = newContext.audio;
+    }
     if (newContext.sound !== undefined) {
-      sound.enabled = newContext.sound;
+      this.audio.enabled = newContext.sound;
     }
     if (newContext.locale !== undefined) {
       this.context.locale = newContext.locale;
@@ -1193,7 +1199,7 @@ export class BalanceScaleGame implements KidGame {
       const hudTitle = this.container.querySelector('#hud-title');
       if (hudTitle) hudTitle.textContent = this.t.title;
       const soundBtn = this.container.querySelector('#btn-sound-toggle');
-      if (soundBtn) soundBtn.textContent = sound.enabled ? this.t.soundOn : this.t.soundOff;
+      if (soundBtn) soundBtn.textContent = this.audio.enabled ? this.t.soundOn : this.t.soundOff;
       const weightsLabel = this.container.querySelector('#hud-weights-label');
       if (weightsLabel) weightsLabel.textContent = this.t.yourWeights;
       const hookLabel = this.container.querySelector('#hud-hook-label');
@@ -1228,7 +1234,7 @@ export class BalanceScaleGame implements KidGame {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
-    sound.close();
+    this.audio.close();
   }
 }
 

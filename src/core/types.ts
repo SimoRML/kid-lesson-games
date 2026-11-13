@@ -1,3 +1,6 @@
+import type { SoundEngine } from './audio.js';
+import type { I18nManager } from './i18n.js';
+
 export type AgeGroup = '3-5' | '6-8' | '9-11';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type GameCategory = 'numbers' | 'letters' | 'logic' | 'spatial';
@@ -37,6 +40,9 @@ export interface GameContext {
   sound: boolean;
   locale: string;
   customLevels?: unknown;
+  audio: SoundEngine;
+  i18n: I18nManager;
+  t: (key: string, params?: Record<string, string | number>) => string;
   emit: <T extends GameEventType>(type: T, payload: GameEventPayloads[T]) => void;
 }
 

@@ -21,6 +21,15 @@
 
 ---
 
+## ⚡ Phase 2.5: Scaling Architecture & Core Isolation (Completed)
+- [x] **Shared Procedural Web Audio Engine**: `SoundEngine` in `src/core/audio.ts` providing tactile pops, thuds, clicks, chimes, victory fanfare, and custom tones without external audio assets.
+- [x] **Shared i18n & Localization Resolver**: `I18nManager` & `createI18nResolver` in `src/core/i18n.ts` supporting standard UI dictionary tokens, parameter interpolation, and type-safe cartridge overlays.
+- [x] **Dynamic Lazy Loading via `import.meta.glob`**: Eager lightweight catalog metadata discovery (`game.json` / `meta.json`) paired with lazy code-split cartridge loading.
+- [x] **Race-Condition & Telemetry Resilience**: Generation token sequence in `<kid-game>` preventing stale mount race conditions on rapid game switching.
+- [x] **Scaffolding CLI Update**: `npm run create-game` generates cartridges adhering to updated `GameContext` contract with zero boilerplate.
+
+---
+
 ## 🎨 Phase 3: Next Game Ideas (Pipeline)
 - [ ] **Number Line Hopper** (*Numbers / Spatial* - Ages 3-5 & 6-8): Frog jumping along positive/negative number lines to solve addition/subtraction.
 - [ ] **Letter Sound Safari** (*Letters / Phonetics* - Ages 3-5): Audio-tactile phonics matching.

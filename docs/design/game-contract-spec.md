@@ -84,17 +84,19 @@ Enables the host application and game picker to display cards, filter by age bra
 Every game exports a factory or class that conforms to the `KidGame` lifecycle:
 
 ```typescript
+import type { SoundEngine } from '../src/core/audio.js';
+import type { I18nManager } from '../src/core/i18n.js';
+
 export interface GameContext {
   ageGroup: '3-5' | '6-8' | '9-11';
+  difficulty: 'easy' | 'medium' | 'hard';
   sound: boolean;
-  difficulty?: 'easy' | 'medium' | 'hard';
-  assetsBaseUrl?: string;
-  onEvent?: (event: GameEvent) => void;
-}
-
-export interface GameEvent {
-  type: 'ready' | 'progress' | 'score' | 'complete' | 'error';
-  payload: Record<string, unknown>;
+  locale: string;
+  customLevels?: unknown;
+  audio: SoundEngine;
+  i18n: I18nManager;
+  t: (key: string, params?: Record<string, string | number>) => string;
+  emit: <T extends GameEventType>(type: T, payload: GameEventPayloads[T]) => void;
 }
 
 export interface KidGame {
@@ -115,13 +117,48 @@ export interface KidGame {
   resume?(): void;
 
   /**
-   * 4. Teardown: MANDATORY. Must remove DOM nodes, disconnect resize observers,
+   * 4. Update Config: Dynamically updates options (locale, sound, difficulty) mid-game.
+   */
+  updateConfig?(newContext: Partial<GameContext>): void;
+
+  /**
+   * 5. Teardown: MANDATORY. Must remove DOM nodes, disconnect resize observers,
    * cancel animation frames, stop audio contexts, and clear physics engines.
    * Zero memory leaks contract.
    */
   destroy(): void;
 }
 ```
+
+---
+
+## 5. Shared Core Utilities vs. Cartridge Isolation
+
+To keep cartridge generation fast and maintainable across dozens of games, common procedural audio synthesis and localized resolution are managed by `<kid-game>` and injected via `GameContext`:
+
+### A. Shared Procedural Audio (`context.audio`)
+The core `SoundEngine` provides zero-asset procedural Web Audio SFX:
+- `playPop()`: Bubble pop or item select (rising pitch sweep)
+- `playDrop()` / `playThud()`: Impact, snap, or slotting
+- `playClick()`: Crisp UI button tap
+- `playChime()`: Milestone or intermediate solved chime
+- `playSuccess()`: Multi-note celebratory fanfare
+- `playError()`: Gentle low-buzz feedback
+- `playTone(freq, duration, type, options)`: Arbitrary custom frequency synthesizer
+
+The AudioContext lifecycle (auto-resuming suspended audio contexts upon first user interaction, muting, volume, and clean closure) is handled by the host element.
+
+### B. Shared i18n & Cartridge Dictionaries (`context.i18n`)
+- Core common tokens (`soundOn`, `soundOff`, `level`, `score`, `reset`, `wellDone`, `loading`, `error`) are available via `context.t(key)`.
+- Cartridges define localized strings and bind them via `createI18nResolver(DICTIONARY, defaultLocale)` for type-safe cartridge translation lookup.
+
+---
+
+## 6. Dynamic Lazy Loading & Concurrency Guarantees
+
+- **Lightweight Catalog Discovery**: All metadata files (`games/*/{game,meta}.json`) are loaded eagerly so `registry.list()` is synchronous and lightweight for host menus.
+- **Dynamic Chunking**: Game modules (`games/*/index.ts`) are dynamically imported via lazy `import.meta.glob`. Vite code-splits each cartridge into an independent ES chunk (`dist/<game-id>-*.js`), keeping the initial shell bundle minimal.
+- **Race Condition Prevention**: `<kid-game>` increments a monotonic `loadToken` sequence number on attribute changes. If the user rapidly switches games or unmounts the component mid-load, obsolete asynchronous imports and mounts are aborted immediately, preventing race condition DOM collisions and orphan background loops.
 
 ---
 

@@ -49,36 +49,46 @@ const gameJson = {
 fs.writeFileSync(path.join(gameDir, 'game.json'), JSON.stringify(gameJson, null, 2) + '\n');
 
 // 2. index.ts
+const className = `${id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}Game`;
 const indexTs = `import type { GameContext, KidGame } from '../../src/core/types.js';
 
-export class ${id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}Game implements KidGame {
+export class ${className} implements KidGame {
   private container!: HTMLElement;
   private context!: GameContext;
 
   mount(container: HTMLElement, context: GameContext) {
     this.container = container;
     this.context = context;
+    this.render();
+  }
+
+  private render() {
+    const isFr = this.context.locale?.startsWith('fr');
+    const welcome = isFr ? 'Bienvenue à' : 'Welcome to';
+    const scoreBtnText = isFr ? 'Gagner le point !' : 'Score a Point!';
 
     this.container.innerHTML = \`
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #f8fafc; text-align: center; padding: 24px;">
-        <h2 style="color: #38bdf8; font-size: 1.5rem; margin-bottom: 8px;">🎮 \${context.locale === 'fr' ? 'Bienvenue à' : 'Welcome to'} ${title}</h2>
+        <h2 style="color: #38bdf8; font-size: 1.5rem; margin-bottom: 8px;">🎮 \${welcome} ${title}</h2>
         <p style="color: #94a3b8; max-width: 400px; margin-bottom: 24px;">
-          Age: <strong>\${context.ageGroup}</strong> | Difficulty: <strong>\${context.difficulty}</strong>
+          Age: <strong>\${this.context.ageGroup}</strong> | Difficulty: <strong>\${this.context.difficulty}</strong>
         </p>
-        <button id="btn-play" style="background: #2563eb; color: white; border: none; padding: 10px 24px; border-radius: 9999px; font-weight: bold; cursor: pointer;">
-          \${context.locale === 'fr' ? 'Gagner le point !' : 'Score a Point!'}
+        <button id="btn-play" style="background: #2563eb; color: white; border: none; padding: 10px 24px; border-radius: 9999px; font-weight: bold; cursor: pointer; transition: transform 0.1s;">
+          \${scoreBtnText}
         </button>
       </div>
     \`;
 
     const btn = this.container.querySelector('#btn-play');
     btn?.addEventListener('click', () => {
+      this.context.audio.playPop();
+      this.context.audio.playSuccess();
       this.context.emit('game:score', { points: 50, streak: 1, delta: 50 });
       this.context.emit('game:complete', {
         stars: 3,
         score: 50,
         timeElapsed: 5,
-        summary: 'Great job!'
+        summary: this.context.t('wellDone') || 'Great job!'
       });
     });
   }
@@ -87,13 +97,18 @@ export class ${id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).jo
     console.log('${title} started');
   }
 
+  updateConfig(newConfig: Partial<GameContext>) {
+    Object.assign(this.context, newConfig);
+    this.render();
+  }
+
   destroy() {
     this.container.innerHTML = '';
   }
 }
 
 export function createGame(): KidGame {
-  return new ${id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}Game();
+  return new ${className}();
 }
 
 export default createGame;

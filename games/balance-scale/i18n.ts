@@ -1,3 +1,5 @@
+import { createI18nResolver } from '../../src/core/i18n.js';
+
 export type SupportedLocale = 'en' | 'fr';
 
 export interface Translations {
@@ -83,7 +85,4 @@ export const DICTIONARY: Record<SupportedLocale, Translations> = {
   }
 };
 
-export function getTranslations(locale?: string): Translations {
-  if (locale && locale.startsWith('fr')) return DICTIONARY.fr;
-  return DICTIONARY.en;
-}
+export const getTranslations = createI18nResolver<Translations>(DICTIONARY, 'en');
