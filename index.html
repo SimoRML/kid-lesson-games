@@ -27,6 +27,8 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
       }
 
       .logo {
@@ -35,6 +37,24 @@
         background: linear-gradient(135deg, #38bdf8, #818cf8);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+      }
+
+      .header-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85rem;
+        color: #94a3b8;
+      }
+
+      .header-badge {
+        background: #1e293b;
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-weight: 600;
+        font-size: 0.75rem;
       }
 
       main {
@@ -58,6 +78,84 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
+      }
+
+      .game-meta-card {
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .game-meta-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .game-meta-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .category-pill {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+      }
+
+      .category-pill[data-category="numbers"] {
+        background: rgba(56, 189, 248, 0.15);
+        color: #38bdf8;
+        border-color: rgba(56, 189, 248, 0.3);
+      }
+
+      .category-pill[data-category="logic"] {
+        background: rgba(168, 85, 247, 0.15);
+        color: #c084fc;
+        border-color: rgba(168, 85, 247, 0.3);
+      }
+
+      .category-pill[data-category="spatial"] {
+        background: rgba(251, 191, 36, 0.15);
+        color: #fbbf24;
+        border-color: rgba(251, 191, 36, 0.3);
+      }
+
+      .game-meta-desc {
+        font-size: 0.88rem;
+        color: #94a3b8;
+        line-height: 1.45;
+      }
+
+      .game-meta-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .skill-tag {
+        font-size: 0.72rem;
+        background: #1e293b;
+        color: #cbd5e1;
+        padding: 3px 9px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .game-card {
@@ -92,11 +190,15 @@
         justify-content: space-between;
         padding: 8px 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        gap: 12px;
       }
 
       .control-label {
         font-size: 0.9rem;
         color: #cbd5e1;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
 
       select, button {
@@ -107,6 +209,25 @@
         border-radius: 8px;
         font-size: 0.85rem;
         cursor: pointer;
+        transition: border-color 0.15s ease, background 0.15s ease;
+      }
+
+      select:hover, button:hover {
+        background: #253349;
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      select:focus-visible, button:focus-visible {
+        outline: 2px solid #38bdf8;
+        outline-offset: 2px;
+      }
+
+      #select-game {
+        font-weight: 600;
+        color: #38bdf8;
+        border-color: rgba(56, 189, 248, 0.35);
+        background: #152238;
+        max-width: 190px;
       }
 
       #event-log {
@@ -137,11 +258,29 @@
   <body>
     <header>
       <div class="logo">🚀 Kid Lesson Games</div>
-      <div style="font-size: 0.9rem; color: #94a3b8;">Web Component Testbed</div>
+      <div class="header-meta">
+        <span class="header-badge">Web Component Testbed</span>
+        <span>Cartridge Playground</span>
+      </div>
     </header>
 
     <main>
       <div class="game-container">
+        <!-- Live Cartridge Metadata Banner -->
+        <div class="game-meta-card" id="game-meta-card">
+          <div class="game-meta-top">
+            <h1 class="game-meta-title" id="meta-title">Balance the Scale</h1>
+            <span class="category-pill" id="meta-category" data-category="numbers">numbers</span>
+          </div>
+          <p class="game-meta-desc" id="meta-desc">Place weights on the scale to achieve balance using addition and lever physics!</p>
+          <div class="game-meta-tags" id="meta-skills">
+            <span class="skill-tag">addition</span>
+            <span class="skill-tag">number-sense</span>
+            <span class="skill-tag">visual-physics</span>
+            <span class="skill-tag">equilibrium</span>
+          </div>
+        </div>
+
         <!-- The Web Component under test! -->
         <div class="game-card">
           <kid-game id="my-game" game="balance-scale" age="6-8" difficulty="medium" sound="true"></kid-game>
@@ -152,7 +291,18 @@
         <div class="panel-title">Component Controls</div>
 
         <div class="control-row">
-          <span class="control-label">Language / Langue</span>
+          <label for="select-game" class="control-label">🎮 Active Game</label>
+          <select id="select-game" aria-label="Select Game Cartridge">
+            <option value="balance-scale">Balance the Scale</option>
+            <option value="buoyancy-tank">Buoyancy Tank</option>
+            <option value="gear-trains">Gear Trains</option>
+            <option value="marble-run-angles">Marble Run Angles</option>
+            <option value="pulley-lift">Pulley Lift</option>
+          </select>
+        </div>
+
+        <div class="control-row">
+          <label for="select-lang" class="control-label">Language / Langue</label>
           <select id="select-lang">
             <option value="en" selected>English (en)</option>
             <option value="fr">Français (fr)</option>
@@ -160,7 +310,7 @@
         </div>
 
         <div class="control-row">
-          <span class="control-label">Age Bracket</span>
+          <label for="select-age" class="control-label">Age Bracket</label>
           <select id="select-age">
             <option value="3-5">3–5 (Preschool)</option>
             <option value="6-8" selected>6–8 (Elementary)</option>
@@ -169,22 +319,20 @@
         </div>
 
         <div class="control-row">
-          <span class="control-label">Levels Source</span>
+          <label for="select-levels" class="control-label">Levels Source</label>
           <select id="select-levels">
             <option value="auto" selected>Auto-Generate (Default)</option>
-            <option value="custom-addition">Custom: 1000g Addition</option>
-            <option value="custom-lever">Custom: Mechanical Lever</option>
           </select>
         </div>
 
         <div class="control-row">
           <span class="control-label">Sound FX</span>
-          <button id="btn-sound">Toggle Sound (ON)</button>
+          <button type="button" id="btn-sound">Toggle Sound (ON)</button>
         </div>
 
         <div class="control-row">
           <span class="control-label">Actions</span>
-          <button id="btn-restart">Restart Game</button>
+          <button type="button" id="btn-restart">Restart Game</button>
         </div>
 
         <div class="panel-title" style="margin-top: 12px;">Live Event Bridge</div>
@@ -192,54 +340,122 @@
       </div>
     </main>
 
-    <script type="module" src="/src/index.ts"></script>
-    <script>
+    <script type="module">
+      import { registry } from '/src/index.ts';
+
       const game = document.getElementById('my-game');
       const log = document.getElementById('event-log');
+      const selectGame = document.getElementById('select-game');
       const selectLang = document.getElementById('select-lang');
       const selectAge = document.getElementById('select-age');
       const selectLevels = document.getElementById('select-levels');
       const btnSound = document.getElementById('btn-sound');
       const btnRestart = document.getElementById('btn-restart');
 
-      const customPresets = {
-        'auto': null,
-        'custom-addition': [
-          {
-            left: [1000],
-            inventory: [500, 250, 250, 100],
-            instruction: "Custom Level 1: Decompose 1 kg (1000g) into metric parts!"
-          },
-          {
-            left: [750],
-            inventory: [500, 200, 50, 100],
-            instruction: "Custom Level 2: Balance 750g!"
-          }
-        ],
-        'custom-lever': [
-          {
-            left: [300],
-            leftNotch: 4,
-            rightNotch: 2,
-            inventory: [600, 200, 100],
-            leverMode: true,
-            instruction: "Custom Lever: 300g at Notch 4 (torque 1200). Balance at Notch 2 with 600g!"
-          }
-        ]
-      };
+      const metaTitle = document.getElementById('meta-title');
+      const metaCategory = document.getElementById('meta-category');
+      const metaDesc = document.getElementById('meta-desc');
+      const metaSkills = document.getElementById('meta-skills');
 
-      selectLevels.addEventListener('change', (e) => {
-        const val = e.target.value;
-        const config = customPresets[val];
-        if (config) {
-          game.levels = config;
-          appendLog('custom-levels-set', { preset: val, levelsCount: config.length });
-        } else {
-          game.removeAttribute('levels');
-          game.levels = null;
-          appendLog('custom-levels-cleared', { fallback: 'auto' });
+      const customPresetsByGame = {
+        'balance-scale': {
+          'auto': { label: 'Auto-Generate (Default)', value: null },
+          'custom-addition': {
+            label: 'Custom: 1000g Addition',
+            value: [
+              {
+                left: [1000],
+                inventory: [500, 250, 250, 100],
+                instruction: 'Custom Level 1: Decompose 1 kg (1000g) into metric parts!'
+              },
+              {
+                left: [750],
+                inventory: [500, 200, 50, 100],
+                instruction: 'Custom Level 2: Balance 750g!'
+              }
+            ]
+          },
+          'custom-lever': {
+            label: 'Custom: Mechanical Lever',
+            value: [
+              {
+                left: [300],
+                leftNotch: 4,
+                rightNotch: 2,
+                inventory: [600, 200, 100],
+                leverMode: true,
+                instruction: 'Custom Lever: 300g at Notch 4 (torque 1200). Balance at Notch 2 with 600g!'
+              }
+            ]
+          }
+        },
+        'marble-run-angles': {
+          'auto': { label: 'Auto-Generate (Default)', value: null },
+          'custom-ricochet': {
+            label: 'Custom: 135° Trampoline Ricochet',
+            value: [
+              {
+                emitter: { x: 100, y: 70, speed: 200, angle: 45 },
+                cup: { x: 420, y: 460, width: 80, height: 60 },
+                obstacles: [],
+                fixedRamps: [],
+                slots: [],
+                inventory: [{ type: 'trampoline', length: 110, angle: 135, restitution: 0.9 }],
+                stars: [{ x: 260, y: 260, collected: false }],
+                instruction: 'Custom: Position and rotate trampoline to bank the shot!'
+              }
+            ]
+          }
+        },
+        'pulley-lift': {
+          'auto': { label: 'Auto-Generate (Default)', value: null },
+          'custom-compound': {
+            label: 'Custom: 4x Heavy Lift (240kg)',
+            value: [
+              {
+                loadMass: 240,
+                targetHeight: 180,
+                systemType: 'compound-4x',
+                mechanicalAdvantage: 4,
+                availableWeights: [60, 40, 20],
+                instruction: 'Custom: 4-pulley compound tackle! Effort = 60kg for 240kg block.'
+              }
+            ]
+          }
+        },
+        'gear-trains': {
+          'auto': { label: 'Auto-Generate (Default)', value: null },
+          'custom-ratio': {
+            label: 'Custom: 3x Speed Doubler',
+            value: [
+              {
+                motorPeg: { x: 140, y: 260, teeth: 24, rpm: 12, dir: 1 },
+                targetPeg: { x: 460, y: 260, teeth: 8, targetRpm: 36, targetDir: -1 },
+                pegs: [{ x: 300, y: 260 }],
+                availableGears: [{ teeth: 12 }, { teeth: 16 }, { teeth: 8 }],
+                instruction: 'Custom: Gear train to triple output RPM to 36!'
+              }
+            ]
+          }
+        },
+        'buoyancy-tank': {
+          'auto': { label: 'Auto-Generate (Default)', value: null },
+          'custom-sub': {
+            label: 'Custom: Saltwater Submarine Hover',
+            value: [
+              {
+                liquidDensity: 1.2,
+                targetDepth: 260,
+                podEmptyMass: 200,
+                podVolume: 300,
+                availableWeights: [100, 60, 40],
+                availableFloats: [50, 30],
+                instruction: 'Custom: Match total pod density to 1.2 g/cm³!'
+              }
+            ]
+          }
         }
-      });
+      };
 
       function appendLog(type, detail) {
         const entry = document.createElement('div');
@@ -250,8 +466,120 @@
         log.scrollTop = log.scrollHeight;
       }
 
+      function updateMetaDisplay(gameId) {
+        const meta = registry.get(gameId)?.metadata;
+        if (!meta) return;
+
+        if (metaTitle) metaTitle.textContent = meta.title || gameId;
+        if (metaDesc) metaDesc.textContent = meta.description || 'Interactive educational physics cartridge.';
+        if (metaCategory) {
+          metaCategory.textContent = meta.category || 'cartridge';
+          metaCategory.setAttribute('data-category', meta.category || 'numbers');
+        }
+        if (metaSkills) {
+          metaSkills.innerHTML = (meta.skills || [])
+            .map((s) => `<span class="skill-tag">${s}</span>`)
+            .join('');
+        }
+      }
+
+      function updateLevelsDropdown(gameId) {
+        const presets = customPresetsByGame[gameId] || {
+          'auto': { label: 'Auto-Generate (Default)', value: null }
+        };
+        selectLevels.innerHTML = '';
+        for (const [key, item] of Object.entries(presets)) {
+          const opt = document.createElement('option');
+          opt.value = key;
+          opt.textContent = item.label;
+          selectLevels.appendChild(opt);
+        }
+        selectLevels.value = 'auto';
+        game.removeAttribute('levels');
+        game.levels = null;
+      }
+
+      function populateGameSelector() {
+        const games = registry.list();
+        if (games && games.length > 0) {
+          selectGame.innerHTML = '';
+          const sorted = [...games].sort((a, b) => a.title.localeCompare(b.title));
+          for (const g of sorted) {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = `${g.title} (${g.id})`;
+            selectGame.appendChild(opt);
+          }
+        }
+      }
+
+      function switchGame(newGameId) {
+        if (!newGameId) return;
+
+        const prevId = game.getAttribute('game');
+        if (prevId === newGameId) return;
+
+        // Update URL query parameter
+        const url = new URL(window.location.href);
+        url.searchParams.set('game', newGameId);
+        window.history.replaceState(null, '', url.toString());
+
+        // Update select value if not already in sync
+        if (selectGame.value !== newGameId) {
+          selectGame.value = newGameId;
+        }
+
+        // Reset and update levels dropdown for new cartridge
+        updateLevelsDropdown(newGameId);
+
+        // Update active game on element
+        game.setAttribute('game', newGameId);
+        updateMetaDisplay(newGameId);
+
+        appendLog('game:switch', { from: prevId, to: newGameId });
+      }
+
+      // Initialize
+      populateGameSelector();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlGame = urlParams.get('game');
+      const initialGameId = (urlGame && registry.has(urlGame))
+        ? urlGame
+        : (game.getAttribute('game') || 'balance-scale');
+
+      selectGame.value = initialGameId;
+      if (game.getAttribute('game') !== initialGameId) {
+        game.setAttribute('game', initialGameId);
+      }
+      updateLevelsDropdown(initialGameId);
+      updateMetaDisplay(initialGameId);
+
+      // Event listeners
+      selectGame.addEventListener('change', (e) => switchGame(e.target.value));
+
+      selectLevels.addEventListener('change', (e) => {
+        const val = e.target.value;
+        const currentGameId = game.getAttribute('game') || 'balance-scale';
+        const presets = customPresetsByGame[currentGameId] || {};
+        const config = presets[val]?.value;
+        if (config) {
+          game.levels = config;
+          appendLog('custom-levels-set', { preset: val, levelsCount: config.length });
+        } else {
+          game.removeAttribute('levels');
+          game.levels = null;
+          appendLog('custom-levels-cleared', { fallback: 'auto' });
+        }
+      });
+
       ['game:ready', 'game:start', 'game:progress', 'game:score', 'game:complete'].forEach((evtName) => {
-        game.addEventListener(evtName, (e) => appendLog(evtName, e.detail));
+        game.addEventListener(evtName, (e) => {
+          appendLog(evtName, e.detail);
+          if (evtName === 'game:ready' && e.detail?.gameId) {
+            updateMetaDisplay(e.detail.gameId);
+          }
+        });
       });
 
       selectLang.addEventListener('change', (e) => {
