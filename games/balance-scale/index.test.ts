@@ -106,6 +106,29 @@ describe('Balance Scale Game & Helpers', () => {
     });
   });
 
+  describe('9-11 lever generation (no answer giveaway)', () => {
+    it('starts the right hook off the solving notch and stays solvable', () => {
+      for (let run = 0; run < 40; run++) {
+        for (const lvl of generateLevelsForAge('9-11')) {
+          expect(lvl.solutionNotch).toBeDefined();
+          expect(lvl.rightNotch).not.toBe(lvl.solutionNotch);
+
+          const torque = lvl.targetLeft.reduce((a, w) => a + w.grams, 0) * lvl.leftNotch;
+          const grams = lvl.inventory.map((w) => w.grams);
+          const solvableAt = (notch: number) => {
+            for (let mask = 1; mask < 1 << grams.length; mask++) {
+              let sum = 0;
+              grams.forEach((g, i) => { if (mask & (1 << i)) sum += g; });
+              if (sum * notch === torque) return true;
+            }
+            return false;
+          };
+          expect(solvableAt(lvl.solutionNotch!)).toBe(true);
+        }
+      }
+    });
+  });
+
   describe('parseCustomLevels', () => {
     it('parses valid custom levels from array and JSON string', () => {
       const rawConfig = [
@@ -275,7 +298,7 @@ describe('Balance Scale Game & Helpers', () => {
       const notch3Btn = container.querySelector('.btn-notch[data-notch="3"]') as HTMLButtonElement;
       expect(notch3Btn).toBeDefined();
       notch3Btn.click();
-      expect(container.querySelector('#instruction')?.textContent).toContain('At right notch 3');
+      expect(container.querySelector('#instruction')?.textContent).toContain('Left: 300g × 4 = 1200');
 
       // Test sound toggle button
       const soundBtn = container.querySelector('#btn-sound-toggle') as HTMLButtonElement;
@@ -371,13 +394,169 @@ describe('Balance Scale Game & Helpers', () => {
         })
       );
 
-      expect(container.querySelector('#instruction')?.textContent).toContain('At right notch 2');
+      expect(container.querySelector('#instruction')?.textContent).toContain('Left: 200g × 4 = 800');
+      expect(container.querySelector('.btn-notch[data-notch="2"]')?.textContent).toContain('✓ Notch 2');
 
       // Release pointer
       window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
 
       game.destroy();
       document.body.removeChild(container);
+    });
+
+    describe('issue fixes', () => {
+      const setup = (levels: unknown, locale: 'en' | 'fr' = 'en') => {
+        const game = createBalanceScaleGame() as BalanceScaleGame;
+        context.customLevels = levels as any;
+        context.locale = locale;
+        game.mount(container, context);
+        return game;
+      };
+      const clickTray = (index: number) => {
+        const tray = container.querySelector('#inventory-tray') as HTMLDivElement;
+        (tray.children[index] as HTMLElement).dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      };
+      const instruction = () => container.querySelector('#instruction')?.textContent ?? '';
+
+      it('#1 does not repeat the target for a single-weight level', () => {
+        const game = setup([{ left: [750], inventory: [500, 250] }]);
+        expect(instruction()).toBe('Balance 750g using a different combination of weights!');
+        game.destroy();
+        const game2 = setup([{ left: [1000], inventory: [500, 500] }]);
+        expect(instruction()).toBe('Balance 1 kg using a different combination of weights!');
+        game2.destroy();
+      });
+
+      it('#2 updates the instruction live on place and undo (standard mode)', () => {
+        const game = setup([{ left: [600, 400], inventory: [250, 500, 750] }]);
+        expect(instruction()).toContain('600g + 400g (1 kg)');
+        clickTray(0); // first tray item
+        expect(instruction()).toMatch(/^Right: \d+g of 1 kg, keep going!$/);
+        clickTray(0);
+        clickTray(0);
+        expect(instruction()).toContain('too heavy');
+        // Undo the heaviest: click the top stacked weight
+        const rightPan = (game as any).getRightPanCenter();
+        const wrapper = container.querySelector('#canvas-wrapper') as HTMLElement;
+        const topIdx = (game as any).rightWeights.length - 1;
+        wrapper.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: rightPan.x, clientY: rightPan.y - 22 - topIdx * 38 }));
+        expect((game as any).rightWeights).toHaveLength(2);
+        game.destroy();
+      });
+
+      it('#2 updates the instruction live in lever mode and when the notch moves', () => {
+        const game = setup([{ left: [200], leftNotch: 4, rightNotch: 4, leverMode: true, inventory: [300, 100] }]);
+        expect(instruction()).toBe('Left: 200g × 4 = 800. Make the right side equal 800!');
+        clickTray(0);
+        expect(instruction()).toBe('Right torque: 300g × 4 = 1200 is more than 800. Too heavy!');
+        (container.querySelector('.btn-notch[data-notch="2"]') as HTMLButtonElement).click();
+        expect(instruction()).toBe('Right torque: 300g × 2 = 600 / 800. A little more!');
+        game.updateConfig({ locale: 'fr' });
+        expect(instruction()).toBe('Force à droite : 300g × 2 = 600 / 800. Encore un peu !');
+        game.destroy();
+      });
+
+      it('#3 lever instruction never contains the needed grams (EN and FR)', () => {
+        for (const locale of ['en', 'fr'] as const) {
+          const game = setup([{ left: [200], leftNotch: 4, rightNotch: 3, leverMode: true, inventory: [250, 150] }], locale);
+          expect(instruction()).not.toContain('400g');
+          game.destroy();
+        }
+      });
+
+      it('#4 translates notch buttons and updates them live on locale change', () => {
+        const game = setup([{ left: [200], leftNotch: 4, rightNotch: 2, leverMode: true, inventory: [400] }]);
+        const labels = () => Array.from(container.querySelectorAll('.btn-notch')).map((b) => b.textContent);
+        expect(labels()).toEqual(['Notch 1', '✓ Notch 2', 'Notch 3', 'Notch 4']);
+        game.updateConfig({ locale: 'fr' });
+        expect(labels()).toEqual(['Cran 1', '✓ Cran 2', 'Cran 3', 'Cran 4']);
+        game.destroy();
+        const frGame = setup([{ left: [200], leftNotch: 4, rightNotch: 2, leverMode: true, inventory: [400] }], 'fr');
+        expect(labels()[0]).toBe('Cran 1');
+        frGame.destroy();
+      });
+
+      describe('win banner and teardown', () => {
+        const winLevel = () => setup([
+          { left: [500], inventory: [250, 250] },
+          { left: [100], inventory: [50, 50] }
+        ]);
+        const forceWin = (game: BalanceScaleGame) => {
+          (game as any).rightWeights = [createWeight(250), createWeight(250)];
+          for (let i = 0; i < 80; i++) (game as any).updatePhysics();
+        };
+
+        it('#5 shows the localized banner on win, hides it on next level', () => {
+          vi.useFakeTimers();
+          try {
+            const game = winLevel();
+            const banner = () => container.querySelector('#win-banner') as HTMLElement;
+            expect(banner().classList.contains('show')).toBe(false);
+            forceWin(game);
+            expect(banner().classList.contains('show')).toBe(true);
+            expect(banner().textContent).toBe('✨ Perfect Balance!');
+            game.updateConfig({ locale: 'fr' });
+            expect(banner().textContent).toBe('✨ Équilibre Parfait !');
+            vi.advanceTimersByTime(1600);
+            expect(banner().classList.contains('show')).toBe(false);
+            expect((game as any).currentLevelIndex).toBe(1);
+            game.destroy();
+          } finally {
+            vi.useRealTimers();
+          }
+        });
+
+        it('#5 destroy during the win window leaves no pending timers', () => {
+          vi.useFakeTimers();
+          try {
+            const game = winLevel();
+            forceWin(game);
+            expect(vi.getTimerCount()).toBeGreaterThan(0);
+            game.destroy();
+            expect(vi.getTimerCount()).toBe(0);
+            expect((game as any).pendingTimeouts.size).toBe(0);
+          } finally {
+            vi.useRealTimers();
+          }
+        });
+      });
+
+      it('lifecycle: pause/resume control rAF, destroy removes window listeners and does not close audio', () => {
+        const game = setup([{ left: [500], inventory: [500] }]);
+        const raf = globalThis.requestAnimationFrame as any;
+        const caf = globalThis.cancelAnimationFrame as any;
+        raf.mockClear();
+        game.start();
+        expect(raf).toHaveBeenCalledTimes(1);
+        game.pause();
+        expect(caf).toHaveBeenCalled();
+        raf.mockClear();
+        game.resume();
+        expect(raf).toHaveBeenCalledTimes(1);
+
+        const closeSpy = vi.spyOn(context.audio, 'close');
+        const removeSpy = vi.spyOn(AbortController.prototype, 'abort');
+        game.destroy();
+        expect(closeSpy).not.toHaveBeenCalled();
+        expect(removeSpy).toHaveBeenCalled();
+        expect(container.innerHTML).toBe('');
+        removeSpy.mockRestore();
+
+        // After destroy, window events must not reach the game (no throw, no state change)
+        expect(() => {
+          window.dispatchEvent(new MouseEvent('mousemove', { clientX: 10, clientY: 10 }));
+          window.dispatchEvent(new MouseEvent('mouseup'));
+        }).not.toThrow();
+      });
+
+      it('does not crash without ResizeObserver or a 2D context', () => {
+        (globalThis as any).ResizeObserver = undefined;
+        (HTMLCanvasElement.prototype.getContext as any) = vi.fn().mockReturnValue(null);
+        const game = setup([{ left: [500], inventory: [500] }]);
+        expect(() => game.start()).not.toThrow();
+        game.destroy();
+      });
     });
   });
 });

@@ -19,6 +19,8 @@ interface Level {
   rightNotch: 1 | 2 | 3 | 4;
   leverMode: boolean;
   customInstruction?: string;
+  /** Generated lever levels only: the notch at which the inventory solves the puzzle. */
+  solutionNotch?: 1 | 2 | 3 | 4;
 }
 
 export interface CustomLevelConfig {
@@ -174,13 +176,17 @@ export function generateLevelsForAge(age: string): Level[] {
       const distractorPool = pool.filter((g) => !forbidden.has(g) && !solution.includes(g));
       const distractors = shuffle(distractorPool).slice(0, 2);
 
+      // Start on a NON-solving notch so the child must reason about torque (tau = m x d).
+      const startNotch = randomItem(([1, 2, 3, 4] as const).filter((n) => n !== tpl.solNotch));
+
       return {
         targetLeft: tpl.leftArr.map((g) => createWeight(g)),
         targetRight: [],
         inventory: shuffle([...solution, ...distractors]).map((g) => createWeight(g)),
         leftNotch: tpl.leftNotch,
-        rightNotch: tpl.solNotch, // Starts right at the solvable notch!
-        leverMode: true
+        rightNotch: startNotch,
+        leverMode: true,
+        solutionNotch: tpl.solNotch
       };
     });
   }
@@ -312,6 +318,10 @@ export class BalanceScaleGame implements KidGame {
   private ctx!: CanvasRenderingContext2D;
   private animFrameId: number | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private abortController: AbortController | null = null;
+  private pendingTimeouts = new Set<ReturnType<typeof setTimeout>>();
+  private started = false;
+  private paused = false;
 
   // Level state
   private levels: Level[] = [];
@@ -367,11 +377,18 @@ export class BalanceScaleGame implements KidGame {
   mount(container: HTMLElement, context: GameContext) {
     this.container = container;
     this.context = context;
+    this.abortController = new AbortController();
     this.t = getTranslations(context.locale);
     this.audio = context.audio || sound;
     this.audio.enabled = context.sound;
 
     this.container.innerHTML = `
+      <style>
+        .btn-notch { min-width: 48px; min-height: 36px; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.15s; }
+        .btn-notch:hover { transform: scale(1.06); }
+        #win-banner { position: absolute; left: 50%; top: 10%; transform: translate(-50%, -20px) scale(0.8); opacity: 0; pointer-events: none; padding: 10px 26px; border-radius: 9999px; background: rgba(251, 191, 36, 0.95); color: #0f172a; font-weight: 800; font-size: 1.4rem; box-shadow: 0 8px 28px rgba(0,0,0,0.4); transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); white-space: nowrap; z-index: 20; }
+        #win-banner.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      </style>
       <div style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; background: radial-gradient(circle at 50% 25%, #1e293b, #090d16); color: #f8fafc; font-family: inherit;">
         <!-- Top HUD -->
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); z-index: 10;">
@@ -391,16 +408,17 @@ export class BalanceScaleGame implements KidGame {
         <div id="notch-selector-row" style="display: none; align-items: center; justify-content: center; gap: 12px; padding: 6px 16px; background: rgba(15, 23, 42, 0.85); border-bottom: 1px solid rgba(255,255,255,0.06); z-index: 10;">
           <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;" id="hud-hook-label">${this.t.rightHookLabel}</span>
           <div style="display: flex; gap: 8px;" id="notch-button-group">
-            <button class="btn-notch" data-notch="1" style="min-width: 48px; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.15s;">Notch 1</button>
-            <button class="btn-notch" data-notch="2" style="min-width: 48px; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.15s;">Notch 2</button>
-            <button class="btn-notch" data-notch="3" style="min-width: 48px; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.15s;">Notch 3</button>
-            <button class="btn-notch" data-notch="4" style="min-width: 48px; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.15); background: #1e293b; color: #cbd5e1; cursor: pointer; transition: all 0.15s;">Notch 4</button>
+            <button class="btn-notch" data-notch="1">${this.t.notch} 1</button>
+            <button class="btn-notch" data-notch="2">${this.t.notch} 2</button>
+            <button class="btn-notch" data-notch="3">${this.t.notch} 3</button>
+            <button class="btn-notch" data-notch="4">${this.t.notch} 4</button>
           </div>
         </div>
 
         <!-- Interactive Canvas Area -->
         <div id="canvas-wrapper" style="flex: 1; position: relative; overflow: hidden; touch-action: none;">
           <canvas id="balance-canvas" style="display: block; width: 100%; height: 100%;"></canvas>
+          <div id="win-banner" role="status" aria-live="polite"></div>
         </div>
 
         <!-- Inventory Tray at Bottom -->
@@ -415,7 +433,7 @@ export class BalanceScaleGame implements KidGame {
     `;
 
     this.canvas = this.container.querySelector('#balance-canvas') as HTMLCanvasElement;
-    this.ctx = this.canvas.getContext('2d')!;
+    this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
 
     this.setupResize();
     this.setupEvents();
@@ -424,12 +442,13 @@ export class BalanceScaleGame implements KidGame {
 
   private setupResize() {
     const wrapper = this.container.querySelector('#canvas-wrapper') as HTMLElement;
+    if (typeof ResizeObserver === 'undefined') return;
     this.resizeObserver = new ResizeObserver(() => {
       const rect = wrapper.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       this.canvas.width = rect.width * dpr;
       this.canvas.height = rect.height * dpr;
-      this.ctx.scale(dpr, dpr);
+      this.ctx?.scale(dpr, dpr);
     });
     this.resizeObserver.observe(wrapper);
   }
@@ -456,26 +475,42 @@ export class BalanceScaleGame implements KidGame {
         htmlBtn.style.color = '#0f172a';
         htmlBtn.style.borderColor = '#f59e0b';
         htmlBtn.style.boxShadow = '0 0 12px rgba(251, 191, 36, 0.4)';
-        htmlBtn.textContent = `✓ Notch ${notchNum}`;
+        htmlBtn.textContent = `✓ ${this.t.notch} ${notchNum}`;
       } else {
         htmlBtn.style.background = '#1e293b';
         htmlBtn.style.color = '#cbd5e1';
         htmlBtn.style.borderColor = 'rgba(255,255,255,0.15)';
         htmlBtn.style.boxShadow = 'none';
-        htmlBtn.textContent = `Notch ${notchNum}`;
+        htmlBtn.textContent = `${this.t.notch} ${notchNum}`;
       }
     });
   }
 
   private updateInstructionText() {
     const instruction = this.container.querySelector('#instruction');
-    if (instruction && this.levels[this.currentLevelIndex]) {
-      instruction.textContent = this.getLevelInstruction(this.levels[this.currentLevelIndex]);
+    const lvl = this.levels[this.currentLevelIndex];
+    if (instruction && lvl) {
+      instruction.textContent = this.getLiveInstruction(lvl);
     }
+  }
+
+  /** Live scaffolding: progress text once the child changed the right pan, otherwise the level prompt. */
+  private getLiveInstruction(lvl: Level): string {
+    const initialRight = lvl.targetRight.reduce((a, b) => a + b.grams, 0);
+    const { leftGrams, rightGrams } = this.calculateTorque();
+    const untouched = this.rightWeights.length === lvl.targetRight.length && rightGrams === initialRight;
+    if (untouched || leftGrams === 0) {
+      return this.getLevelInstruction(lvl);
+    }
+    if (lvl.leverMode) {
+      return this.t.formatLeverLive(rightGrams, this.rightNotch, leftGrams * this.leftNotch);
+    }
+    return this.t.formatStandardLive(rightGrams, leftGrams);
   }
 
   private setupEvents() {
     const wrapper = this.container.querySelector('#canvas-wrapper') as HTMLElement;
+    const signal = this.abortController!.signal;
 
     const getPos = (e: MouseEvent | Touch) => {
       const rect = this.canvas.getBoundingClientRect();
@@ -493,7 +528,7 @@ export class BalanceScaleGame implements KidGame {
         if (n >= 1 && n <= 4) {
           this.setRightNotch(n);
         }
-      });
+      }, { signal });
     });
 
     const handlePointerDown = (pos: { x: number; y: number }) => {
@@ -507,6 +542,7 @@ export class BalanceScaleGame implements KidGame {
         this.hoveredRightWeightIndex = -1;
         this.audio.playPop();
         this.renderInventory();
+        this.updateInstructionText();
         return;
       }
 
@@ -656,33 +692,34 @@ export class BalanceScaleGame implements KidGame {
         this.draggedWeight = null;
         this.hasDraggedBeyondThreshold = false;
         this.renderInventory();
+        this.updateInstructionText();
       }
     };
 
-    wrapper.addEventListener('mousedown', (e) => handlePointerDown(getPos(e)));
-    window.addEventListener('mousemove', (e) => handlePointerMove(getPos(e)));
-    window.addEventListener('mouseup', handlePointerUp);
+    wrapper.addEventListener('mousedown', (e) => handlePointerDown(getPos(e)), { signal });
+    window.addEventListener('mousemove', (e) => handlePointerMove(getPos(e)), { signal });
+    window.addEventListener('mouseup', handlePointerUp, { signal });
 
     wrapper.addEventListener('touchstart', (e) => {
       if (e.touches.length > 0) handlePointerDown(getPos(e.touches[0]));
-    }, { passive: true });
+    }, { passive: true, signal });
     window.addEventListener('touchmove', (e) => {
       if (e.touches.length > 0) handlePointerMove(getPos(e.touches[0]));
-    }, { passive: true });
-    window.addEventListener('touchend', handlePointerUp);
+    }, { passive: true, signal });
+    window.addEventListener('touchend', handlePointerUp, { signal });
 
     const soundBtn = this.container.querySelector('#btn-sound-toggle') as HTMLButtonElement;
     soundBtn?.addEventListener('click', () => {
       this.audio.enabled = !this.audio.enabled;
       soundBtn.textContent = this.audio.enabled ? this.t.soundOn : this.t.soundOff;
-    });
+    }, { signal });
 
     const resetBtn = this.container.querySelector('#btn-reset') as HTMLButtonElement;
     resetBtn?.addEventListener('click', () => {
       this.levels = this.initLevels();
       this.loadLevel(0);
       this.audio.playPop();
-    });
+    }, { signal });
   }
 
   private setAgeGroup(age: string) {
@@ -702,7 +739,7 @@ export class BalanceScaleGame implements KidGame {
     if (lvl.leverMode) {
       return this.t.formatLeverInstruction(leftSum, lvl.leftNotch, leftSum * lvl.leftNotch, this.rightNotch);
     }
-    return this.t.formatStandardInstruction(leftDesc, leftSum, rightStartSum);
+    return this.t.formatStandardInstruction(leftDesc, leftSum, rightStartSum, lvl.targetLeft.length);
   }
 
   private loadLevel(index: number) {
@@ -717,6 +754,7 @@ export class BalanceScaleGame implements KidGame {
     this.isDraggingRightNotch = false;
     this.isHoveringRightLever = false;
     this.isLevelComplete = false;
+    this.hideWinBanner();
     this.balancedTimer = 0;
     this.angle = 0;
     this.angularVelocity = 0;
@@ -731,7 +769,7 @@ export class BalanceScaleGame implements KidGame {
     this.context.emit('game:progress', {
       step: index + 1,
       total: this.levels.length,
-      detail: this.getLevelInstruction(lvl)
+      detail: this.getLiveInstruction(lvl)
     });
   }
 
@@ -796,12 +834,48 @@ export class BalanceScaleGame implements KidGame {
 
   start() {
     this.startTime = Date.now();
-    this.loop();
+    this.started = true;
+    this.paused = false;
+    if (this.animFrameId === null) this.loop();
+  }
+
+  pause() {
+    this.paused = true;
+    if (this.animFrameId !== null) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+    }
+  }
+
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    if (this.started && this.animFrameId === null) this.loop();
+  }
+
+  private schedule(fn: () => void, ms: number) {
+    const id = setTimeout(() => {
+      this.pendingTimeouts.delete(id);
+      fn();
+    }, ms);
+    this.pendingTimeouts.add(id);
+  }
+
+  private showWinBanner() {
+    const banner = this.container.querySelector('#win-banner') as HTMLElement | null;
+    if (!banner) return;
+    banner.textContent = this.t.wellDone;
+    banner.classList.add('show');
+  }
+
+  private hideWinBanner() {
+    const banner = this.container.querySelector('#win-banner') as HTMLElement | null;
+    banner?.classList.remove('show');
   }
 
   private loop = () => {
     this.updatePhysics();
-    this.draw();
+    if (this.ctx) this.draw();
     this.animFrameId = requestAnimationFrame(this.loop);
   };
 
@@ -888,6 +962,7 @@ export class BalanceScaleGame implements KidGame {
 
   private handleLevelWin() {
     this.isLevelComplete = true;
+    this.showWinBanner();
     this.audio.playSuccess();
 
     this.score += 100;
@@ -907,7 +982,7 @@ export class BalanceScaleGame implements KidGame {
       origin: { y: 0.6 }
     });
 
-    setTimeout(() => {
+    this.schedule(() => {
       if (this.currentLevelIndex + 1 < this.levels.length) {
         this.loadLevel(this.currentLevelIndex + 1);
       } else {
@@ -918,7 +993,7 @@ export class BalanceScaleGame implements KidGame {
           timeElapsed: elapsed,
           summary: this.t.summary
         });
-        setTimeout(() => {
+        this.schedule(() => {
           this.levels = this.initLevels();
           this.loadLevel(0);
         }, 1800);
@@ -1207,6 +1282,9 @@ export class BalanceScaleGame implements KidGame {
       const resetBtn = this.container.querySelector('#btn-reset');
       if (resetBtn) resetBtn.textContent = this.t.reset;
 
+      this.updateNotchButtonsUI();
+      const banner = this.container.querySelector('#win-banner');
+      if (banner) banner.textContent = this.t.wellDone;
       this.updateInstructionText();
       const badge = this.container.querySelector('#level-badge');
       if (badge) badge.textContent = `${this.t.level} ${this.currentLevelIndex + 1}/${this.levels.length}`;
@@ -1226,15 +1304,19 @@ export class BalanceScaleGame implements KidGame {
   }
 
   destroy() {
-    if (this.animFrameId) {
+    if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-      this.resizeObserver = null;
-    }
-    this.audio.close();
+    this.pendingTimeouts.forEach((id) => clearTimeout(id));
+    this.pendingTimeouts.clear();
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
+    this.abortController?.abort();
+    this.abortController = null;
+    this.started = false;
+    // context.audio is owned by the host <kid-game>; never close it here.
+    if (this.container) this.container.innerHTML = '';
   }
 }
 

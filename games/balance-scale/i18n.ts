@@ -11,21 +11,28 @@ export interface Translations {
   soundOff: string;
   yourWeights: string;
   rightHookLabel: string;
+  notch: string;
   wellDone: string;
   summary: string;
-  formatStandardInstruction: (leftDesc: string, totalGrams: number, rightStartGrams: number) => string;
+  /** `leftCount` = number of weights on the left pan (defaults to counting " + " in `leftDesc`). */
+  formatStandardInstruction: (leftDesc: string, totalGrams: number, rightStartGrams: number, leftCount?: number) => string;
   formatLeverInstruction: (leftGrams: number, leftNotch: number, targetTorque: number, rightNotch: number) => string;
+  /** Live progress while the child fills the right pan (never states the missing amount). */
+  formatStandardLive: (rightGrams: number, targetGrams: number) => string;
+  formatLeverLive: (rightGrams: number, rightNotch: number, targetTorque: number) => string;
 }
 
-function formatMetric(grams: number, locale: SupportedLocale): string {
-  if (grams >= 1000 && grams % 1000 === 0) {
-    return `${grams / 1000} kg (${grams}g)`;
-  }
+/** Single consistent metric format: "750g", "1 kg", "1.25 kg" (no nested parentheses). */
+export function formatMetric(grams: number, locale: SupportedLocale): string {
   if (grams >= 1000) {
     const kg = (grams / 1000).toLocaleString(locale, { maximumFractionDigits: 2 });
-    return `${kg} kg (${grams}g)`;
+    return `${kg.replace(/\u202f|\u00a0/g, ' ')} kg`;
   }
   return `${grams}g`;
+}
+
+function countParts(leftDesc: string, leftCount?: number): number {
+  return leftCount ?? leftDesc.split(' + ').length;
 }
 
 export const DICTIONARY: Record<SupportedLocale, Translations> = {
@@ -38,22 +45,36 @@ export const DICTIONARY: Record<SupportedLocale, Translations> = {
     soundOff: '🔇 Sound OFF',
     yourWeights: 'Your Metric Weights',
     rightHookLabel: 'Right Hook Notch:',
+    notch: 'Notch',
     wellDone: '✨ Perfect Balance!',
     summary: 'Mastered balance, metric conversions & levers!',
-    formatStandardInstruction: (leftDesc, totalGrams, rightStartGrams) => {
+    formatStandardInstruction: (leftDesc, totalGrams, rightStartGrams, leftCount) => {
       const totalStr = formatMetric(totalGrams, 'en');
+      const shown = countParts(leftDesc, leftCount) >= 2 ? `${leftDesc} (${totalStr})` : leftDesc;
       if (rightStartGrams > 0) {
-        return `Left has ${leftDesc} (${totalStr}), right has ${rightStartGrams}g. Add ${totalGrams - rightStartGrams}g using different weights!`;
+        return `Left has ${shown}, right has ${formatMetric(rightStartGrams, 'en')}. Add ${formatMetric(totalGrams - rightStartGrams, 'en')} using different weights!`;
       }
-      return `Balance ${leftDesc} (${totalStr}) using a different combination of weights!`;
+      return `Balance ${shown} using a different combination of weights!`;
     },
     formatLeverInstruction: (leftGrams, leftNotch, targetTorque, rightNotch) => {
-      const neededGrams = Math.round(targetTorque / rightNotch);
-      const isInteger = targetTorque % rightNotch === 0;
-      if (!isInteger) {
-        return `Left torque is ${leftGrams}g × ${leftNotch} = ${targetTorque}. Move right hook to a notch that divides ${targetTorque} evenly!`;
+      const base = `Left: ${leftGrams}g × ${leftNotch} = ${targetTorque}. Make the right side equal ${targetTorque}!`;
+      if (targetTorque % rightNotch !== 0) {
+        return `${base} Move the right hook to a notch that divides ${targetTorque} evenly.`;
       }
-      return `Left torque: ${leftGrams}g × ${leftNotch} = ${targetTorque}. At right notch ${rightNotch}, you need ${neededGrams}g (${neededGrams} × ${rightNotch} = ${targetTorque})!`;
+      return base;
+    },
+    formatStandardLive: (rightGrams, targetGrams) => {
+      const right = formatMetric(rightGrams, 'en');
+      if (rightGrams === targetGrams) return `Right: ${right}. Perfectly balanced!`;
+      if (rightGrams > targetGrams) return `Right: ${right} is too heavy, take something off!`;
+      return `Right: ${right} of ${formatMetric(targetGrams, 'en')}, keep going!`;
+    },
+    formatLeverLive: (rightGrams, rightNotch, targetTorque) => {
+      const torque = rightGrams * rightNotch;
+      const eq = `Right torque: ${rightGrams}g × ${rightNotch} = ${torque}`;
+      if (torque === targetTorque) return `${eq}. Perfectly balanced!`;
+      if (torque > targetTorque) return `${eq} is more than ${targetTorque}. Too heavy!`;
+      return `${eq} / ${targetTorque}. A little more!`;
     }
   },
   fr: {
@@ -65,22 +86,36 @@ export const DICTIONARY: Record<SupportedLocale, Translations> = {
     soundOff: '🔇 Son COUPÉ',
     yourWeights: 'Vos Poids Métriques',
     rightHookLabel: 'Cran du crochet droit :',
+    notch: 'Cran',
     wellDone: '✨ Équilibre Parfait !',
     summary: 'Maîtrise de l’équilibre, des conversions et des leviers !',
-    formatStandardInstruction: (leftDesc, totalGrams, rightStartGrams) => {
+    formatStandardInstruction: (leftDesc, totalGrams, rightStartGrams, leftCount) => {
       const totalStr = formatMetric(totalGrams, 'fr');
+      const shown = countParts(leftDesc, leftCount) >= 2 ? `${leftDesc} (${totalStr})` : leftDesc;
       if (rightStartGrams > 0) {
-        return `Gauche : ${leftDesc} (${totalStr}), Droite : ${rightStartGrams}g. Ajoutez ${totalGrams - rightStartGrams}g avec d'autres poids !`;
+        return `Gauche : ${shown}, Droite : ${formatMetric(rightStartGrams, 'fr')}. Ajoutez ${formatMetric(totalGrams - rightStartGrams, 'fr')} avec d'autres poids !`;
       }
-      return `Équilibrez ${leftDesc} (${totalStr}) avec une combinaison différente de poids !`;
+      return `Équilibrez ${shown} avec une combinaison différente de poids !`;
     },
     formatLeverInstruction: (leftGrams, leftNotch, targetTorque, rightNotch) => {
-      const neededGrams = Math.round(targetTorque / rightNotch);
-      const isInteger = targetTorque % rightNotch === 0;
-      if (!isInteger) {
-        return `Force à gauche : ${leftGrams}g × ${leftNotch} = ${targetTorque}. Déplacez le crochet sur un cran qui divise ${targetTorque} !`;
+      const base = `Gauche : ${leftGrams}g × ${leftNotch} = ${targetTorque}. Rendez le côté droit égal à ${targetTorque} !`;
+      if (targetTorque % rightNotch !== 0) {
+        return `${base} Déplacez le crochet sur un cran qui divise ${targetTorque}.`;
       }
-      return `Force à gauche : ${leftGrams}g × ${leftNotch} = ${targetTorque}. Au cran ${rightNotch}, il faut ${neededGrams}g (${neededGrams} × ${rightNotch} = ${targetTorque}) !`;
+      return base;
+    },
+    formatStandardLive: (rightGrams, targetGrams) => {
+      const right = formatMetric(rightGrams, 'fr');
+      if (rightGrams === targetGrams) return `Droite : ${right}. Équilibre parfait !`;
+      if (rightGrams > targetGrams) return `Droite : ${right}, c'est trop lourd, retirez un poids !`;
+      return `Droite : ${right} sur ${formatMetric(targetGrams, 'fr')}, continuez !`;
+    },
+    formatLeverLive: (rightGrams, rightNotch, targetTorque) => {
+      const torque = rightGrams * rightNotch;
+      const eq = `Force à droite : ${rightGrams}g × ${rightNotch} = ${torque}`;
+      if (torque === targetTorque) return `${eq}. Équilibre parfait !`;
+      if (torque > targetTorque) return `${eq}, plus que ${targetTorque}. Trop lourd !`;
+      return `${eq} / ${targetTorque}. Encore un peu !`;
     }
   }
 };
