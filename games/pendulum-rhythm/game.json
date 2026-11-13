@@ -1,0 +1,18 @@
+{
+  "id": "pendulum-rhythm",
+  "title": "Pendulum Rhythm Lab",
+  "version": "1.0.0",
+  "description": "Explore periodic swings, metronome tempos, and harmonic polyrhythms through tactile pendulum physics!",
+  "author": "Contributor",
+  "category": "numbers",
+  "ageGroups": ["3-5", "6-8", "9-11"],
+  "skills": [
+    "pendulum-physics",
+    "periodicity",
+    "fractions",
+    "rhythm-sync",
+    "variable-isolation",
+    "momentum"
+  ],
+  "thumbnail": "assets/thumb.svg"
+}

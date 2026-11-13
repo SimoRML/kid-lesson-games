@@ -454,6 +454,54 @@
               }
             ]
           }
+        },
+        'pendulum-rhythm': {
+          'auto': { label: 'Auto-Generate (Default)', value: null },
+          'custom-metronome': {
+            label: 'Custom: Match 75 BPM Metronome',
+            value: [
+              {
+                id: 'custom-metronome-1',
+                ageGroup: '6-8',
+                mode: 'metronome',
+                title: 'Custom Tempo Sync',
+                prompt: 'Match 75 BPM with the right string length!',
+                pendulums: [
+                  {
+                    id: 'p1',
+                    pivotX: 300,
+                    pivotY: 70,
+                    length: 64,
+                    mass: 100
+                  }
+                ],
+                availableLengths: [25, 45, 64, 100],
+                metronome: {
+                  bpm: 75,
+                  requiredStreak: 3
+                }
+              }
+            ]
+          },
+          'custom-polyrhythm': {
+            label: 'Custom: 2:1 Harmonic Polyrhythm',
+            value: [
+              {
+                id: 'custom-poly-1',
+                ageGroup: '9-11',
+                mode: 'polyrhythm',
+                title: 'Custom 2:1 Polyrhythm',
+                prompt: 'Set 25cm and 100cm for 2:1 harmonic ratio!',
+                pendulums: [
+                  { id: 'pA', pivotX: 200, pivotY: 70, length: 25, mass: 100 },
+                  { id: 'pB', pivotX: 400, pivotY: 70, length: 100, mass: 100 }
+                ],
+                availableLengths: [25, 45, 64, 100],
+                targetHarmonicRatio: [2, 1],
+                harmonicTolerancePercent: 5
+              }
+            ]
+          }
         }
       };
 
