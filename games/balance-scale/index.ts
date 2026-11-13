@@ -151,6 +151,8 @@ export class BalanceScaleGame implements KidGame {
 
   // Interaction
   private draggedWeight: MetricWeight | null = null;
+  private dragStartPos = { x: 0, y: 0 };
+  private hasDraggedBeyondThreshold = false;
   private hoveredRightWeightIndex: number = -1;
   private mousePos = { x: 0, y: 0 };
 
@@ -251,40 +253,52 @@ export class BalanceScaleGame implements KidGame {
 
     const handlePointerMove = (pos: { x: number; y: number }) => {
       this.mousePos = pos;
+      if (this.draggedWeight !== null && !this.hasDraggedBeyondThreshold) {
+        if (Math.hypot(pos.x - this.dragStartPos.x, pos.y - this.dragStartPos.y) > 8) {
+          this.hasDraggedBeyondThreshold = true;
+        }
+      }
       this.hoveredRightWeightIndex = this.draggedWeight === null ? this.getHitRightWeightIndex(pos) : -1;
       this.canvas.style.cursor = this.hoveredRightWeightIndex !== -1 ? 'pointer' : 'default';
     };
 
     const handlePointerUp = () => {
       if (this.draggedWeight !== null) {
-        // Also allow dropping directly onto a right-side notch in leverMode
-        let droppedOnNotch = false;
-        if (this.leverMode) {
-          for (const n of [1, 2, 3, 4] as const) {
-            const anchor = this.getNotchPosition('right', n);
-            if (Math.hypot(this.mousePos.x - anchor.x, this.mousePos.y - anchor.y) < 36) {
-              this.rightNotch = n;
+        if (!this.hasDraggedBeyondThreshold) {
+          // Quick click/tap on an available weight -> add directly to right pan stack!
+          this.rightWeights.push(this.draggedWeight);
+          sound.playDrop();
+        } else {
+          // Dragged weight -> check if dropped onto a right-side notch or right pan
+          let droppedOnNotch = false;
+          if (this.leverMode) {
+            for (const n of [1, 2, 3, 4] as const) {
+              const anchor = this.getNotchPosition('right', n);
+              if (Math.hypot(this.mousePos.x - anchor.x, this.mousePos.y - anchor.y) < 36) {
+                this.rightNotch = n;
+                this.rightWeights.push(this.draggedWeight);
+                sound.playDrop();
+                droppedOnNotch = true;
+                break;
+              }
+            }
+          }
+
+          if (!droppedOnNotch) {
+            const rightPan = this.getRightPanCenter();
+            const dist = Math.hypot(this.mousePos.x - rightPan.x, this.mousePos.y - rightPan.y);
+
+            if (dist < 90) {
               this.rightWeights.push(this.draggedWeight);
               sound.playDrop();
-              droppedOnNotch = true;
-              break;
+            } else {
+              this.inventory.push(this.draggedWeight);
             }
           }
         }
 
-        if (!droppedOnNotch) {
-          const rightPan = this.getRightPanCenter();
-          const dist = Math.hypot(this.mousePos.x - rightPan.x, this.mousePos.y - rightPan.y);
-
-          if (dist < 90) {
-            this.rightWeights.push(this.draggedWeight);
-            sound.playDrop();
-          } else {
-            this.inventory.push(this.draggedWeight);
-          }
-        }
-
         this.draggedWeight = null;
+        this.hasDraggedBeyondThreshold = false;
         this.renderInventory();
       }
     };
@@ -383,17 +397,24 @@ export class BalanceScaleGame implements KidGame {
       btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.08)');
       btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
 
-      const startDrag = () => {
+      const startDrag = (clientX: number, clientY: number) => {
+        const rect = this.canvas.getBoundingClientRect();
+        const pos = { x: clientX - rect.left, y: clientY - rect.top };
+        this.mousePos = pos;
+        this.dragStartPos = { ...pos };
+        this.hasDraggedBeyondThreshold = false;
         this.draggedWeight = item;
         this.inventory.splice(idx, 1);
         sound.playPop();
         this.renderInventory();
       };
 
-      btn.addEventListener('mousedown', startDrag);
+      btn.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
       btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        startDrag();
+        if (e.touches.length > 0) {
+          startDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }
       });
 
       tray.appendChild(btn);
@@ -634,7 +655,7 @@ export class BalanceScaleGame implements KidGame {
     );
 
     // 4. Cursor Dragged Weight
-    if (this.draggedWeight !== null) {
+    if (this.draggedWeight !== null && this.hasDraggedBeyondThreshold) {
       this.drawWeightBlock(this.mousePos.x, this.mousePos.y, this.draggedWeight, true, false);
     }
   }
