@@ -1,0 +1,11 @@
+{
+  "id": "gear-trains",
+  "title": "Gear Trains",
+  "version": "1.0.0",
+  "description": "Connect spinning gears to master ratios, directions, and mechanical advantage!",
+  "author": "Contributor",
+  "category": "logic",
+  "ageGroups": ["3-5", "6-8", "9-11"],
+  "skills": ["multiplication", "ratios", "rotational-direction", "spatial-reasoning"],
+  "thumbnail": "assets/thumb.svg"
+}

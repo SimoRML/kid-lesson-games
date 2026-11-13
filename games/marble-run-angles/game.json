@@ -1,0 +1,11 @@
+{
+  "id": "marble-run-angles",
+  "title": "Marble Run Angles",
+  "version": "1.0.0",
+  "description": "Guide falling marbles into target cups using geometry, ramp slopes, and reflection physics!",
+  "author": "Contributor",
+  "category": "spatial",
+  "ageGroups": ["3-5", "6-8", "9-11"],
+  "skills": ["geometry", "angles", "reflection", "slopes", "spatial-reasoning"],
+  "thumbnail": "assets/thumb.svg"
+}

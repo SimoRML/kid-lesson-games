@@ -1,0 +1,11 @@
+{
+  "id": "pulley-lift",
+  "title": "Pulley Lift & Mechanical Advantage",
+  "version": "1.0.0",
+  "description": "Rig ropes around fixed, movable, and compound pulleys to lift heavy stone blocks using mechanical advantage and work conservation!",
+  "author": "Contributor",
+  "category": "logic",
+  "ageGroups": ["3-5", "6-8", "9-11"],
+  "skills": ["simple-machines", "fractions", "work-conservation", "mechanical-advantage", "proportional-thinking"],
+  "thumbnail": "assets/thumb.svg"
+}

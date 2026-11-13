@@ -1,0 +1,11 @@
+{
+  "id": "buoyancy-tank",
+  "title": "Buoyancy Tank & Density Lab",
+  "version": "1.0.0",
+  "description": "Explore Archimedes principle, water volume displacement, and submarine neutral buoyancy trim!",
+  "author": "Contributor",
+  "category": "logic",
+  "ageGroups": ["3-5", "6-8", "9-11"],
+  "skills": ["density", "volume-displacement", "buoyancy", "spatial-reasoning"],
+  "thumbnail": "assets/thumb.svg"
+}

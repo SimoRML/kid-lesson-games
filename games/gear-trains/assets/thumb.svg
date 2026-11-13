@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <rect width="120" height="120" rx="20" fill="#0f172a"/>
+  <!-- Amber Gear -->
+  <g transform="translate(42, 54)">
+    <circle r="28" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+    <circle r="10" fill="#0f172a"/>
+    <circle r="4" fill="#fbbf24"/>
+    <!-- Teeth -->
+    <path d="M-4,-32 h8 l-1,6 h-6 z M22,-22 l6,6 l-5,4 l-4,-4 z M30,-4 v8 l-6,-1 v-6 z M22,18 l-6,6 l-4,-4 l4,-5 z M-4,28 h8 l-1,-6 h-6 z M-24,18 l-6,-6 l5,-4 l4,4 z M-32,-4 v8 l6,-1 v-6 z M-24,-24 l6,-6 l4,4 l-4,5 z" fill="#d97706"/>
+  </g>
+  <!-- Sky Blue Gear -->
+  <g transform="translate(80, 68)">
+    <circle r="20" fill="#0284c7" stroke="#0369a1" stroke-width="2"/>
+    <circle r="7" fill="#0f172a"/>
+    <circle r="3" fill="#38bdf8"/>
+    <!-- Teeth -->
+    <path d="M-3,-23 h6 l-1,4 h-4 z M16,-16 l4,4 l-3,3 l-3,-3 z M21,-3 v6 l-4,-1 v-4 z M16,13 l-4,4 l-3,-3 l3,-3 z M-3,20 h6 l-1,-4 h-4 z M-17,13 l-4,-4 l3,-3 l3,3 z M-23,-3 v6 l4,-1 v-4 z M-17,-17 l4,-4 l3,3 l-3,3 z" fill="#0369a1"/>
+  </g>
+  <path d="M38,20 A34,34 0 0,1 70,30" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+</svg>
