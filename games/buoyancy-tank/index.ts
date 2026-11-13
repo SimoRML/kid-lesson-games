@@ -936,6 +936,9 @@ export class BuoyancyTankGame implements KidGame {
   private score = 0;
   private streak = 0;
   private lastTimestamp = 0;
+  private startTimeMs = 0;
+  private hasStarted = false;
+  private isPaused = false;
 
   // Visuals & physics
   private wavePhase = 0;
@@ -979,11 +982,15 @@ export class BuoyancyTankGame implements KidGame {
     this.context.emit?.('game:start', {
       gameId: 'buoyancy-tank'
     });
+    this.hasStarted = true;
+    this.isPaused = false;
+    this.startTimeMs = Date.now();
     this.lastTimestamp = performance.now();
     this.loop(this.lastTimestamp);
   }
 
   pause(): void {
+    this.isPaused = true;
     if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
@@ -991,6 +998,7 @@ export class BuoyancyTankGame implements KidGame {
   }
 
   resume(): void {
+    this.isPaused = false;
     if (this.animFrameId === null) {
       this.lastTimestamp = performance.now();
       this.loop(this.lastTimestamp);
@@ -1014,8 +1022,19 @@ export class BuoyancyTankGame implements KidGame {
     }
 
     if (newContext.ageGroup && newContext.ageGroup !== prevAge) {
+      // Score convention: each age bracket is a fresh run.
+      this.score = 0;
+      this.streak = 0;
+      this.startTimeMs = Date.now();
       this.initLevels();
       this.loadLevel(0);
+      this.updateScoreDisplay();
+    }
+
+    // Recover the render loop if it died (or was never restarted) while the host is running us.
+    if (this.hasStarted && !this.isPaused && this.animFrameId === null) {
+      this.lastTimestamp = performance.now();
+      this.loop(this.lastTimestamp);
     }
   }
 
@@ -1087,8 +1106,10 @@ export class BuoyancyTankGame implements KidGame {
           color: #f8fafc;
           font-family: system-ui, -apple-system, sans-serif;
           user-select: none;
-          overflow: hidden;
+          overflow-x: hidden;
+          overflow-y: auto;
           box-sizing: border-box;
+          container-type: inline-size;
         }
         .bt-hud {
           display: flex;
@@ -1097,7 +1118,9 @@ export class BuoyancyTankGame implements KidGame {
           padding: 10px 16px;
           background: #1e293b;
           border-bottom: 2px solid #334155;
-          gap: 12px;
+          gap: 8px 12px;
+          flex-wrap: wrap;
+          flex-shrink: 0;
           z-index: 10;
         }
         .bt-hud-left {
@@ -1111,6 +1134,14 @@ export class BuoyancyTankGame implements KidGame {
           color: #38bdf8;
           white-space: nowrap;
         }
+        @container (max-width: 760px) {
+          .bt-title { font-size: 1rem; white-space: normal; }
+          .bt-hud { padding: 8px 10px; }
+          .bt-hud-left { order: 1; flex: 1 1 auto; min-width: 0; }
+          .bt-hud-right { order: 2; flex-wrap: wrap; justify-content: flex-end; }
+          .bt-instruction { order: 3; flex: 1 1 100%; font-size: 0.85rem; }
+          .bt-item { min-height: 56px; }
+        }
         .bt-badge {
           background: #334155;
           color: #fbbf24;
@@ -1120,7 +1151,8 @@ export class BuoyancyTankGame implements KidGame {
           font-size: 0.85rem;
         }
         .bt-instruction {
-          flex: 1;
+          flex: 1 1 280px;
+          min-width: 0;
           text-align: center;
           font-size: 0.95rem;
           font-weight: 600;
@@ -1130,6 +1162,7 @@ export class BuoyancyTankGame implements KidGame {
           border-radius: 8px;
           border: 1px solid #475569;
           min-height: 24px;
+          box-sizing: border-box;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1158,16 +1191,15 @@ export class BuoyancyTankGame implements KidGame {
           border-color: #38bdf8;
         }
         .bt-main {
-          flex: 1;
+          flex: 1 0 auto;
           position: relative;
           display: flex;
           flex-direction: column;
-          overflow: hidden;
         }
         .bt-canvas-wrap {
-          flex: 1;
+          flex: 1 1 auto;
           position: relative;
-          min-height: 280px;
+          min-height: 240px;
         }
         canvas.bt-canvas {
           position: absolute;
@@ -1184,10 +1216,11 @@ export class BuoyancyTankGame implements KidGame {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 14px;
+          gap: 10px 14px;
+          flex-wrap: wrap;
+          flex-shrink: 0;
           min-height: 76px;
           box-sizing: border-box;
-          overflow-x: auto;
           z-index: 10;
         }
         .bt-item {
@@ -1196,7 +1229,8 @@ export class BuoyancyTankGame implements KidGame {
           align-items: center;
           justify-content: center;
           min-width: 64px;
-          height: 64px;
+          min-height: 64px;
+          box-sizing: border-box;
           padding: 4px 8px;
           background: #0f172a;
           border: 2px solid #475569;
@@ -1225,6 +1259,7 @@ export class BuoyancyTankGame implements KidGame {
           </div>
           <div id="hud-instruction" class="bt-instruction">...</div>
           <div class="bt-hud-right">
+            <span id="hud-score" class="bt-badge">${t.score}: ${this.score}</span>
             <button id="btn-sound-toggle" class="bt-btn">${this.context.sound ? t.soundOn : t.soundOff}</button>
             <button id="btn-reset" class="bt-btn">${t.reset}</button>
           </div>
@@ -1300,8 +1335,15 @@ export class BuoyancyTankGame implements KidGame {
     }
   }
 
+  private updateScoreDisplay(): void {
+    const t = getTranslations(this.context.locale as SupportedLocale || 'en');
+    const el = this.container.querySelector('#hud-score');
+    if (el) el.textContent = `${t.score}: ${this.score}`;
+  }
+
   private updateHUDText(): void {
     const t = getTranslations(this.context.locale as SupportedLocale || 'en');
+    this.updateScoreDisplay();
 
     // Title & Badge
     const titleEl = this.container.querySelector('#hud-title');
@@ -1361,7 +1403,11 @@ export class BuoyancyTankGame implements KidGame {
         trim.totalMassG,
         trim.totalVolumeCm3,
         trim.density,
-        trim.status
+        trim.status,
+        {
+          hasFoam: (this.currentLevel.modules || []).some((m) => m.type === 'foam'),
+          hasBallast: (this.currentLevel.modules || []).some((m) => m.type === 'ballast')
+        }
       );
     }
   }
@@ -1533,10 +1579,15 @@ export class BuoyancyTankGame implements KidGame {
     this.lastTimestamp = now;
     const dt = Math.min(rawDt, 0.033);
 
-    this.updatePhysics(dt);
-    this.renderCanvas();
-
+    // Schedule the next frame first so a single bad frame can never freeze the game.
     this.animFrameId = requestAnimationFrame((t) => this.loop(t));
+
+    try {
+      this.updatePhysics(dt);
+      this.renderCanvas();
+    } catch (err) {
+      console.error('[buoyancy-tank] frame error (loop continues):', err);
+    }
   }
 
   private updatePhysics(dt: number): void {
@@ -1589,8 +1640,24 @@ export class BuoyancyTankGame implements KidGame {
       }
     }
 
+    // Horizontal slots keep placed items from overlapping (and attached to the pod in 9-11)
+    const isSubLevel = this.currentLevel.ageGroup === '9-11' || this.currentLevel.targetType === 'submarine';
+    const n = this.placedEntities.length;
+    const slotGap = Math.min(56, Math.max(30, (Math.min(rect.width - 40, 500) - 60) / Math.max(1, n)));
+
     // Update placed items (bobbing floaters, sinking blocks)
-    for (const ent of this.placedEntities) {
+    for (let idx = 0; idx < n; idx++) {
+      const ent = this.placedEntities[idx];
+      const slotX = rect.width / 2 + (idx - (n - 1) / 2) * slotGap;
+      ent.x += (slotX - ent.x) * Math.min(1.0, dt * 8.0);
+
+      if (isSubLevel) {
+        // Modules are strapped under the pod hull so they visibly belong to it
+        const attachY = this.subY + 48;
+        ent.y += (attachY - ent.y) * Math.min(1.0, dt * 8.0);
+        continue;
+      }
+
       const isFloater = (ent.item as BuoyancyItem).behavior === 'float';
 
       if (isFloater) {
@@ -1653,6 +1720,7 @@ export class BuoyancyTankGame implements KidGame {
     this.isRoundWon = true;
     this.score += 100;
     this.streak += 1;
+    this.updateScoreDisplay();
 
     this.context.audio?.playSuccess();
     confetti({
@@ -1681,8 +1749,10 @@ export class BuoyancyTankGame implements KidGame {
         this.context.emit?.('game:complete', {
           stars: 3,
           score: this.score,
-          timeElapsed: 30,
-          summary: 'Mastered Archimedes hydrostatics, displacement and submarine neutral buoyancy!'
+          timeElapsed: Math.max(0, Math.round((Date.now() - (this.startTimeMs || Date.now())) / 1000)),
+          summary: getTranslations(this.context.locale as SupportedLocale || 'en').summaries[
+            (this.currentLevel.ageGroup || this.context.ageGroup || '6-8') as '3-5' | '6-8' | '9-11'
+          ]
         });
       }
     }, 1200);
@@ -1848,7 +1918,7 @@ export class BuoyancyTankGame implements KidGame {
 
       // Label
       ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 10px system-ui';
+      ctx.font = 'bold 9px system-ui';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(ent.item.label || '', ent.x, ent.y);
@@ -1933,7 +2003,7 @@ export class BuoyancyTankGame implements KidGame {
     ctx.stroke();
 
     // Propeller at stern
-    const bladeScale = Math.sin(this.propellerAngle);
+    const bladeScale = Math.max(0.05, Math.abs(Math.sin(this.propellerAngle)));
     ctx.fillStyle = '#b45309';
     ctx.beginPath();
     ctx.ellipse(-72, 0, 4, 18 * bladeScale, 0, 0, Math.PI * 2);
