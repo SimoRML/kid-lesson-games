@@ -294,10 +294,11 @@
           <label for="select-game" class="control-label">🎮 Active Game</label>
           <select id="select-game" aria-label="Select Game Cartridge">
             <option value="balance-scale">Balance the Scale</option>
-            <option value="buoyancy-tank">Buoyancy Tank</option>
+            <option value="buoyancy-tank">Buoyancy Tank &amp; Density Lab</option>
             <option value="gear-trains">Gear Trains</option>
             <option value="marble-run-angles">Marble Run Angles</option>
-            <option value="pulley-lift">Pulley Lift</option>
+            <option value="pendulum-rhythm">Pendulum Rhythm Lab</option>
+            <option value="pulley-lift">Pulley Lift &amp; Mechanical Advantage</option>
           </select>
         </div>
 
@@ -341,7 +342,7 @@
     </main>
 
     <script type="module">
-      import { registry } from '/src/index.ts';
+      import { registry } from './src/index.ts';
 
       const game = document.getElementById('my-game');
       const log = document.getElementById('event-log');
@@ -392,17 +393,33 @@
         'marble-run-angles': {
           'auto': { label: 'Auto-Generate (Default)', value: null },
           'custom-ricochet': {
-            label: 'Custom: 135° Trampoline Ricochet',
+            label: 'Custom: Chasm Trampoline Reflection',
             value: [
               {
-                emitter: { x: 100, y: 70, speed: 200, angle: 45 },
-                cup: { x: 420, y: 460, width: 80, height: 60 },
-                obstacles: [],
-                fixedRamps: [],
-                slots: [],
-                inventory: [{ type: 'trampoline', length: 110, angle: 135, restitution: 0.9 }],
-                stars: [{ x: 260, y: 260, collected: false }],
-                instruction: 'Custom: Position and rotate trampoline to bank the shot!'
+                id: 'custom-chasm-1',
+                title: 'Custom Chasm Bounce',
+                mode: 'reflection',
+                emitter: { x: 140, y: 50, vx: 0, vy: 40 },
+                cup: { x: 600, y: 350, width: 80, height: 44 },
+                fixedRamps: [
+                  { x1: 360, y1: 320, x2: 570, y2: 340, type: 'wood', restitution: 0.5 }
+                ],
+                obstacles: [{ x: 280, y: 440, radius: 24 }],
+                slots: [
+                  {
+                    id: 'slot-1',
+                    x: 140,
+                    y: 190,
+                    allowedTypes: ['wood', 'trampoline'],
+                    initialAngle: 45
+                  }
+                ],
+                inventory: [
+                  { type: 'trampoline', angleDeg: 45, length: 120, restitution: 0.9 },
+                  { type: 'wood', angleDeg: 45, length: 120, restitution: 0.5 }
+                ],
+                stars: [{ x: 260, y: 230 }, { x: 460, y: 310 }],
+                instruction: 'Custom: Snap the bouncy trampoline into the slot to launch across the chasm!'
               }
             ]
           }
@@ -413,12 +430,13 @@
             label: 'Custom: 4x Heavy Lift (240kg)',
             value: [
               {
-                loadMass: 240,
-                targetHeight: 180,
-                systemType: 'compound-4x',
-                mechanicalAdvantage: 4,
-                availableWeights: [60, 40, 20],
-                instruction: 'Custom: 4-pulley compound tackle! Effort = 60kg for 240kg block.'
+                id: 'custom-pulley-4x',
+                title: 'Compound 4x Hoist',
+                loadKg: 240,
+                targetHeightM: 2.0,
+                systemType: 'compound-4',
+                availableWeights: [40, 20, 30, 50],
+                instruction: 'Custom: 4-pulley compound tackle (MA = 4)! Combine 40 kg + 20 kg = 60 kg to lift 240 kg.'
               }
             ]
           }
@@ -426,31 +444,59 @@
         'gear-trains': {
           'auto': { label: 'Auto-Generate (Default)', value: null },
           'custom-ratio': {
-            label: 'Custom: 3x Speed Doubler',
+            label: 'Custom: 3x Speed Tripler',
             value: [
               {
-                motorPeg: { x: 140, y: 260, teeth: 24, rpm: 12, dir: 1 },
-                targetPeg: { x: 460, y: 260, teeth: 8, targetRpm: 36, targetDir: -1 },
-                pegs: [{ x: 300, y: 260 }],
-                availableGears: [{ teeth: 12 }, { teeth: 16 }, { teeth: 8 }],
-                instruction: 'Custom: Gear train to triple output RPM to 36!'
+                id: 'custom-gear-3x',
+                title: '3:1 Speed Tripler',
+                ageGroup: '9-11',
+                motor: { pegId: 'motor', x: 160, y: 230, teeth: 24, rpm: 40, direction: 'cw' },
+                target: { pegId: 'target', x: 480, y: 230, teeth: 8, targetRpm: 120, targetDirection: 'cw', type: 'dial' },
+                pegs: [{ id: 'p1', x: 360, y: 230 }],
+                inventory: [{ teeth: 16 }, { teeth: 12 }, { teeth: 6 }],
+                instruction: 'Custom: Bridge the 24T motor and 8T target with a 16T gear to triple output to 120 RPM CW!'
               }
             ]
           }
         },
         'buoyancy-tank': {
           'auto': { label: 'Auto-Generate (Default)', value: null },
-          'custom-sub': {
-            label: 'Custom: Saltwater Submarine Hover',
+          'custom-displacement': {
+            label: 'Custom: +300 mL Displacement',
             value: [
               {
-                liquidDensity: 1.2,
-                targetDepth: 260,
-                podEmptyMass: 200,
-                podVolume: 300,
-                availableWeights: [100, 60, 40],
-                availableFloats: [50, 30],
-                instruction: 'Custom: Match total pod density to 1.2 g/cm³!'
+                id: 'custom-bt-disp',
+                title: 'Graduated Cylinder +300 mL',
+                ageGroup: '6-8',
+                fluidType: 'freshwater',
+                initialWaterMl: 400,
+                targetWaterMl: 700,
+                tankCapacityMl: 1000,
+                inventory: [
+                  { id: 'b1', name: 'Block 100', label: '100 cm³', volumeCm3: 100, massG: 250 },
+                  { id: 'b2', name: 'Block 200', label: '200 cm³', volumeCm3: 200, massG: 500 },
+                  { id: 'b3', name: 'Distractor 150', label: '150 cm³', volumeCm3: 150, massG: 375, isDistractor: true }
+                ]
+              }
+            ]
+          },
+          'custom-sub': {
+            label: 'Custom: Saltwater Submarine Trim',
+            value: [
+              {
+                id: 'custom-bt-sub',
+                title: 'Saltwater Brine Trim (1.20 g/cm³)',
+                ageGroup: '9-11',
+                fluidType: 'saltwater',
+                initialWaterMl: 600,
+                targetWaterMl: 600,
+                tankCapacityMl: 1000,
+                submarine: { massG: 360, volumeCm3: 400, slots: 2 },
+                modules: [
+                  { id: 'm1', name: 'Ballast +70g', label: '+70 g', massG: 70, volumeCm3: 0 },
+                  { id: 'm2', name: 'Ballast +50g', label: '+50 g', massG: 50, volumeCm3: 0 },
+                  { id: 'm3', name: 'Ballast +30g', label: '+30 g', massG: 30, volumeCm3: 0, isDistractor: true }
+                ]
               }
             ]
           }
@@ -465,20 +511,24 @@
                 ageGroup: '6-8',
                 mode: 'metronome',
                 title: 'Custom Tempo Sync',
-                prompt: 'Match 75 BPM with the right string length!',
+                prompt: 'Match 75 BPM with the 64cm string length!',
                 pendulums: [
                   {
                     id: 'p1',
                     pivotX: 300,
-                    pivotY: 70,
-                    length: 64,
-                    mass: 100
+                    pivotY: 55,
+                    length: 100,
+                    mass: 100,
+                    isAdjustableLength: true,
+                    allowedLengths: [25, 45, 64, 100],
+                    allowedMasses: [50, 100, 200]
                   }
                 ],
                 availableLengths: [25, 45, 64, 100],
+                availableMasses: [50, 100, 200],
                 metronome: {
                   bpm: 75,
-                  requiredStreak: 3
+                  targetStreak: 3
                 }
               }
             ]
@@ -491,14 +541,25 @@
                 ageGroup: '9-11',
                 mode: 'polyrhythm',
                 title: 'Custom 2:1 Polyrhythm',
-                prompt: 'Set 25cm and 100cm for 2:1 harmonic ratio!',
+                prompt: 'Set Pendulum B to 100cm so length ratio is (2/1)² = 4!',
                 pendulums: [
-                  { id: 'pA', pivotX: 200, pivotY: 70, length: 25, mass: 100 },
-                  { id: 'pB', pivotX: 400, pivotY: 70, length: 100, mass: 100 }
+                  { id: 'pendulum-a', pivotX: 220, pivotY: 55, length: 25, mass: 100, isAdjustableLength: false },
+                  {
+                    id: 'pendulum-b',
+                    pivotX: 380,
+                    pivotY: 55,
+                    length: 50,
+                    mass: 100,
+                    isAdjustableLength: true,
+                    allowedLengths: [25, 50, 75, 100]
+                  }
                 ],
-                availableLengths: [25, 45, 64, 100],
-                targetHarmonicRatio: [2, 1],
-                harmonicTolerancePercent: 5
+                availableLengths: [25, 50, 75, 100],
+                polyrhythm: {
+                  ratioP: 2,
+                  ratioQ: 1,
+                  targetCoincidences: 2
+                }
               }
             ]
           }
