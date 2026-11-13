@@ -47,12 +47,14 @@ npm run create-game <game-id>
 # Example: npm run create-game number-line
 ```
 
-> ⚠️ **Note on `create-game` output (🚧 Partial)**: `scripts/create-game.js` generates starter `game.json`, `index.ts`, and `README.md`. To reach full ✅ production status, you **must** also create `i18n.ts` and `index.test.ts` and upgrade `index.ts` to the full zero-leak lifecycle shown below.
+> ✅ **Note on `create-game` output**: `scripts/create-game.js` scaffolds all 6 production files (`game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md`) implementing the full zero-leak lifecycle, dual-curriculum `generateLevelsForAge(age, difficulty)` with `parseCustomLevels`, and a ready-to-run Vitest suite.
 
 Required cartridge structure for a ✅ game:
 ```text
 games/<game-id>/
 ├── game.json        # Taxonomy, age brackets, skills, title (canonical filename)
+├── assets/
+│   └── thumb.svg    # Vector badge preview
 ├── index.ts         # KidGame implementation, pure level/math helpers & createGame() factory
 ├── i18n.ts          # Typed EN/FR dictionary using createI18nResolver
 ├── index.test.ts    # Deterministic unit tests + DOM mount/start/updateConfig/destroy tests
@@ -238,10 +240,10 @@ this.context.emit('game:complete', {
 7. ⚠️ **`KidGameElement` Property vs. Attribute Quirks**:
    - The getter for the `game` attribute is `el.gameId` (there is no `el.game` property).
    - Only `el.levels` has a JS property setter (`el.levels = [...]`). Once `el.levels` is set to a non-null value via JS property, `this._customLevels` takes precedence over `el.setAttribute('levels', ...)` until `el.levels = null` is assigned.
-8. ⚠️ **`context.difficulty` Is Currently Ignored by Cartridges (🚧 Partial)**:
-   - `<kid-game difficulty="easy|medium|hard">` is parsed and passed in `context.difficulty`, but the 6 existing games only branch level generation by `context.ageGroup` (`3-5`, `6-8`, `9-11`).
-9. ⚠️ **`src/index.ts` Drops `author` and `thumbnail` from `GameMetadata`**:
-   - `src/index.ts` constructs `GameMetadata` without copying `raw.author` or `raw.thumbnail`, and 4 of the 6 games (`balance-scale`, `buoyancy-tank`, `marble-run-angles`, `pulley-lift`) do not yet have `assets/thumb.svg` on disk.
+8. ✅ **`context.difficulty` Wiring (resolved)**:
+   - `<kid-game difficulty="easy|medium|hard">` is parsed and passed in `context.difficulty`. All 6 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(ageGroup, difficulty)` and reload on `updateConfig`.
+9. ✅ **`src/index.ts` Preserves `author` and `thumbnail` & Thumbnails Present (resolved)**:
+   - `src/index.ts` registers `GameMetadata` with `raw.author` and `raw.thumbnail`, and all 6 games feature on-theme `assets/thumb.svg` vector badges.
 10. ✅ **`games/balance-scale` Lifecycle (resolved)**:
     - Fixed in PR #27: `AbortController` window-listener cleanup, tracked timeouts cleared in `destroy()`, `pause()`/`resume()`, no `audio.close()`, and a `README.md` was added.
 11. ⚠️ **Unused `matter-js` Dependency in `package.json`**:

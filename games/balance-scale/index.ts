@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import type { GameContext, KidGame } from '../../src/core/types.js';
+import type { Difficulty, GameContext, KidGame } from '../../src/core/types.js';
 import type { SoundEngine } from '../../src/core/audio.js';
 import { sound } from './audio.js';
 import { getTranslations, type Translations } from './i18n.js';
@@ -106,7 +106,7 @@ export function findDecompositions(
   return results;
 }
 
-export function generateLevelsForAge(age: string): Level[] {
+export function generateLevelsForAge(age: string, difficulty: Difficulty = 'medium'): Level[] {
   if (age === '3-5') {
     const pool = [50, 100, 150, 200, 250, 300, 400];
     const leftCandidates: number[][] = [
@@ -120,6 +120,7 @@ export function generateLevelsForAge(age: string): Level[] {
     ];
 
     const pickedLefts = shuffle(leftCandidates).slice(0, 3);
+    const distractorCount = difficulty === 'easy' ? 0 : difficulty === 'hard' ? 2 : 1;
     return pickedLefts.map((leftArr) => {
       const leftSum = leftArr.reduce((a, b) => a + b, 0);
       const forbidden = new Set<number>([...leftArr, leftSum]);
@@ -127,7 +128,7 @@ export function generateLevelsForAge(age: string): Level[] {
       const solution = decomps.length > 0 ? randomItem(decomps) : [100, 100];
 
       const distractorPool = pool.filter((g) => !forbidden.has(g));
-      const distractors = [randomItem(distractorPool)];
+      const distractors = shuffle(distractorPool).slice(0, distractorCount);
 
       return {
         targetLeft: leftArr.map((g) => createWeight(g)),
@@ -163,6 +164,7 @@ export function generateLevelsForAge(age: string): Level[] {
     ];
 
     const picked = shuffle(leverTemplates).slice(0, 3);
+    const distractorCount = difficulty === 'easy' ? 1 : difficulty === 'hard' ? 3 : 2;
     return picked.map((tpl) => {
       const leftSum = tpl.leftArr.reduce((a, b) => a + b, 0);
       const targetTorque = leftSum * tpl.leftNotch;
@@ -174,7 +176,7 @@ export function generateLevelsForAge(age: string): Level[] {
       const solution = decomps.length > 0 ? randomItem(decomps) : [200];
 
       const distractorPool = pool.filter((g) => !forbidden.has(g) && !solution.includes(g));
-      const distractors = shuffle(distractorPool).slice(0, 2);
+      const distractors = shuffle(distractorPool).slice(0, distractorCount);
 
       // Start on a NON-solving notch so the child must reason about torque (tau = m x d).
       const startNotch = randomItem(([1, 2, 3, 4] as const).filter((n) => n !== tpl.solNotch));
@@ -218,7 +220,8 @@ export function generateLevelsForAge(age: string): Level[] {
     const solution = decomps.length > 0 ? randomItem(decomps) : [250, 250];
 
     const distractorPool = pool.filter((g) => !forbidden.has(g));
-    const distractors = shuffle(distractorPool).slice(0, 2);
+    const distractorCount = difficulty === 'easy' ? 1 : difficulty === 'hard' ? 3 : 2;
+    const distractors = shuffle(distractorPool).slice(0, distractorCount);
 
     return {
       targetLeft: tpl.leftArr.map((g) => createWeight(g)),
@@ -349,7 +352,7 @@ export class BalanceScaleGame implements KidGame {
         return parsed;
       }
     }
-    return generateLevelsForAge(this.context.ageGroup);
+    return generateLevelsForAge(this.context.ageGroup, this.context.difficulty);
   }
 
   // Interaction
@@ -1293,11 +1296,16 @@ export class BalanceScaleGame implements KidGame {
       this.context.ageGroup = newContext.ageGroup;
       reloadLevels = true;
     }
+    if (newContext.difficulty !== undefined && newContext.difficulty !== this.context.difficulty) {
+      this.context.difficulty = newContext.difficulty;
+      reloadLevels = true;
+    }
     if ('customLevels' in newContext && newContext.customLevels !== this.context.customLevels) {
       this.context.customLevels = newContext.customLevels;
       reloadLevels = true;
     }
     if (reloadLevels) {
+      this.score = 0;
       this.levels = this.initLevels();
       this.loadLevel(0);
     }

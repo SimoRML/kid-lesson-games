@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import type { GameContext, KidGame, AgeGroup } from '../../src/core/types.js';
+import type { GameContext, KidGame, AgeGroup, Difficulty } from '../../src/core/types.js';
 import type { SoundEngine } from '../../src/core/audio.js';
 import { getTranslations, type PendulumTranslations, type SyncHint } from './i18n.js';
 
@@ -521,9 +521,9 @@ export function verifyAntiMirroring(level: PendulumLevel): boolean {
 // 3. PROCEDURAL LEVEL GENERATOR & DEFENSIVE CUSTOM LEVEL PARSER
 // ============================================================================
 
-export function generateLevelsForAge(ageGroup: AgeGroup): PendulumLevel[] {
+export function generateLevelsForAge(ageGroup: AgeGroup, difficulty: Difficulty = 'medium'): PendulumLevel[] {
   if (ageGroup === '3-5') {
-    return [
+    const levels: PendulumLevel[] = [
       {
         id: 'knockdown-1',
         levelNumber: 1,
@@ -657,10 +657,27 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PendulumLevel[] {
         ]
       }
     ];
+
+    if (difficulty === 'easy') {
+      levels.forEach((lvl) => {
+        lvl.pendulums[0].bobRadius = 26;
+        if (lvl.blocks) {
+          lvl.blocks.forEach((b) => { b.mass = Math.round(b.mass * 0.8); });
+        }
+      });
+    } else if (difficulty === 'hard') {
+      levels.forEach((lvl) => {
+        lvl.pendulums[0].bobRadius = 22;
+        if (lvl.blocks) {
+          lvl.blocks.forEach((b) => { b.mass = Math.round(b.mass * 1.25); });
+        }
+      });
+    }
+    return levels;
   }
 
   if (ageGroup === '6-8') {
-    return [
+    const levels: PendulumLevel[] = [
       {
         id: 'beat-60',
         levelNumber: 1,
@@ -755,10 +772,27 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PendulumLevel[] {
         availableMasses: [50, 100, 200]
       }
     ];
+
+    if (difficulty === 'easy') {
+      levels.forEach((lvl) => {
+        if (lvl.metronome && lvl.metronome.toleranceMs !== undefined) {
+          lvl.metronome.toleranceMs = Math.round(lvl.metronome.toleranceMs * 1.3);
+          lvl.metronome.targetStreak = 2;
+        }
+      });
+    } else if (difficulty === 'hard') {
+      levels.forEach((lvl) => {
+        if (lvl.metronome && lvl.metronome.toleranceMs !== undefined) {
+          lvl.metronome.toleranceMs = Math.round(lvl.metronome.toleranceMs * 0.8);
+          lvl.metronome.targetStreak = 4;
+        }
+      });
+    }
+    return levels;
   }
 
   // Ages 9-11: Harmonic Polyrhythms (Square-root law T ∝ √L)
-  return [
+  const levels: PendulumLevel[] = [
     {
       id: 'poly-2-1',
       levelNumber: 1,
@@ -880,6 +914,18 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PendulumLevel[] {
       availableLengths: [20, 40, 60, 80, 90, 120]
     }
   ];
+
+  if (difficulty === 'easy') {
+    levels.forEach((lvl) => {
+      if (lvl.polyrhythm) lvl.polyrhythm.targetCoincidences = 2;
+    });
+  } else if (difficulty === 'hard') {
+    levels.forEach((lvl) => {
+      if (lvl.polyrhythm) lvl.polyrhythm.targetCoincidences = 3;
+    });
+  }
+
+  return levels;
 }
 
 /**
@@ -1171,8 +1217,16 @@ export class PendulumRhythmGame implements KidGame {
       this.setupLevel(0);
     }
 
+    if (newContext.difficulty && newContext.difficulty !== this.context.difficulty) {
+      this.context.difficulty = newContext.difficulty;
+      this.resetRunProgress();
+      this.loadLevels();
+      this.setupLevel(0);
+    }
+
     if (newContext.customLevels !== undefined) {
       this.context.customLevels = newContext.customLevels;
+      this.resetRunProgress();
       this.loadLevels();
       this.setupLevel(0);
     }
@@ -1220,7 +1274,7 @@ export class PendulumRhythmGame implements KidGame {
       loaded = parseCustomLevels(this.context.customLevels);
     }
     if (!loaded || loaded.length === 0) {
-      loaded = generateLevelsForAge(this.context.ageGroup);
+      loaded = generateLevelsForAge(this.context.ageGroup, this.context.difficulty);
     }
     this.levels = loaded;
     this.currentLevelIndex = 0;

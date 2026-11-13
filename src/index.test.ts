@@ -9,6 +9,8 @@ describe('Root Package Entry Point (src/index.ts)', () => {
     const balanceScale = registry.get('balance-scale');
     expect(balanceScale).toBeDefined();
     expect(balanceScale?.metadata.id).toBe('balance-scale');
+    expect(balanceScale?.metadata.author).toBe('simorml');
+    expect(balanceScale?.metadata.thumbnail).toBe('assets/thumb.svg');
   });
 
   it('defines the <kid-game> custom element in the DOM registry', () => {

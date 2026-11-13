@@ -191,6 +191,16 @@ describe('Pulley Lift Game & Mechanical Advantage Engine', () => {
         expect(verifyAntiMirroring(lvl)).toBe(true);
       }
     });
+
+    it('modulates distractors based on difficulty parameter', () => {
+      const easyPreschool = generateLevelsForAge('3-5', 'easy');
+      const hardPreschool = generateLevelsForAge('3-5', 'hard');
+      expect(easyPreschool[0].availableWeights.length).toBeLessThan(hardPreschool[0].availableWeights.length);
+
+      const easyElem = generateLevelsForAge('6-8', 'easy');
+      const hardElem = generateLevelsForAge('6-8', 'hard');
+      expect(easyElem[0].availableWeights.length).toBeLessThan(hardElem[0].availableWeights.length);
+    });
   });
 
   // =========================================================================

@@ -20,8 +20,8 @@
 - [x] ✅ Implement shared procedural Web Audio engine (`SoundEngine` in [src/core/audio.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/audio.ts)) with zero external audio assets.
 - [x] ✅ Implement shared bilingual (`en`/`fr`) localization manager (`I18nManager` & `createI18nResolver` in [src/core/i18n.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/i18n.ts)).
 - [x] ✅ Build interactive browser testbed & event inspector ([index.html](file:///home/simo/Documents/www/kid-lesson-games/index.html)) with live cartridge selector, custom level presets, and telemetry log.
-- [ ] 🚧 Wire `context.difficulty` (`easy` | `medium` | `hard`) into cartridge puzzle generators (currently parsed on `<kid-game>` and passed in `GameContext`, but ignored by cartridges).
-- [ ] 🚧 Preserve `author` and `thumbnail` fields when registering `GameMetadata` in [src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.ts).
+- [x] ✅ Wire `context.difficulty` (`easy` | `medium` | `hard`) into cartridge puzzle generators and `updateConfig` across all 6 cartridges.
+- [x] ✅ Preserve `author` and `thumbnail` fields when registering `GameMetadata` in [src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.ts).
 - [ ] 🗺️ Add named Shadow DOM customization slots (`<slot name="loading">` and `<slot name="error">`) to `KidGameElement`.
 - [ ] 🗺️ Add optional programmatic `mountGame(gameId, container, options)` convenience helper alongside `<kid-game>`.
 - [ ] 🗺️ Guard `class KidGameElement extends HTMLElement` in [src/core/KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts) so server-side imports in Node.js (Next.js / Nuxt SSR) do not throw `ReferenceError: HTMLElement is not defined`.
@@ -33,10 +33,10 @@
 - [x] ✅ Establish Git repository structure with `.brainstorm/` ignored for private ideation.
 - [x] ✅ Automatic cartridge discovery via Vite `import.meta.glob` (`games/*/{game,meta}.json` eagerly + `games/*/index.ts` lazily) with zero edits to `src/`.
 - [x] ✅ Contributor CLI scaffolding tool (`npm run create-game <game-id>` in [scripts/create-game.js](file:///home/simo/Documents/www/kid-lesson-games/scripts/create-game.js)).
-- [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, 13 test files / 271 tests passing).
-- [ ] 🚧 Upgrade `scripts/create-game.js` to also scaffold `i18n.ts`, `index.test.ts`, `pause()`/`resume()`, and `AbortController` zero-leak teardown boilerplate.
+- [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, 13 test files / 277 tests passing).
+- [x] ✅ Upgrade `scripts/create-game.js` to scaffold `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, `pause()`/`resume()`, and `AbortController` zero-leak teardown boilerplate.
 - [x] ✅ Bring `games/balance-scale` lifecycle teardown up to the strict zero-leak standard of the newer 5 cartridges (remove `window` mouse/touch listeners via `AbortController`, clear win `setTimeout`s in `destroy()`, implement `pause()`/`resume()`, and add `games/balance-scale/README.md`).
-- [ ] 🚧 Add missing `assets/thumb.svg` thumbnails for `balance-scale`, `buoyancy-tank`, `marble-run-angles`, and `pulley-lift` (already present for `gear-trains` and `pendulum-rhythm`).
+- [x] ✅ Add missing `assets/thumb.svg` thumbnails for `balance-scale`, `buoyancy-tank`, `marble-run-angles`, and `pulley-lift` (all 6 games now have vector SVG thumbnails).
 
 ---
 

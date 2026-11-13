@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="btBgGlow" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </radialGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0369a1" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="20" fill="url(#btBgGlow)"/>
+  <!-- Tank Glass Outline -->
+  <rect x="24" y="24" width="72" height="76" rx="6" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <!-- Water body -->
+  <rect x="26" y="44" width="68" height="54" rx="4" fill="url(#waterGrad)"/>
+  <!-- Water surface wave -->
+  <path d="M 26 44 Q 43 41 60 44 T 94 44" fill="none" stroke="#bae6fd" stroke-width="2"/>
+  <!-- Graduation ticks on left glass -->
+  <line x1="26" y1="52" x2="32" y2="52" stroke="#bae6fd" stroke-width="1.5" opacity="0.7"/>
+  <line x1="26" y1="62" x2="35" y2="62" stroke="#bae6fd" stroke-width="2" opacity="0.9"/>
+  <line x1="26" y1="72" x2="32" y2="72" stroke="#bae6fd" stroke-width="1.5" opacity="0.7"/>
+  <line x1="26" y1="82" x2="35" y2="82" stroke="#bae6fd" stroke-width="2" opacity="0.9"/>
+  <!-- Floating wood block at surface -->
+  <rect x="36" y="38" width="14" height="12" rx="2" fill="#f59e0b" stroke="#d97706" stroke-width="1"/>
+  <!-- Floating bubbles -->
+  <circle cx="56" cy="68" r="2.5" fill="#e0f2fe" opacity="0.6"/>
+  <circle cx="59" cy="58" r="1.5" fill="#e0f2fe" opacity="0.8"/>
+  <circle cx="68" cy="74" r="2" fill="#e0f2fe" opacity="0.5"/>
+  <!-- Submarine / neutral buoyancy capsule in mid water -->
+  <rect x="52" y="60" width="22" height="12" rx="6" fill="#10b981" stroke="#059669" stroke-width="1.2"/>
+  <circle cx="58" cy="66" r="2" fill="#a7f3d0"/>
+  <circle cx="66" cy="66" r="2" fill="#a7f3d0"/>
+  <!-- Sunk lead/iron weight at bottom -->
+  <polygon points="76,94 88,94 84,84 80,84" fill="#94a3b8" stroke="#64748b" stroke-width="1"/>
+</svg>

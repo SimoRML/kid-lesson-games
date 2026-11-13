@@ -102,11 +102,11 @@ The project targets four core educational taxonomy categories across three age b
 | Lazy Per-Game Code Splitting | ES build (`dist/kid-games.es.js`) splits all 6 games into separate chunks | ✅ | UMD build (`dist/kid-games.umd.js`) bundles all games together due to UMD format constraints (⚠️) |
 | Bilingual Localization (`en` / `fr`) | Core `I18nManager` + all 6 cartridges support `en` and `fr` | ✅ | Additional EU locales (`es`, `de`, `it`, `nl`) are 🗺️ Planned |
 | Procedural Web Audio (`SoundEngine`) | Shared `SoundEngine` injected via `context.audio` across all games | ✅ | Complete |
-| `numbers`, `logic`, `spatial` Categories | 6 full physics/math games implemented and tested (271 Vitest tests) | ✅ | Expand with `number-line` (🗺️) |
+| `numbers`, `logic`, `spatial` Categories | 6 full physics/math games implemented and tested (277 Vitest tests) | ✅ | Expand with Moroccan curriculum games: `money-market`, `number-line`, `fraction-feast` (🗺️) |
 | `letters` Curriculum Category | Taxonomy type `'letters'` exists in `GameCategory`, 0 games built | 🗺️ | Scaffold and implement `letter-sound-safari`, `letter-trace`, or `word-builder` |
-| `difficulty` Attribute (`easy`/`medium`/`hard`) | Parsed on `<kid-game>` and passed in `context.difficulty` | 🚧 | Cartridges currently only branch on `context.ageGroup`; wire `context.difficulty` into puzzle generators (e.g., distractor count or tolerance) |
-| Cartridge Metadata (`author`, `thumbnail`) | Defined in `game.json` and `GameMetadata` interface | 🚧 | `src/index.ts` currently drops `author` and `thumbnail` when registering metadata; only 2 of 6 games (`gear-trains`, `pendulum-rhythm`) have `assets/thumb.svg` on disk |
+| `difficulty` Attribute (`easy`/`medium`/`hard`) | Parsed on `<kid-game>` and passed in `context.difficulty`; all 6 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)` | ✅ | Complete across all cartridges |
+| Cartridge Metadata (`author`, `thumbnail`) | Preserved during registration in `src/index.ts`; all 6 games feature `assets/thumb.svg` vector badges on disk | ✅ | Complete |
 | `balance-scale` Lifecycle Teardown | Zero-leak teardown, pause/resume, README | ✅ | Fixed in PR #27 (AbortController teardown, tracked timeouts, `pause()`/`resume()`, README) |
-| Scaffolding CLI (`npm run create-game`) | Generates `game.json`, `index.ts`, and `README.md` | 🚧 | Does not yet scaffold `i18n.ts`, `index.test.ts`, or `AbortController` teardown boilerplate |
+| Scaffolding CLI (`npm run create-game`) | Scaffolds `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md` with complete zero-leak lifecycle contracts | ✅ | Complete |
 | npm Registry Package (`kid-lesson-games`) | Not published to npm (`"private": true`); installable via git or local bundle | 🗺️ | Emit `.d.ts` declarations, guard `HTMLElement` for Node SSR, and publish to npm |
 | Programmatic `mountGame()` Helper & Named Slots | Documented in early design specs (`docs/design/`) | 🗺️ | Optional convenience wrapper around `registry.create(id)` and `<slot name="loading\|error">` in `KidGameElement` |

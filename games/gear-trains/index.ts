@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import type { GameContext, KidGame, AgeGroup } from '../../src/core/types.js';
+import type { GameContext, KidGame, AgeGroup, Difficulty } from '../../src/core/types.js';
 import { getTranslations, type RotationDirection } from './i18n.js';
 
 // ============================================================================
@@ -548,9 +548,9 @@ export function verifyAntiMirroring(level: GearLevel): boolean {
 // 4. CURRICULUM GENERATOR & CUSTOM LEVEL PARSER
 // ============================================================================
 
-export function generateLevelsForAge(ageGroup: AgeGroup): GearLevel[] {
+export function generateLevelsForAge(ageGroup: AgeGroup, difficulty: Difficulty = 'medium'): GearLevel[] {
   if (ageGroup === '3-5') {
-    return [
+    const levels: GearLevel[] = [
       {
         id: 'preschool-1',
         levelNumber: 1,
@@ -600,10 +600,22 @@ export function generateLevelsForAge(ageGroup: AgeGroup): GearLevel[] {
         solutionPath: ['p1', 'p2', 'p3']
       }
     ];
+
+    if (difficulty === 'easy') {
+      const distractors = levels[0].distractors || [];
+      levels[0].inventory = levels[0].inventory.filter((g) => !distractors.some((d) => d.id === g.id));
+      levels[0].distractors = [];
+    } else if (difficulty === 'hard') {
+      const extra = createGearItem(16, 'dist-extra-16');
+      levels[0].inventory.push(extra);
+      if (!levels[0].distractors) levels[0].distractors = [];
+      levels[0].distractors.push(extra);
+    }
+    return levels;
   }
 
   if (ageGroup === '6-8') {
-    return [
+    const levels: GearLevel[] = [
       {
         id: 'elementary-1',
         levelNumber: 1,
@@ -660,10 +672,23 @@ export function generateLevelsForAge(ageGroup: AgeGroup): GearLevel[] {
         solutionPath: ['p1', 'p2']
       }
     ];
+
+    if (difficulty === 'easy') {
+      const removed = levels[0].distractors ? levels[0].distractors.pop() : undefined;
+      if (removed) {
+        levels[0].inventory = levels[0].inventory.filter((g) => g.id !== removed.id);
+      }
+    } else if (difficulty === 'hard') {
+      const extra = createGearItem(24, 'dist-extra-24');
+      levels[0].inventory.push(extra);
+      if (!levels[0].distractors) levels[0].distractors = [];
+      levels[0].distractors.push(extra);
+    }
+    return levels;
   }
 
   // Upper Elementary (9-11)
-  return [
+  const levels: GearLevel[] = [
     {
       id: 'upper-1',
       levelNumber: 1,
@@ -721,6 +746,20 @@ export function generateLevelsForAge(ageGroup: AgeGroup): GearLevel[] {
       solutionPath: ['p1', 'p2']
     }
   ];
+
+  if (difficulty === 'easy') {
+    const removed = levels[0].distractors ? levels[0].distractors.pop() : undefined;
+    if (removed) {
+      levels[0].inventory = levels[0].inventory.filter((g) => g.id !== removed.id);
+    }
+  } else if (difficulty === 'hard') {
+    const extra = createGearItem(12, 'dist-extra-12');
+    levels[0].inventory.push(extra);
+    if (!levels[0].distractors) levels[0].distractors = [];
+    levels[0].distractors.push(extra);
+  }
+
+  return levels;
 }
 
 /**
@@ -1037,7 +1076,7 @@ export class GearTrainsGame implements KidGame {
 
     // Load curriculum levels
     const custom = parseCustomLevels(this.context.customLevels);
-    this.levels = custom || generateLevelsForAge(this.context.ageGroup);
+    this.levels = custom || generateLevelsForAge(this.context.ageGroup, this.context.difficulty);
     this.currentLevelIndex = 0;
     this.placedGears.clear();
     this.gearRotations.clear();
@@ -1141,7 +1180,7 @@ export class GearTrainsGame implements KidGame {
     }
     if (newContext.ageGroup && newContext.ageGroup !== this.context.ageGroup) {
       this.context.ageGroup = newContext.ageGroup;
-      this.levels = generateLevelsForAge(this.context.ageGroup);
+      this.levels = parseCustomLevels(this.context.customLevels) || generateLevelsForAge(this.context.ageGroup, this.context.difficulty);
       this.currentLevelIndex = 0;
       this.placedGears.clear();
       this.gearRotations.clear();
@@ -1155,15 +1194,34 @@ export class GearTrainsGame implements KidGame {
       this.updateHUD();
       this.renderTray();
     }
-    if (newContext.customLevels !== undefined) {
-      this.context.customLevels = newContext.customLevels;
-      const parsed = parseCustomLevels(this.context.customLevels);
-      this.levels = parsed || generateLevelsForAge(this.context.ageGroup);
+    if (newContext.difficulty && newContext.difficulty !== this.context.difficulty) {
+      this.context.difficulty = newContext.difficulty;
+      this.levels = parseCustomLevels(this.context.customLevels) || generateLevelsForAge(this.context.ageGroup, this.context.difficulty);
       this.currentLevelIndex = 0;
       this.placedGears.clear();
       this.gearRotations.clear();
       this.hasWonLevel = false;
       this.settlingStartTime = null;
+      this.score = 0;
+      this.streak = 0;
+      this.startTimeMs = Date.now();
+      this.clearPendingTimeouts();
+      this.updateHUD();
+      this.renderTray();
+    }
+    if (newContext.customLevels !== undefined) {
+      this.context.customLevels = newContext.customLevels;
+      const parsed = parseCustomLevels(this.context.customLevels);
+      this.levels = parsed || generateLevelsForAge(this.context.ageGroup, this.context.difficulty);
+      this.currentLevelIndex = 0;
+      this.placedGears.clear();
+      this.gearRotations.clear();
+      this.hasWonLevel = false;
+      this.settlingStartTime = null;
+      this.score = 0;
+      this.streak = 0;
+      this.startTimeMs = Date.now();
+      this.clearPendingTimeouts();
       this.updateHUD();
       this.renderTray();
     }

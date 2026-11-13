@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="plBgGlow" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </radialGradient>
+  </defs>
+  <rect width="120" height="120" rx="20" fill="url(#plBgGlow)"/>
+  <!-- Top Support Beam -->
+  <rect x="20" y="16" width="80" height="6" rx="2" fill="#475569" stroke="#64748b" stroke-width="1"/>
+  <!-- Top Fixed Pulley Mount & Wheel -->
+  <rect x="52" y="22" width="4" height="10" fill="#64748b"/>
+  <circle cx="54" cy="36" r="12" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+  <circle cx="54" cy="36" r="4" fill="#0f172a"/>
+  <!-- Movable Pulley Wheel below -->
+  <circle cx="70" cy="66" r="10" fill="#0284c7" stroke="#0369a1" stroke-width="1.5"/>
+  <circle cx="70" cy="66" r="3.5" fill="#0f172a"/>
+  <!-- Rope / Cable -->
+  <!-- Anchor to top beam -> under movable pulley -> over fixed pulley -> pull down -->
+  <path d="M 80 22 L 80 66 A 10 10 0 0 1 60 66 L 42 36 A 12 12 0 0 1 66 36 L 70 66" fill="none" stroke="#e2e8f0" stroke-width="2"/>
+  <line x1="42" y1="36" x2="30" y2="82" stroke="#e2e8f0" stroke-width="2"/>
+  <!-- Effort Pull Arrow / Handle -->
+  <circle cx="30" cy="84" r="3" fill="#38bdf8"/>
+  <path d="M 30 88 L 30 102 M 26 98 L 30 103 L 34 98" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <!-- Movable Pulley Hook & Load Block -->
+  <line x1="70" y1="76" x2="70" y2="82" stroke="#64748b" stroke-width="2"/>
+  <rect x="58" y="82" width="24" height="20" rx="3" fill="#64748b" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="70" y="96" fill="#f8fafc" font-size="9" font-weight="bold" font-family="sans-serif" text-anchor="middle">100N</text>
+</svg>

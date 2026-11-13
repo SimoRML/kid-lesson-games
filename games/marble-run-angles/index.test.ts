@@ -215,6 +215,16 @@ describe('Marble Run Angles Game & Physics Helpers', () => {
         expect(hasTrampoline).toBe(true);
       }
     });
+
+    it('modulates distractors and target tolerance based on difficulty parameter', () => {
+      const easy = generateLevelsForAge('3-5', 'easy');
+      const hard = generateLevelsForAge('3-5', 'hard');
+      expect(easy[0].inventory.length).toBeLessThan(hard[0].inventory.length);
+
+      const easyElem = generateLevelsForAge('6-8', 'easy');
+      const hardElem = generateLevelsForAge('6-8', 'hard');
+      expect(easyElem[0].cup.width).toBeGreaterThan(hardElem[0].cup.width);
+    });
   });
 
 /**

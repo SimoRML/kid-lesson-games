@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import type { GameContext, KidGame, AgeGroup } from '../../src/core/types.js';
+import type { GameContext, KidGame, AgeGroup, Difficulty } from '../../src/core/types.js';
 import { getTranslations, type SupportedLocale } from './i18n.js';
 
 // ============================================================================
@@ -346,9 +346,9 @@ export function createSubmarineModule(
 // 3. CURRICULUM GENERATOR & ANTI-MIRRORING VERIFIER
 // ============================================================================
 
-export function generateLevelsForAge(ageGroup: AgeGroup): BuoyancyLevel[] {
+export function generateLevelsForAge(ageGroup: AgeGroup, difficulty: Difficulty = 'medium'): BuoyancyLevel[] {
   if (ageGroup === '3-5') {
-    return [
+    const levels: BuoyancyLevel[] = [
       {
         id: 'preschool-1',
         levelNumber: 1,
@@ -465,10 +465,27 @@ export function generateLevelsForAge(ageGroup: AgeGroup): BuoyancyLevel[] {
         modules: []
       }
     ];
+
+    if (difficulty === 'easy') {
+      levels[0].inventory = levels[0].inventory.filter((i) => !i.isDistractor);
+      levels[1].inventory = levels[1].inventory.slice(0, 2);
+    } else if (difficulty === 'hard') {
+      levels[0].inventory.push(
+        createBuoyancyItem('metal-key', 'Key', 40, 5, {
+          material: 'metal',
+          shape: 'bolt',
+          label: 'Key 🔑',
+          color: '#64748b',
+          behavior: 'sink',
+          isDistractor: true
+        })
+      );
+    }
+    return levels;
   }
 
   if (ageGroup === '6-8') {
-    return [
+    const levels: BuoyancyLevel[] = [
       {
         id: 'elem-1',
         levelNumber: 1,
@@ -567,10 +584,23 @@ export function generateLevelsForAge(ageGroup: AgeGroup): BuoyancyLevel[] {
         modules: []
       }
     ];
+
+    if (difficulty === 'easy') {
+      levels[0].inventory = levels[0].inventory.filter((i) => !i.isDistractor);
+    } else if (difficulty === 'hard') {
+      levels[0].inventory.push(
+        createBuoyancyItem('block-50-d', '50 cm³ Block', 125, 50, {
+          label: '50 cm³',
+          color: '#a855f7',
+          isDistractor: true
+        })
+      );
+    }
+    return levels;
   }
 
   // 9-11 Upper Elementary
-  return [
+  const levels: BuoyancyLevel[] = [
     {
       id: 'upper-1',
       levelNumber: 1,
@@ -647,6 +677,22 @@ export function generateLevelsForAge(ageGroup: AgeGroup): BuoyancyLevel[] {
       ]
     }
   ];
+
+  if (difficulty === 'easy') {
+    levels.forEach((lvl) => {
+      const distractors = lvl.modules.filter((m) => m.isDistractor);
+      if (distractors.length > 1) {
+        const keep = distractors[0];
+        lvl.modules = lvl.modules.filter((m) => !m.isDistractor || m.id === keep.id);
+      }
+    });
+  } else if (difficulty === 'hard') {
+    levels[0].modules.push(
+      createSubmarineModule('ballast-d3', 'Ballast 10g', 10, 0, { label: '+10 g', color: '#1e293b', isDistractor: true })
+    );
+  }
+
+  return levels;
 }
 
 export function verifyAntiMirroring(level: BuoyancyLevel): boolean {
@@ -1009,6 +1055,8 @@ export class BuoyancyTankGame implements KidGame {
     const prevLocale = this.context.locale;
     const prevSound = this.context.sound;
     const prevAge = this.context.ageGroup;
+    const prevDiff = this.context.difficulty;
+    const prevLevels = this.context.customLevels;
 
     Object.assign(this.context, newContext);
 
@@ -1021,8 +1069,12 @@ export class BuoyancyTankGame implements KidGame {
       this.updateSoundButton();
     }
 
-    if (newContext.ageGroup && newContext.ageGroup !== prevAge) {
-      // Score convention: each age bracket is a fresh run.
+    const ageChanged = newContext.ageGroup !== undefined && newContext.ageGroup !== prevAge;
+    const diffChanged = newContext.difficulty !== undefined && newContext.difficulty !== prevDiff;
+    const levelsChanged = newContext.customLevels !== undefined && newContext.customLevels !== prevLevels;
+
+    if (ageChanged || diffChanged || levelsChanged) {
+      // Score convention: each age bracket / difficulty is a fresh run.
       this.score = 0;
       this.streak = 0;
       this.startTimeMs = Date.now();
@@ -1068,7 +1120,7 @@ export class BuoyancyTankGame implements KidGame {
         return;
       }
     }
-    this.levels = generateLevelsForAge(this.context.ageGroup || '6-8');
+    this.levels = generateLevelsForAge(this.context.ageGroup || '6-8', this.context.difficulty);
   }
 
   private loadLevel(index: number): void {

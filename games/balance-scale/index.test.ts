@@ -104,6 +104,13 @@ describe('Balance Scale Game & Helpers', () => {
         expect(lvl.inventory.length).toBeGreaterThanOrEqual(2);
       }
     });
+
+    it('modulates distractors based on difficulty parameter', () => {
+      const easy = generateLevelsForAge('3-5', 'easy');
+      const hard = generateLevelsForAge('3-5', 'hard');
+      // Hard mode includes more distractor options in inventory
+      expect(easy[0].inventory.length).toBeLessThan(hard[0].inventory.length);
+    });
   });
 
   describe('9-11 lever generation (no answer giveaway)', () => {
@@ -271,7 +278,8 @@ describe('Balance Scale Game & Helpers', () => {
       game.updateConfig({
         locale: 'fr',
         sound: true,
-        ageGroup: '6-8'
+        ageGroup: '6-8',
+        difficulty: 'hard'
       });
 
       expect(container.querySelector('#hud-title')?.textContent).toBe('⚖️ Labo d’Équilibre');

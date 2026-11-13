@@ -169,6 +169,16 @@ describe('Buoyancy Tank Game & Archimedes Hydrostatic Engine', () => {
         expect(verifyAntiMirroring(lvl)).toBe(true);
       }
     });
+
+    it('modulates distractors based on difficulty parameter', () => {
+      const easy = generateLevelsForAge('3-5', 'easy');
+      const hard = generateLevelsForAge('3-5', 'hard');
+      expect(easy[0].inventory.length).toBeLessThan(hard[0].inventory.length);
+
+      const easyUpper = generateLevelsForAge('9-11', 'easy');
+      const hardUpper = generateLevelsForAge('9-11', 'hard');
+      expect(easyUpper[0].modules.length).toBeLessThan(hardUpper[0].modules.length);
+    });
   });
 
   // =========================================================================

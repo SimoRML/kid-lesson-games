@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import type { GameContext, KidGame, AgeGroup } from '../../src/core/types.js';
+import type { GameContext, KidGame, AgeGroup, Difficulty } from '../../src/core/types.js';
 import type { SoundEngine } from '../../src/core/audio.js';
 import { getTranslations, type Translations, type SupportedLocale } from './i18n.js';
 
@@ -571,9 +571,9 @@ export function createManipulative(
 
 // --- Procedural Level Generation ---
 
-export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
+export function generateLevelsForAge(ageGroup: AgeGroup, difficulty: Difficulty = 'medium'): MarbleLevel[] {
   if (ageGroup === '3-5') {
-    return [
+    const levels: MarbleLevel[] = [
       {
         id: 'preschool-1',
         title: 'Downhill Slide',
@@ -676,10 +676,17 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
         ]
       }
     ];
+
+    if (difficulty === 'easy') {
+      levels[0].inventory = levels[0].inventory.filter((p) => p.angleDeg === 23);
+    } else if (difficulty === 'hard') {
+      levels[0].inventory.push(createManipulative('wood', { angleDeg: 120, length: 180 }));
+    }
+    return levels;
   }
 
   if (ageGroup === '6-8') {
-    return [
+    const levels: MarbleLevel[] = [
       {
         id: 'elementary-1',
         title: 'Around the Pegs',
@@ -821,10 +828,18 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
         ]
       }
     ];
+
+    if (difficulty === 'easy') {
+      levels.forEach((lvl) => { lvl.cup.width = 90; });
+    } else if (difficulty === 'hard') {
+      levels.forEach((lvl) => { lvl.cup.width = 70; });
+      levels[0].inventory.push(createManipulative('wood', { angleDeg: 90, length: 120 }));
+    }
+    return levels;
   }
 
   // Upper Elementary (9-11): Law of Reflection & Trampoline physics
-  return [
+  const levels: MarbleLevel[] = [
     {
       id: 'upper-1',
       title: 'The Great Chasm',
@@ -928,6 +943,15 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
       ]
     }
   ];
+
+  if (difficulty === 'easy') {
+    levels.forEach((lvl) => { lvl.cup.width = 90; });
+  } else if (difficulty === 'hard') {
+    levels.forEach((lvl) => { lvl.cup.width = 70; });
+    levels[0].inventory.push(createManipulative('wood', { angleDeg: 120, length: 120 }));
+  }
+
+  return levels;
 }
 
 // --- Custom Levels Validator ---
@@ -1341,8 +1365,18 @@ export class MarbleRunAnglesGame implements KidGame {
       this.startTime = Date.now();
       reload = true;
     }
+    if (newContext.difficulty && newContext.difficulty !== this.context.difficulty) {
+      this.context.difficulty = newContext.difficulty;
+      this.score = 0;
+      this.streak = 0;
+      this.startTime = Date.now();
+      reload = true;
+    }
     if ('customLevels' in newContext && newContext.customLevels !== this.context.customLevels) {
       this.context.customLevels = newContext.customLevels;
+      this.score = 0;
+      this.streak = 0;
+      this.startTime = Date.now();
       reload = true;
     }
     if (reload) {
@@ -1373,7 +1407,7 @@ export class MarbleRunAnglesGame implements KidGame {
     if (custom && custom.length > 0) {
       this.levels = custom;
     } else {
-      this.levels = generateLevelsForAge(this.context.ageGroup);
+      this.levels = generateLevelsForAge(this.context.ageGroup, this.context.difficulty);
     }
   }
 

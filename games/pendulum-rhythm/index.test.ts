@@ -283,6 +283,17 @@ describe('Pendulum Rhythm Game & Harmonic Oscillator Engine', () => {
         expect(lvl.availableLengths?.length).toBeGreaterThanOrEqual(4);
       });
     });
+
+    it('modulates tolerances and physical parameters based on difficulty parameter', () => {
+      const easyPreschool = generateLevelsForAge('3-5', 'easy');
+      const hardPreschool = generateLevelsForAge('3-5', 'hard');
+      expect(easyPreschool[0].pendulums[0].bobRadius!).toBeGreaterThan(hardPreschool[0].pendulums[0].bobRadius!);
+
+      const easyElem = generateLevelsForAge('6-8', 'easy');
+      const hardElem = generateLevelsForAge('6-8', 'hard');
+      expect(easyElem[0].metronome!.toleranceMs!).toBeGreaterThan(hardElem[0].metronome!.toleranceMs!);
+      expect(easyElem[0].metronome!.targetStreak!).toBeLessThan(hardElem[0].metronome!.targetStreak!);
+    });
   });
 
   // =========================================================================

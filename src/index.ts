@@ -23,7 +23,9 @@ for (const [path, metaMod] of Object.entries(metaModules)) {
     description: (raw.description as string) || '',
     category: (raw.category as GameMetadata['category']) || 'numbers',
     ageGroups: (raw.ageGroups as GameMetadata['ageGroups']) || ['6-8'],
-    skills: (raw.skills as string[]) || []
+    skills: (raw.skills as string[]) || [],
+    ...(raw.thumbnail ? { thumbnail: raw.thumbnail as string } : {}),
+    ...(raw.author ? { author: raw.author as string } : {})
   };
 
   const gameDir = path.replace(/\/(game|meta)\.json$/, '');

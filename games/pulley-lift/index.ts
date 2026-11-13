@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import type { GameContext, KidGame, AgeGroup } from '../../src/core/types.js';
+import type { GameContext, KidGame, AgeGroup, Difficulty } from '../../src/core/types.js';
 import type { SoundEngine } from '../../src/core/audio.js';
 import { getTranslations, type HintState, type PulleyTranslations } from './i18n.js';
 
@@ -708,9 +708,9 @@ export function isLevelSolved(
 // 4. CURRICULUM LEVEL GENERATOR & CUSTOM PARSER
 // ============================================================================
 
-export function generateLevelsForAge(ageGroup: AgeGroup): PulleyLevel[] {
+export function generateLevelsForAge(ageGroup: AgeGroup, difficulty: Difficulty = 'medium'): PulleyLevel[] {
   if (ageGroup === '3-5') {
-    return [
+    const levels: PulleyLevel[] = [
       {
         id: 'pulley-3-5-1',
         levelNumber: 1,
@@ -779,10 +779,20 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PulleyLevel[] {
         antiMirroring: false
       }
     ];
+
+    if (difficulty === 'easy') {
+      levels[0].availableWeights = levels[0].availableWeights.filter((w) => w.kg === 20 || w.kg === 10);
+      levels[0].distractorWeights = [10];
+    } else if (difficulty === 'hard') {
+      levels[0].availableWeights.push(createWeightItem(30, 'dist'));
+      if (!levels[0].distractorWeights) levels[0].distractorWeights = [];
+      levels[0].distractorWeights.push(30);
+    }
+    return levels;
   }
 
   if (ageGroup === '6-8') {
-    return [
+    const levels: PulleyLevel[] = [
       {
         id: 'pulley-6-8-1',
         levelNumber: 1,
@@ -857,10 +867,20 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PulleyLevel[] {
         antiMirroring: true
       }
     ];
+
+    if (difficulty === 'easy') {
+      levels[0].availableWeights = levels[0].availableWeights.filter((w) => w.kg !== 40 && w.kg !== 25);
+      levels[0].distractorWeights = [70];
+    } else if (difficulty === 'hard') {
+      levels[0].availableWeights.push(createWeightItem(15, 'dist'));
+      if (!levels[0].distractorWeights) levels[0].distractorWeights = [];
+      levels[0].distractorWeights.push(15);
+    }
+    return levels;
   }
 
   // Age group '9-11'
-  return [
+  const levels: PulleyLevel[] = [
     {
       id: 'pulley-9-11-1',
       levelNumber: 1,
@@ -937,6 +957,17 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PulleyLevel[] {
       antiMirroring: true
     }
   ];
+
+  if (difficulty === 'easy') {
+    levels[0].availableWeights = levels[0].availableWeights.filter((w) => w.kg !== 40);
+    levels[0].distractorWeights = [70];
+  } else if (difficulty === 'hard') {
+    levels[0].availableWeights.push(createWeightItem(55, 'dist'));
+    if (!levels[0].distractorWeights) levels[0].distractorWeights = [];
+    levels[0].distractorWeights.push(55);
+  }
+
+  return levels;
 }
 
 export function parseCustomLevels(raw: unknown): PulleyLevel[] | null {
@@ -1446,8 +1477,16 @@ export class PulleyLiftGame implements KidGame {
       this.setupLevel(0);
     }
 
+    if (newContext.difficulty && newContext.difficulty !== this.context.difficulty) {
+      this.context.difficulty = newContext.difficulty;
+      this.resetProgress();
+      this.loadLevels();
+      this.setupLevel(0);
+    }
+
     if (newContext.customLevels !== undefined) {
       this.context.customLevels = newContext.customLevels;
+      this.resetProgress();
       this.loadLevels();
       this.setupLevel(0);
     }
@@ -1487,7 +1526,7 @@ export class PulleyLiftGame implements KidGame {
         return;
       }
     }
-    this.levels = generateLevelsForAge(this.context.ageGroup || '6-8');
+    this.levels = generateLevelsForAge(this.context.ageGroup || '6-8', this.context.difficulty);
   }
 
   /** Resets score, streak and the elapsed-time origin, and refreshes the score HUD. */
