@@ -37,7 +37,7 @@
 
 ## 0. Mandatory Agent Workflow 🔒
 
-Every change by an AI agent (and every human, ideally) follows these **10 gates, in order**. No skipping, no "I'll do it after". The only exemption is a trivial change (typo, comment, link fix) which may skip Gate 2's written plan but **never** Gates 3–9.
+Every change by an AI agent (and every human, ideally) follows these **10 gates, in order**. No skipping, no "I'll do it after". The only exemption is a trivial change (typo, comment, link fix) which may skip Gate 2's written plan but **never** Gates 3–9. Branch, PR and independent review still apply to trivial changes: this is deliberate, so `main` stays reviewed and always green.
 
 > Status of enforcement: the rules below are **instructions**, not technical controls. GitHub branch protection, required CI checks on PRs, and a PR template are 🗺️ **Planned** (see [TODO.md](TODO.md)); until they exist, agents enforce the rules on themselves. Today the only CI is [`deploy-pages.yml`](.github/workflows/deploy-pages.yml), which runs on pushes to `main` — **it does not test PRs**, so local verification (Gate 5) is the real safety net.
 
@@ -70,7 +70,7 @@ Large work is split into several small PRs (one concern per PR). Keep the plan i
 
 ### Multi-agent safety (read before Gate 4 if more than one agent may be active)
 Several AI sessions may work on this repo at once. To make conflicts and breakage impossible by construction:
-1. **Isolate**: each agent works in its **own git worktree** (`git worktree add ../kid-lesson-games-<slug> -b <branch> origin/main`) or its own clone. Never share a working directory between two writing agents. `.claude/worktrees` is git-ignored.
+1. **Isolate**: each agent works in its **own git worktree** (`git worktree add ../kid-lesson-games-<slug> -b <branch> origin/main`) or its own clone. Never share a working directory between two writing agents. Worktrees created outside the repo (as above) are unaffected by `.gitignore`; if you create them inside the repo, use `.claude/worktrees/`, which is git-ignored (all of `.claude/` is).
 2. **Claim your territory**: declare the files/directories you will edit in the plan/PR description. A game cartridge (`games/<id>/`) is a natural unit: **one writer per cartridge at a time**.
 3. **Serialized shared files** (high conflict risk): `package.json`, `package-lock.json`, `index.html`, `README.md`, `TODO.md`, `docs/VISION.md` (Gap Analysis), `CHANGELOG.md`, `src/**`, `vite.config.ts`, `tsconfig.json`, `.github/**`. Touch them only when your plan lists them, keep edits minimal and localized, and rebase right before opening the PR. If another open PR already touches the same file (`gh pr list` + `gh pr diff`), **ask the user** which lands first.
 4. **Version numbers are never bumped in feature PRs** (guaranteed conflict magnet). Only the merger bumps them (Gate 9). Feature PRs add a line under `## [Unreleased]` in `CHANGELOG.md` only.
@@ -102,7 +102,7 @@ npx tsc --noEmit          # type check (also part of both builds)
 npm test                  # 100% green, zero unhandled errors
 npm run build             # library ES + UMD
 npm run build:pages       # playground
-git status --porcelain src/   # must be empty for cartridge-only work
+git diff --name-only origin/main -- src/   # must print nothing for cartridge-only work (git status is useless once committed)
 ```
 - UI/gameplay changes: also run `npm run dev` and exercise the feature in a browser (desktop + 375 px mobile width; mouse click, drag, and touch if possible), check the console for errors, and confirm `destroy()` leaves no listeners/timers. State clearly what you could **not** verify.
 - Coverage must not drop for touched files (`npm run test:coverage`).
@@ -115,7 +115,7 @@ git status --porcelain src/   # must be empty for cartridge-only work
 | Anything in `src/` or public API/attributes/events | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), the relevant [docs/design](docs/design) spec, §6–§8 of this file, root `README.md` |
 | Build, scripts, CI, tooling | cold-start list and §0/§8/§9 of this file, root `README.md` |
 | A roadmap item completed or discovered | [TODO.md](TODO.md) (tick/move/add) and status labels (✅/🚧/🗺️/⚠️) everywhere they appear |
-| Any user-visible change | `CHANGELOG.md` under `## [Unreleased]` |
+| Any change that is not purely a typo fix (code, docs, tooling) | `CHANGELOG.md` under `## [Unreleased]` |
 | A gotcha or rule you learned the hard way | §8 of this file |
 - Only claim ✅ for what you verified (status-label rule above). Docs must describe what exists on disk **now**, not intent. Keep counts and file names (e.g. "6 games") accurate.
 - If this file itself is wrong or outdated, fix it in the same PR (small, separate commit) or raise it with the user.
@@ -134,19 +134,19 @@ git status --porcelain src/   # must be empty for cartridge-only work
 - **Review checklist** (all must be answered, in writing, on the PR):
   1. **Plan fidelity**: diff matches the approved plan; no scope creep; no unrelated files.
   2. **Correctness & tests**: logic verified, edge cases, new/changed tests meaningful, none weakened.
-  3. **Contract**: §3 contribution contract, §4 pedagogy, §5 UX, §6 lifecycle/zero-leak, bilingual i18n.
+  3. **Contract**: §3 contribution contract, §4 pedagogy, §5 UX, §6 lifecycle/zero-leak, bilingual i18n (mark "N/A: docs-only" for PRs that touch no code).
   4. **Security**: secrets scan, unsafe DOM sinks, input validation, new deps/actions, remote assets.
   5. **Multi-agent safety**: rebased on current `main`, no collisions with other open PRs, no forbidden shared-file or version edits.
   6. **Docs**: Gate 6 table satisfied, labels truthful, `CHANGELOG.md` entry present.
   7. **Semver**: declared impact is correct (Gate 9).
 - Tooling hint: use the code-review and security-review skills where available (`/code-review`, `/security-review`).
-- Outcome: `gh pr review --approve` **or** `--request-changes` with specific, actionable items. The Reviewer does not silently edit the author's code; fixes go back to the author. Anything it cannot judge (product/pedagogy decisions, ambiguity) is **escalated to the user**, never guessed.
+- Outcome: `gh pr review --approve` **or** `--request-changes` with specific, actionable items. All agents usually share one GitHub account and GitHub rejects self-approval/self-request-changes: if that happens, post the verdict as `gh pr comment` starting with `VERDICT: APPROVE` or `VERDICT: REQUEST_CHANGES`. The Reviewer does not silently edit the author's code; fixes go back to the author. Anything it cannot judge (product/pedagogy decisions, ambiguity) is **escalated to the user**, never guessed.
 
 ### Gate 9 — Merge & release (Merger role; the Reviewer agent or the user)
 Merge only when **all** are true: approved by the Reviewer; Gate 5 re-verified on the up-to-date branch; no unresolved conversations; no merge conflicts; any required CI checks green (once PR CI exists, 🗺️); the user's plan approval covered this scope.
 1. Rebase/merge `origin/main` into the branch if behind, re-run the Gate 5 commands.
-2. **Squash-merge** (`gh pr merge --squash --delete-branch`) with a Conventional Commit title. Do not enable auto-merge unless the user asked.
-   **The source branch must be removed after merging**: remote (confirm `git ls-remote --heads origin <branch>` is empty), local (`git branch -D <branch>`; `-D` is expected after a squash-merge), and its worktree (`git worktree remove <path>`; `git worktree prune`). Then `git fetch --prune`. Delete only the branch of the PR you just merged, never anyone else's.
+2. **Squash-merge** from the **main checkout** with the branch not checked out (`git switch main` first; otherwise the local delete fails): `gh pr merge --squash --delete-branch`, with a Conventional Commit title. Do not enable auto-merge unless the user asked.
+   **The source branch must be removed after merging**: remote (confirm `git ls-remote --heads origin <branch>` is empty), local (`git branch -D <branch>`; `-D` is expected after a squash-merge), and its worktree (`git worktree remove <path>`; `git worktree prune`). `gh --delete-branch` has been seen to leave the remote branch behind, so after merging always check and, if needed, run `git push origin --delete <branch>`. Then `git fetch --prune`. Delete only the branch of the PR you just merged, never anyone else's.
 3. **Semver** ([semver.org](https://semver.org), currently `0.x`, package is `"private": true`):
    | Change | Bump |
    |---|---|
@@ -392,7 +392,7 @@ Before declaring any task or new cartridge complete, verify every item below (th
 - [ ] **Security**: no secrets, no unsafe DOM sinks on external data, `customLevels` validated, no new deps/remote assets without approval, `npm audit --omit=dev` reviewed.
 - [ ] **Live docs & changelog**: Gate 6 table satisfied, `CHANGELOG.md` `[Unreleased]` entry added.
 - [ ] **PR opened, not merged by the author**: Conventional Commit history, PR description complete, handed to the independent Reviewer agent (Gate 8).
-- [ ] **Zero Core Leaks**: `git status --porcelain src/` is clean (if building a cartridge), and `destroy()` cleans up all `requestAnimationFrame`, `setTimeout`, `ResizeObserver`, and `window` listeners (`AbortController`).
+- [ ] **Zero Core Leaks**: `git diff --name-only origin/main -- src/` prints nothing (if building a cartridge), and `destroy()` cleans up all `requestAnimationFrame`, `setTimeout`, `ResizeObserver`, and `window` listeners (`AbortController`).
 - [ ] **Tests Pass**: `npm test` passes 100% of Vitest suites with zero unhandled errors.
 - [ ] **Builds Pass**: Both `npm run build` (library ES + UMD) and `npm run build:pages` (playground app) succeed with zero TypeScript or Vite errors.
 - [ ] **Playground Updated**: Any new game is added to `<select id="select-game">` and `customPresetsByGame` in `index.html`, with its custom `levels` preset verified against `parseCustomLevels()`.
