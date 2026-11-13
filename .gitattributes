@@ -1,0 +1,4 @@
+# Exclude internal design docs, prompts, and local configs from release archives (git archive & GitHub Release ZIPs)
+.brainstorm/ export-ignore
+user.md export-ignore
+.gitattributes export-ignore

@@ -1,0 +1,27 @@
+{
+  "name": "kid-lesson-games",
+  "version": "0.1.0",
+  "description": "Pluggable mini web games collection for youngsters",
+  "type": "module",
+  "main": "./dist/kid-games.umd.cjs",
+  "module": "./dist/kid-games.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "education",
+    "games",
+    "web-component",
+    "kids",
+    "math",
+    "physics"
+  ],
+  "author": "simorml",
+  "license": "MIT"
+}
