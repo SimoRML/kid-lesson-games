@@ -25,6 +25,13 @@ export interface Translations {
   straight: string;
   woodInfo: string;
   trampolineInfo: string;
+  hintMissPreschool: string;
+  hintMissElementary: string;
+  hintMissUpperElementary: string;
+  hintStalled: string;
+  hintWrongType: string;
+  formatPlacedProgress: (placed: number, total: number) => string;
+  formatRotateHint: (angleInfo: string) => string;
   formatAngleInfo: (angleDeg: number, classification: string) => string;
   formatReflectionHUD: (incidenceDeg: number, reflectionDeg: number, restitution: number) => string;
 }
@@ -53,6 +60,13 @@ export const DICTIONARY: Record<SupportedLocale, Translations> = {
     straight: 'Straight',
     woodInfo: 'Wood (e = 0.5 absorbs impact)',
     trampolineInfo: 'Trampoline (e = 0.9 super bouncy)',
+    hintMissPreschool: 'Oh no, it fell! Try moving the ramps and launch again.',
+    hintMissElementary: 'It fell short: try turning a ramp to a different angle.',
+    hintMissUpperElementary: 'It fell short: try a bouncier material or a different angle.',
+    hintStalled: 'The marble stopped rolling: try a steeper angle or a bouncier material.',
+    hintWrongType: 'That piece does not fit in this slot: try the other kind.',
+    formatPlacedProgress: (placed, total) => `✨ ${placed}/${total} ramps placed. Tap Launch to roll!`,
+    formatRotateHint: (angleInfo) => `Angle: ${angleInfo}. Tap the handle or the ramp to rotate by 15°!`,
     formatAngleInfo: (angleDeg, classification) => `${angleDeg}° (${classification})`,
     formatReflectionHUD: (iDeg, rDeg, e) => `θ_in: ${iDeg.toFixed(0)}° → θ_ref: ${rDeg.toFixed(0)}° | e = ${e.toFixed(1)}`
   },
@@ -79,6 +93,13 @@ export const DICTIONARY: Record<SupportedLocale, Translations> = {
     straight: 'Plat',
     woodInfo: 'Bois (e = 0,5 absorbe le choc)',
     trampolineInfo: 'Trampoline (e = 0,9 très rebondissant)',
+    hintMissPreschool: 'Oh non, elle est tombée ! Déplace les rampes et relance.',
+    hintMissElementary: 'Elle est tombée trop tôt : essaie de tourner une rampe vers un autre angle.',
+    hintMissUpperElementary: 'Elle est tombée trop tôt : essaie un matériau plus rebondissant ou un autre angle.',
+    hintStalled: 'La bille s’est arrêtée : essaie un angle plus raide ou un matériau plus rebondissant.',
+    hintWrongType: 'Cette pièce ne va pas dans cette fente : essaie l’autre sorte.',
+    formatPlacedProgress: (placed, total) => `✨ ${placed}/${total} rampes placées. Appuie sur Lancer !`,
+    formatRotateHint: (angleInfo) => `Angle : ${angleInfo}. Touche la poignée ou la rampe pour pivoter de 15° !`,
     formatAngleInfo: (angleDeg, classification) => `${angleDeg}° (${classification})`,
     formatReflectionHUD: (iDeg, rDeg, e) => `θ_i: ${iDeg.toFixed(0)}° → θ_r: ${rDeg.toFixed(0)}° | e = ${e.toFixed(1)}`
   }

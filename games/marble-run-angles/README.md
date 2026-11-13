@@ -16,6 +16,7 @@ An interactive educational physics cartridge for **kid-lesson-games** teaching s
 ### Tier 2: Ages 6–8 (Early Elementary)
 - **Concept**: Discrete angular rotation ($15^\circ$ increments), angle classification (Acute, Right, Obtuse), and obstacle navigation.
 - **Anti-Mirroring Rule**: Direct vertical drops are physically obstructed by fixed obstacle pegs. Children cannot simply drop marbles straight down; they must calculate acute ($30^\circ, 45^\circ$) and obtuse ($120^\circ, 135^\circ$) redirection paths to steer marbles safely into the target cup.
+- **Rotation is required**: ramps land in the slot at a starting angle (`initialAngle`) that does NOT solve the puzzle; each slot needs 15-90 degrees of forward rotation to reach its verified `solutionAngle`. Because ramps are freely rotatable there are no distractor pieces at this level.
 - **Scaffolding HUD**: A circular protractor gauge overlays the active ramp showing degree ticks ($15^\circ$ steps) and dynamic angle classifications.
 
 ### Tier 3: Ages 9–11 (Upper Elementary)
@@ -54,7 +55,9 @@ An interactive educational physics cartridge for **kid-lesson-games** teaching s
 ## 3. Dual Input Ergonomics & Granular Undo
 
 - **Tap / Click**:
-  - Tapping a ramp in the inventory tray snaps it into the first vacant slot.
+  - Tapping a ramp in the inventory tray snaps it into the first vacant slot that accepts its material (`allowedTypes`). Real mouse/touch taps work (the tray is never rebuilt between pointerdown and click).
+  - Pieces keep their own angle in 3-5 and 9-11, so the wrong ramp is a real mistake; only 6-8 `rotate` slots set a starting angle.
+  - Falling off the board or stalling for about 2 s shows a localized hint (no answer given) and resets the marble. Changing age group restarts score, streak and timer.
   - Tapping a placed ramp or its rotation handle advances its angle by $15^\circ$ (Ages 6–11) or returns it to the tray (Ages 3–5).
   - Tapping the "Clear Pieces" button resets all manipulatives back to the tray.
 - **Drag-and-Drop**:

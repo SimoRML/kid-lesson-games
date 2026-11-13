@@ -29,7 +29,10 @@ export interface Slot {
   y: number;
   allowedTypes?: PieceType[];
   fixedAngle?: number;
+  /** Starting angle given to a piece dropped here in `rotate` mode (must NOT already solve the level). */
   initialAngle?: number;
+  /** Verified winning angle for this slot (used by tests/docs; never shown to the child). */
+  solutionAngle?: number;
   placedPiece: Manipulative | null;
 }
 
@@ -93,6 +96,7 @@ export interface CustomLevelConfig {
     allowedTypes?: PieceType[];
     fixedAngle?: number;
     initialAngle?: number;
+    solutionAngle?: number;
   }[];
   inventory?: (
     | PieceType
@@ -698,7 +702,8 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
             x: 180,
             y: 110,
             allowedTypes: ['wood'],
-            initialAngle: 30, // acute angle deflecting past pegs
+            initialAngle: 165, // start: rotate +45° (3 taps) to the acute 30° that steers past the pegs
+            solutionAngle: 30,
             placedPiece: null
           },
           {
@@ -706,14 +711,15 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
             x: 290,
             y: 175,
             allowedTypes: ['wood'],
-            initialAngle: 30,
+            initialAngle: 0, // start flat: rotate +30° (2 taps)
+            solutionAngle: 30,
             placedPiece: null
           }
         ],
         inventory: [
+          // Rotatable pieces: a distractor would be meaningless because any ramp can be turned to any angle
           createManipulative('wood', { angleDeg: 30, length: 120 }),
-          createManipulative('wood', { angleDeg: 30, length: 120 }),
-          createManipulative('wood', { angleDeg: 90, length: 120 }) // distractor vertical
+          createManipulative('wood', { angleDeg: 30, length: 120 })
         ],
         stars: [
           { id: 'star-1', x: 240, y: 140, radius: 14, collected: false },
@@ -740,7 +746,8 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
             x: 160,
             y: 110,
             allowedTypes: ['wood'],
-            initialAngle: 30,
+            initialAngle: 0, // start flat: rotate +30° (2 taps)
+            solutionAngle: 30,
             placedPiece: null
           },
           {
@@ -748,14 +755,14 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
             x: 280,
             y: 180,
             allowedTypes: ['wood'],
-            initialAngle: 30,
+            initialAngle: 165, // start: rotate +45° (3 taps)
+            solutionAngle: 30,
             placedPiece: null
           }
         ],
         inventory: [
           createManipulative('wood', { angleDeg: 30, length: 120 }),
-          createManipulative('wood', { angleDeg: 30, length: 120 }),
-          createManipulative('wood', { angleDeg: 0, length: 120 }) // distractor flat
+          createManipulative('wood', { angleDeg: 30, length: 120 })
         ],
         stars: [
           { id: 'star-1', x: 220, y: 140, radius: 14, collected: false },
@@ -779,7 +786,8 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
             x: 220,
             y: 110,
             allowedTypes: ['wood'],
-            initialAngle: 30,
+            initialAngle: 0, // start flat: rotate +30° (2 taps)
+            solutionAngle: 30,
             placedPiece: null
           },
           {
@@ -787,7 +795,8 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
             x: 320,
             y: 190,
             allowedTypes: ['wood'],
-            initialAngle: 150, // steer back left
+            initialAngle: 105, // rotate +45° (3 taps) to steer back left
+            solutionAngle: 150,
             placedPiece: null
           },
           {
@@ -795,7 +804,8 @@ export function generateLevelsForAge(ageGroup: AgeGroup): MarbleLevel[] {
             x: 240,
             y: 280,
             allowedTypes: ['wood'],
-            initialAngle: 30,
+            initialAngle: 165, // rotate +45° (3 taps)
+            solutionAngle: 30,
             placedPiece: null
           }
         ],
@@ -972,6 +982,9 @@ export function parseCustomLevels(raw: unknown): MarbleLevel[] | null {
         height: typeof item.cup.height === 'number' && item.cup.height > 0 ? item.cup.height : 44
       };
 
+      const mode: MarbleLevel['mode'] =
+        item.mode === 'reflection' || item.mode === 'rotate' ? item.mode : 'snap';
+
       // Validate slots
       const slots: Slot[] = [];
       if (Array.isArray(item.slots)) {
@@ -987,6 +1000,7 @@ export function parseCustomLevels(raw: unknown): MarbleLevel[] | null {
                 : undefined,
               fixedAngle: typeof s.fixedAngle === 'number' ? s.fixedAngle : undefined,
               initialAngle: typeof s.initialAngle === 'number' ? s.initialAngle : undefined,
+              solutionAngle: typeof s.solutionAngle === 'number' ? s.solutionAngle : undefined,
               placedPiece: null
             });
           }
@@ -995,17 +1009,20 @@ export function parseCustomLevels(raw: unknown): MarbleLevel[] | null {
 
       // Validate inventory
       const inventory: Manipulative[] = [];
+      const ownAngle: boolean[] = [];
       if (Array.isArray(item.inventory)) {
         for (let iIdx = 0; iIdx < item.inventory.length; iIdx++) {
           const inv = item.inventory[iIdx];
           if (typeof inv === 'string' && (inv === 'wood' || inv === 'trampoline')) {
             inventory.push(createManipulative(inv));
+            ownAngle.push(false);
           } else if (
             inv &&
             typeof inv === 'object' &&
             'type' in inv &&
             (inv.type === 'trampoline' || inv.type === 'wood')
           ) {
+            ownAngle.push(typeof inv.angleDeg === 'number');
             inventory.push(
               createManipulative(inv.type, {
                 id: typeof inv.id === 'string' ? inv.id : undefined,
@@ -1016,6 +1033,15 @@ export function parseCustomLevels(raw: unknown): MarbleLevel[] | null {
             );
           }
         }
+      }
+
+      // Snap levels: a piece keeps its own angle, so bare inventory entries default to the
+      // slot's fixedAngle (by index) to keep legacy custom levels solvable.
+      if (mode === 'snap') {
+        inventory.forEach((piece, i) => {
+          const fa = slots[i]?.fixedAngle;
+          if (!ownAngle[i] && fa !== undefined) piece.angleDeg = fa;
+        });
       }
 
       // Fallback if inventory is empty
@@ -1082,9 +1108,6 @@ export function parseCustomLevels(raw: unknown): MarbleLevel[] | null {
           }
         }
       }
-
-      const mode =
-        item.mode === 'reflection' || item.mode === 'rotate' ? item.mode : 'snap';
 
       levels.push({
         id: item.id || `custom-level-${idx + 1}`,
@@ -1183,11 +1206,16 @@ export class MarbleRunAnglesGame implements KidGame {
   private selectedSlotId: string | null = null;
   private hoveredSlotId: string | null = null;
   private hoveredRotateSlotId: string | null = null;
-  private pointerDownPos: { x: number; y: number } | null = null;
   private draggingPiece: Manipulative | null = null;
   private draggingFromSlotId: string | null = null;
   private dragCurrentPos: { x: number; y: number } = { x: 0, y: 0 };
   private isDragging: boolean = false;
+  private interaction: 'none' | 'canvas' | 'tray' = 'none';
+  private pointerDownClient: { x: number; y: number } | null = null;
+  private suppressTrayClick: boolean = false;
+  private missHint: string | null = null;
+  private stallTime: number = 0;
+  private flightTime: number = 0;
 
   private particles: Particle[] = [];
   private bounceFeedbacks: BounceFeedback[] = [];
@@ -1217,7 +1245,7 @@ export class MarbleRunAnglesGame implements KidGame {
             <span id="level-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 700;">${this.t.level} 1/3</span>
           </div>
 
-          <div id="instruction" style="flex: 1; min-width: 200px; font-size: 0.9rem; color: #cbd5e1; font-weight: 500; text-align: center;"></div>
+          <div id="instruction" aria-live="polite" style="flex: 1; min-width: 200px; font-size: 0.85rem; line-height: 1.25; height: 2.5em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: #cbd5e1; font-weight: 500; text-align: center;"></div>
 
           <div style="display: flex; align-items: center; gap: 12px;">
             <div id="score-display" style="font-weight: 700; color: #fbbf24; font-size: 1.05rem;">⭐ 0</div>
@@ -1296,6 +1324,9 @@ export class MarbleRunAnglesGame implements KidGame {
       this.context.locale = newContext.locale;
       this.t = getTranslations(newContext.locale as SupportedLocale);
       this.updateStaticHUD();
+      this.renderTrayUI();
+      if (this.missHint) this.missHint = null;
+      this.updateDynamicInstruction();
     }
     if (newContext.sound !== undefined) {
       this.audio.enabled = newContext.sound;
@@ -1304,6 +1335,10 @@ export class MarbleRunAnglesGame implements KidGame {
     }
     if (newContext.ageGroup && newContext.ageGroup !== this.context.ageGroup) {
       this.context.ageGroup = newContext.ageGroup;
+      // Score convention: a new age bracket is a fresh run (score, streak and timer restart)
+      this.score = 0;
+      this.streak = 0;
+      this.startTime = Date.now();
       reload = true;
     }
     if ('customLevels' in newContext && newContext.customLevels !== this.context.customLevels) {
@@ -1352,6 +1387,10 @@ export class MarbleRunAnglesGame implements KidGame {
     this.hoveredRotateSlotId = null;
     this.draggingPiece = null;
     this.isDragging = false;
+    this.interaction = 'none';
+    this.missHint = null;
+    const trayEl = this.container.querySelector('#inventory-tray') as HTMLElement | null;
+    if (trayEl) trayEl.style.minHeight = '48px';
     this.particles = [];
     this.bounceFeedbacks = [];
 
@@ -1386,6 +1425,8 @@ export class MarbleRunAnglesGame implements KidGame {
     this.marble.inCup = false;
     this.marble.trail = [];
     this.settlingTime = 0;
+    this.stallTime = 0;
+    this.flightTime = 0;
   }
 
   private launchMarble(): void {
@@ -1401,6 +1442,10 @@ export class MarbleRunAnglesGame implements KidGame {
     this.marble.vy = level.emitter.vy ?? 0;
     this.marble.active = true;
     this.marble.inCup = false;
+    this.stallTime = 0;
+    this.flightTime = 0;
+    this.missHint = null;
+    this.updateDynamicInstruction();
     this.audio.playPop();
   }
 
@@ -1419,9 +1464,7 @@ export class MarbleRunAnglesGame implements KidGame {
       this.audio.playPop();
     }
     this.selectedSlotId = null;
-    this.resetMarble();
-    this.renderTrayUI();
-    this.updateDynamicInstruction();
+    this.onBoardChanged();
   }
 
   // --- Board Coordinate Mapping ---
@@ -1504,16 +1547,97 @@ export class MarbleRunAnglesGame implements KidGame {
       this.canvas.addEventListener('pointerdown', (e) => this.onPointerDown(e), { signal });
       window.addEventListener('pointermove', (e) => this.onPointerMove(e), { signal });
       window.addEventListener('pointerup', (e) => this.onPointerUp(e), { signal });
+      window.addEventListener('pointercancel', () => this.onPointerCancel(), { signal });
     }
   }
 
   // --- Interaction & Dual Input (Tap + Drag & Drop) ---
 
+  /** True when `piece` may be placed into `slot` (honours slot.allowedTypes). */
+  private slotAccepts(slot: Slot, piece: Manipulative): boolean {
+    return !slot.allowedTypes || slot.allowedTypes.length === 0 || slot.allowedTypes.includes(piece.type);
+  }
+
+  /** Starting angle a piece takes when placed: rotate-mode slots define their own start angle. */
+  private applyPlacementAngle(level: MarbleLevel, slot: Slot, piece: Manipulative): void {
+    if (level.mode === 'rotate' && slot.initialAngle !== undefined) {
+      piece.angleDeg = slot.initialAngle;
+    }
+  }
+
+  /** Place a piece (from tray or another slot) into a slot. Returns false if the type is not allowed. */
+  private placePiece(level: MarbleLevel, piece: Manipulative, slot: Slot, fromSlotId: string | null): boolean {
+    if (!this.slotAccepts(slot, piece)) return false;
+    if (slot.placedPiece && slot.id !== fromSlotId) {
+      level.inventory.push(slot.placedPiece);
+      slot.placedPiece = null;
+    }
+    if (fromSlotId && fromSlotId !== slot.id) {
+      const oldSlot = level.slots.find((s) => s.id === fromSlotId);
+      if (oldSlot) oldSlot.placedPiece = null;
+    }
+    const invIdx = level.inventory.indexOf(piece);
+    if (invIdx >= 0) level.inventory.splice(invIdx, 1);
+    if (fromSlotId !== slot.id) this.applyPlacementAngle(level, slot, piece);
+    slot.placedPiece = piece;
+    this.selectedSlotId = slot.id;
+    return true;
+  }
+
+  /** Nearest slot within the snap radius that accepts the piece, plus whether a nearby slot refused it. */
+  private findDropSlot(level: MarbleLevel, piece: Manipulative, pos: { x: number; y: number }) {
+    const SNAP_RADIUS = 75;
+    let best: Slot | null = null;
+    let bestD = SNAP_RADIUS;
+    let rejected = false;
+    for (const slot of level.slots) {
+      const d = Math.hypot(pos.x - slot.x, pos.y - slot.y);
+      if (d >= SNAP_RADIUS) continue;
+      if (!this.slotAccepts(slot, piece)) {
+        rejected = true;
+        continue;
+      }
+      if (d < bestD) {
+        bestD = d;
+        best = slot;
+      }
+    }
+    return { slot: best, rejected };
+  }
+
+  /** Called after any change to pieces or angles: reset the marble, clear the miss hint, refresh UI. */
+  private onBoardChanged(): void {
+    this.missHint = null;
+    this.resetMarble();
+    this.renderTrayUI();
+    this.updateDynamicInstruction();
+  }
+
+  private showHint(text: string): void {
+    this.missHint = text;
+    this.updateDynamicInstruction();
+  }
+
+  private onTrayPointerDown(e: PointerEvent, piece: Manipulative): void {
+    if (e.button !== undefined && e.button !== 0) return;
+    const pos = this.toBoardCoords(e.clientX, e.clientY);
+    this.interaction = 'tray';
+    this.suppressTrayClick = false;
+    this.pointerDownClient = { x: e.clientX, y: e.clientY };
+    this.dragCurrentPos = { ...pos };
+    this.draggingPiece = piece;
+    this.draggingFromSlotId = null;
+    this.isDragging = false;
+  }
+
   private onPointerDown(e: PointerEvent): void {
     const pos = this.toBoardCoords(e.clientX, e.clientY);
-    this.pointerDownPos = { ...pos };
+    this.interaction = 'canvas';
+    this.pointerDownClient = { x: e.clientX, y: e.clientY };
     this.dragCurrentPos = { ...pos };
     this.isDragging = false;
+    this.draggingPiece = null;
+    this.draggingFromSlotId = null;
 
     const level = this.levels[this.currentLevelIndex];
     if (!level) return;
@@ -1538,8 +1662,9 @@ export class MarbleRunAnglesGame implements KidGame {
           // Rotate by 15°
           piece.angleDeg = (snapToAngle(piece.angleDeg + 15, 15)) % 180;
           this.audio.playClick();
-          this.resetMarble();
-          this.updateDynamicInstruction();
+          this.selectedSlotId = slot.id;
+          this.interaction = 'none';
+          this.onBoardChanged();
           return;
         }
       }
@@ -1560,11 +1685,15 @@ export class MarbleRunAnglesGame implements KidGame {
   }
 
   private onPointerMove(e: PointerEvent): void {
+    if (this.interaction === 'none') {
+      // Hover only matters while the pointer is over the board
+      if (e.target !== this.canvas) return;
+    }
     const pos = this.toBoardCoords(e.clientX, e.clientY);
     this.dragCurrentPos = { ...pos };
 
-    if (this.pointerDownPos && this.draggingPiece) {
-      const dist = Math.hypot(pos.x - this.pointerDownPos.x, pos.y - this.pointerDownPos.y);
+    if (this.pointerDownClient && this.draggingPiece && this.interaction !== 'none') {
+      const dist = Math.hypot(e.clientX - this.pointerDownClient.x, e.clientY - this.pointerDownClient.y);
       if (dist > 5) {
         this.isDragging = true;
       }
@@ -1594,91 +1723,106 @@ export class MarbleRunAnglesGame implements KidGame {
     }
   }
 
-  private onPointerUp(e: PointerEvent): void {
-    const pos = this.toBoardCoords(e.clientX, e.clientY);
-    const level = this.levels[this.currentLevelIndex];
-
-    if (this.isDragging && this.draggingPiece && level) {
-      // Find closest valid slot
-      let closestSlot: Slot | null = null;
-      let minDistance = 75; // generous snap radius
-
-      for (const slot of level.slots) {
-        const d = Math.hypot(pos.x - slot.x, pos.y - slot.y);
-        if (d < minDistance) {
-          minDistance = d;
-          closestSlot = slot;
-        }
-      }
-
-      if (closestSlot) {
-        // If slot already had a piece, return old piece to inventory
-        if (closestSlot.placedPiece && closestSlot.id !== this.draggingFromSlotId) {
-          level.inventory.push(closestSlot.placedPiece);
-        }
-
-        // Remove from old slot if dragged from another slot
-        if (this.draggingFromSlotId && this.draggingFromSlotId !== closestSlot.id) {
-          const oldSlot = level.slots.find((s) => s.id === this.draggingFromSlotId);
-          if (oldSlot) oldSlot.placedPiece = null;
-        }
-
-        // Apply slot fixed angle if in 3-5 snap mode
-        if (closestSlot.fixedAngle !== undefined) {
-          this.draggingPiece.angleDeg = closestSlot.fixedAngle;
-        } else if (closestSlot.initialAngle !== undefined && this.draggingPiece.angleDeg === 0) {
-          this.draggingPiece.angleDeg = closestSlot.initialAngle;
-        }
-
-        closestSlot.placedPiece = this.draggingPiece;
-        this.selectedSlotId = closestSlot.id;
-        this.audio.playDrop();
-      } else {
-        // Dropped outside: granular undo (returns to inventory)
-        if (this.draggingFromSlotId) {
-          const oldSlot = level.slots.find((s) => s.id === this.draggingFromSlotId);
-          if (oldSlot) oldSlot.placedPiece = null;
-          level.inventory.push(this.draggingPiece);
-          this.audio.playPop();
-        }
-      }
-    } else if (!this.isDragging && this.draggingPiece && this.draggingFromSlotId && level) {
-      // Tap on placed piece: in rotate mode, advance angle; in snap mode, return to tray (granular undo)
-      const slot = level.slots.find((s) => s.id === this.draggingFromSlotId);
-      if (slot && slot.placedPiece) {
-        if (level.mode !== 'snap') {
-          slot.placedPiece.angleDeg = (snapToAngle(slot.placedPiece.angleDeg + 15, 15)) % 180;
-          this.audio.playClick();
-        } else {
-          // Granular undo: tap placed piece returns it to tray
-          level.inventory.push(slot.placedPiece);
-          slot.placedPiece = null;
-          this.selectedSlotId = null;
-          this.audio.playPop();
-        }
-      }
-    }
-
-    this.pointerDownPos = null;
+  private endInteraction(): void {
+    this.interaction = 'none';
+    this.pointerDownClient = null;
     this.draggingPiece = null;
     this.draggingFromSlotId = null;
     this.isDragging = false;
-    this.resetMarble();
-    this.renderTrayUI();
-    this.updateDynamicInstruction();
+  }
+
+  private onPointerCancel(): void {
+    if (this.interaction === 'tray' && this.isDragging) this.suppressTrayClick = true;
+    this.endInteraction();
+  }
+
+  private onPointerUp(e: PointerEvent): void {
+    // Ignore pointer events that did not start inside the game (e.g. testbed controls)
+    if (this.interaction === 'none') return;
+
+    const fromTray = this.interaction === 'tray';
+    const pos = this.toBoardCoords(e.clientX, e.clientY);
+    const level = this.levels[this.currentLevelIndex];
+    const piece = this.draggingPiece;
+    const fromSlotId = this.draggingFromSlotId;
+    const wasDragging = this.isDragging;
+    let changed = false;
+
+    if (level && piece) {
+      if (wasDragging) {
+        const { slot, rejected } = this.findDropSlot(level, piece, pos);
+        if (slot) {
+          this.placePiece(level, piece, slot, fromSlotId);
+          this.audio.playDrop();
+          changed = true;
+        } else if (rejected) {
+          // Nearby slot refuses this material: gentle error, piece stays where it came from
+          this.audio.playError();
+          this.showHint(this.t.hintWrongType);
+        } else if (fromSlotId) {
+          // Dropped outside: granular undo (returns to inventory)
+          const oldSlot = level.slots.find((s) => s.id === fromSlotId);
+          if (oldSlot) oldSlot.placedPiece = null;
+          level.inventory.push(piece);
+          this.audio.playPop();
+          changed = true;
+        }
+      } else if (fromSlotId) {
+        // Tap on placed piece: rotate mode advances the angle; snap mode returns it to the tray
+        const slot = level.slots.find((s) => s.id === fromSlotId);
+        if (slot && slot.placedPiece) {
+          if (level.mode !== 'snap') {
+            slot.placedPiece.angleDeg = snapToAngle(slot.placedPiece.angleDeg + 15, 15) % 180;
+            this.audio.playClick();
+          } else {
+            level.inventory.push(slot.placedPiece);
+            slot.placedPiece = null;
+            this.selectedSlotId = null;
+            this.audio.playPop();
+          }
+          changed = true;
+        }
+      }
+      // fromTray && !wasDragging: a tap. Handled by the item's click event so the pressed
+      // element is never rebuilt between pointerdown and click.
+    }
+
+    if (fromTray && wasDragging) this.suppressTrayClick = true;
+    this.endInteraction();
+    if (changed) this.onBoardChanged();
+  }
+
+  /** Quick tap on a tray item: snap into the first empty slot that accepts the piece. */
+  private onTrayTap(piece: Manipulative): void {
+    if (this.suppressTrayClick) {
+      this.suppressTrayClick = false;
+      return;
+    }
+    const level = this.levels[this.currentLevelIndex];
+    if (!level || !level.inventory.includes(piece)) return;
+    const empty = level.slots.filter((s) => !s.placedPiece);
+    const target = empty.find((s) => this.slotAccepts(s, piece));
+    if (target) {
+      this.placePiece(level, piece, target, null);
+      this.audio.playDrop();
+      this.onBoardChanged();
+    } else {
+      this.audio.playError();
+      if (empty.length > 0) this.showHint(this.t.hintWrongType);
+    }
   }
 
   // --- Tray UI Rendering ---
 
   private renderTrayUI(): void {
-    const tray = this.container.querySelector('#inventory-tray');
+    const tray = this.container.querySelector('#inventory-tray') as HTMLElement | null;
     if (!tray) return;
     tray.innerHTML = '';
 
     const level = this.levels[this.currentLevelIndex];
     if (!level) return;
 
-    level.inventory.forEach((piece, index) => {
+    level.inventory.forEach((piece) => {
       const itemEl = document.createElement('div');
       itemEl.setAttribute('data-id', piece.id);
       itemEl.style.cssText = `
@@ -1694,6 +1838,8 @@ export class MarbleRunAnglesGame implements KidGame {
         font-weight: 600;
         cursor: grab;
         min-height: 44px;
+        touch-action: none;
+        user-select: none;
         transition: transform 0.15s, background 0.15s;
       `;
 
@@ -1712,29 +1858,17 @@ export class MarbleRunAnglesGame implements KidGame {
       itemEl.appendChild(dot);
       itemEl.appendChild(text);
 
-      // Tap on tray item: quick snap into first empty slot
-      itemEl.addEventListener('click', () => {
-        const emptySlot = level.slots.find((s) => !s.placedPiece);
-        if (emptySlot) {
-          level.inventory.splice(index, 1);
-          if (emptySlot.fixedAngle !== undefined) {
-            piece.angleDeg = emptySlot.fixedAngle;
-          } else if (emptySlot.initialAngle !== undefined) {
-            piece.angleDeg = emptySlot.initialAngle;
-          }
-          emptySlot.placedPiece = piece;
-          this.selectedSlotId = emptySlot.id;
-          this.audio.playDrop();
-          this.renderTrayUI();
-          this.resetMarble();
-          this.updateDynamicInstruction();
-        } else {
-          this.audio.playError();
-        }
-      });
+      // Press starts a potential drag; release without movement is a tap (see click below)
+      itemEl.addEventListener('pointerdown', (e) => this.onTrayPointerDown(e as PointerEvent, piece));
+      itemEl.addEventListener('click', () => this.onTrayTap(piece));
 
       tray.appendChild(itemEl);
     });
+
+    // Reserve the tallest tray height seen on this level so the board canvas never resizes
+    const h = tray.offsetHeight;
+    const current = parseFloat(tray.style.minHeight) || 48;
+    if (h > current) tray.style.minHeight = `${h}px`;
   }
 
   // --- Scaffolding & Dynamic HUD Text ---
@@ -1769,8 +1903,19 @@ export class MarbleRunAnglesGame implements KidGame {
     const level = this.levels[this.currentLevelIndex];
     if (!level) return;
 
+    const set = (text: string) => {
+      instEl.textContent = text;
+      instEl.setAttribute('title', text);
+    };
+
+    // A fresh miss/stall hint takes priority until the child changes something or relaunches
+    if (this.missHint) {
+      set(this.missHint);
+      return;
+    }
+
     if (level.instruction) {
-      instEl.textContent = level.instruction;
+      set(level.instruction);
       return;
     }
 
@@ -1778,29 +1923,47 @@ export class MarbleRunAnglesGame implements KidGame {
     if (level.mode === 'snap') {
       const placedCount = level.slots.filter((s) => s.placedPiece).length;
       if (placedCount < level.slots.length) {
-        instEl.textContent = this.t.promptPreschool;
+        set(this.t.promptPreschool);
       } else {
-        instEl.textContent = `✨ ${placedCount}/${level.slots.length} ramps placed. Tap Launch to roll!`;
+        set(this.t.formatPlacedProgress(placedCount, level.slots.length));
       }
     } else if (level.mode === 'rotate') {
       const selected = level.slots.find((s) => s.id === this.selectedSlotId)?.placedPiece;
       if (selected) {
         const cls = classifyAngle(selected.angleDeg);
         const localizedCls = this.t[cls] || cls;
-        instEl.textContent = `Angle: ${this.t.formatAngleInfo(selected.angleDeg, localizedCls)}. Tap handle or ramp to rotate by 15°!`;
+        set(this.t.formatRotateHint(this.t.formatAngleInfo(selected.angleDeg, localizedCls)));
       } else {
-        instEl.textContent = this.t.promptElementary;
+        set(this.t.promptElementary);
       }
     } else {
       // Reflection mode
       const selected = level.slots.find((s) => s.id === this.selectedSlotId)?.placedPiece;
       if (selected) {
         const iDeg = selected.angleDeg;
-        instEl.textContent = this.t.formatReflectionHUD(iDeg, iDeg, selected.restitution);
+        set(this.t.formatReflectionHUD(iDeg, iDeg, selected.restitution));
       } else {
-        instEl.textContent = this.t.promptUpperElementary;
+        set(this.t.promptUpperElementary);
       }
     }
+  }
+
+  /** Marble fell off the board or stalled: localized, non-revealing hint, then reset. */
+  private handleMiss(kind: 'offBoard' | 'stalled'): void {
+    const level = this.levels[this.currentLevelIndex];
+    let hint: string;
+    if (kind === 'stalled') {
+      hint = this.t.hintStalled;
+    } else if (!level || level.mode === 'snap') {
+      hint = this.t.hintMissPreschool;
+    } else if (level.mode === 'rotate') {
+      hint = this.t.hintMissElementary;
+    } else {
+      hint = this.t.hintMissUpperElementary;
+    }
+    this.resetMarble();
+    this.audio.playError();
+    this.showHint(hint);
   }
 
   // --- Main Game Loop (Physics & Animation) ---
@@ -1904,9 +2067,22 @@ export class MarbleRunAnglesGame implements KidGame {
       t.alpha -= dt * 1.5;
     }
 
-    // Out of bounds reset
+    // Out of bounds: hint + reset
     if (this.marble.y > 540 || this.marble.x < -40 || this.marble.x > 840) {
-      this.resetMarble();
+      this.handleMiss('offBoard');
+      return;
+    }
+
+    // Stall detection: nearly motionless outside the cup for ~2 s, or in flight far too long
+    this.flightTime += dt;
+    const speed = Math.hypot(this.marble.vx, this.marble.vy);
+    if (!this.marble.inCup && speed < 25) {
+      this.stallTime += dt;
+    } else {
+      this.stallTime = 0;
+    }
+    if (!this.levelWon && (this.stallTime >= 2 || this.flightTime >= 20)) {
+      this.handleMiss('stalled');
     }
   }
 
