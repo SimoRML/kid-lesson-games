@@ -126,7 +126,7 @@ git status --porcelain src/   # must be empty for cartridge-only work
 - Commit only files from your plan: stage explicitly (`git add <paths>`), never `git add -A` blindly; review `git diff --staged` for secrets, debug code, and unrelated files.
 - Push your branch only: `git push -u origin <branch>`. Never push to `main`.
 - Open the PR with `gh pr create --base main` and fill in: **Summary**, **Plan link/text**, **Type & semver impact**, **Files claimed**, **Verification output** (Gate 5), **Docs updated** (Gate 6), **Security notes**, **Not verified / risks**, **Screenshots/GIF** for UI changes. Draft PRs are fine for early work; mark ready only when Gate 5 passes.
-- After opening: do not merge. Hand over to the Reviewer (Gate 8). Address review comments with new commits on the same branch (no force-push once review started, unless the reviewer asks).
+- After opening: do not merge (the source branch is deleted by the Merger after merge, see Gate 9). Hand over to the Reviewer (Gate 8). Address review comments with new commits on the same branch (no force-push once review started, unless the reviewer asks).
 
 ### Gate 8 — Independent review by a dedicated Reviewer agent
 - The Reviewer is a **separate agent session with fresh context** (not the author, no shared reasoning). It never reviews a PR it authored. It reads the PR only through `gh pr view`, `gh pr diff`, `gh pr checks`, and a clean checkout of the PR branch in its **own worktree**.
@@ -146,6 +146,7 @@ git status --porcelain src/   # must be empty for cartridge-only work
 Merge only when **all** are true: approved by the Reviewer; Gate 5 re-verified on the up-to-date branch; no unresolved conversations; no merge conflicts; any required CI checks green (once PR CI exists, 🗺️); the user's plan approval covered this scope.
 1. Rebase/merge `origin/main` into the branch if behind, re-run the Gate 5 commands.
 2. **Squash-merge** (`gh pr merge --squash --delete-branch`) with a Conventional Commit title. Do not enable auto-merge unless the user asked.
+   **The source branch must be removed after merging**: remote (confirm `git ls-remote --heads origin <branch>` is empty), local (`git branch -D <branch>`; `-D` is expected after a squash-merge), and its worktree (`git worktree remove <path>`; `git worktree prune`). Then `git fetch --prune`. Delete only the branch of the PR you just merged, never anyone else's.
 3. **Semver** ([semver.org](https://semver.org), currently `0.x`, package is `"private": true`):
    | Change | Bump |
    |---|---|
