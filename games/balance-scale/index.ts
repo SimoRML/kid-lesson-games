@@ -151,6 +151,7 @@ export class BalanceScaleGame implements KidGame {
 
   // Interaction
   private draggedWeight: MetricWeight | null = null;
+  private hoveredRightWeightIndex: number = -1;
   private mousePos = { x: 0, y: 0 };
 
   mount(container: HTMLElement, context: GameContext) {
@@ -237,12 +238,12 @@ export class BalanceScaleGame implements KidGame {
         }
       }
 
-      // Click on right pan to return top weight to inventory
-      const rightPan = this.getRightPanCenter();
-      const dist = Math.hypot(pos.x - rightPan.x, pos.y - (rightPan.y - 30));
-      if (dist < 48 && this.rightWeights.length > 0) {
-        const removed = this.rightWeights.pop()!;
+      // Click on a specific stacked weight in the right pan to remove that exact weight
+      const hitIdx = this.getHitRightWeightIndex(pos);
+      if (hitIdx !== -1) {
+        const [removed] = this.rightWeights.splice(hitIdx, 1);
         this.inventory.push(removed);
+        this.hoveredRightWeightIndex = -1;
         sound.playPop();
         this.renderInventory();
       }
@@ -250,6 +251,8 @@ export class BalanceScaleGame implements KidGame {
 
     const handlePointerMove = (pos: { x: number; y: number }) => {
       this.mousePos = pos;
+      this.hoveredRightWeightIndex = this.draggedWeight === null ? this.getHitRightWeightIndex(pos) : -1;
+      this.canvas.style.cursor = this.hoveredRightWeightIndex !== -1 ? 'pointer' : 'default';
     };
 
     const handlePointerUp = () => {
@@ -440,6 +443,18 @@ export class BalanceScaleGame implements KidGame {
     return { x: anchor.x, y: anchor.y + 90, anchorX: anchor.x, anchorY: anchor.y };
   }
 
+  private getHitRightWeightIndex(pos: { x: number; y: number }): number {
+    const rightPan = this.getRightPanCenter();
+    for (let i = this.rightWeights.length - 1; i >= 0; i--) {
+      const blockX = rightPan.x;
+      const blockY = rightPan.y - 22 - i * 38;
+      if (Math.abs(pos.x - blockX) <= 26 && Math.abs(pos.y - blockY) <= 18) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   private calculateTorque() {
     const leftGrams = this.leftWeights.reduce((acc, w) => acc + w.grams, 0);
     const rightGrams = this.rightWeights.reduce((acc, w) => acc + w.grams, 0);
@@ -603,7 +618,8 @@ export class BalanceScaleGame implements KidGame {
       this.leftWeights,
       '#38bdf8',
       leftGrams,
-      this.leftNotch
+      this.leftNotch,
+      -1
     );
     this.drawHangingPan(
       rightPan.anchorX,
@@ -613,12 +629,13 @@ export class BalanceScaleGame implements KidGame {
       this.rightWeights,
       '#fbbf24',
       rightGrams,
-      this.rightNotch
+      this.rightNotch,
+      this.hoveredRightWeightIndex
     );
 
     // 4. Cursor Dragged Weight
     if (this.draggedWeight !== null) {
-      this.drawWeightBlock(this.mousePos.x, this.mousePos.y, this.draggedWeight, true);
+      this.drawWeightBlock(this.mousePos.x, this.mousePos.y, this.draggedWeight, true, false);
     }
   }
 
@@ -630,7 +647,8 @@ export class BalanceScaleGame implements KidGame {
     weights: MetricWeight[],
     accentColor: string,
     totalGrams: number,
-    notch: number
+    notch: number,
+    hoveredIndex: number
   ) {
     const ctx = this.ctx;
     const panWidth = 116;
@@ -656,8 +674,8 @@ export class BalanceScaleGame implements KidGame {
 
     // Stacked weights inside the pan
     let currentY = panY - 4;
-    weights.forEach((w) => {
-      this.drawWeightBlock(panX, currentY - 18, w, false);
+    weights.forEach((w, idx) => {
+      this.drawWeightBlock(panX, currentY - 18, w, false, idx === hoveredIndex);
       currentY -= 38;
     });
 
@@ -686,7 +704,7 @@ export class BalanceScaleGame implements KidGame {
     ctx.fillText(displayLabel, panX, panY + 32);
   }
 
-  private drawWeightBlock(x: number, y: number, item: MetricWeight, isDragging: boolean) {
+  private drawWeightBlock(x: number, y: number, item: MetricWeight, isDragging: boolean, isHovered: boolean) {
     const ctx = this.ctx;
     const width = 50;
     const height = 34;
@@ -698,12 +716,20 @@ export class BalanceScaleGame implements KidGame {
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 14;
       ctx.shadowOffsetY = 8;
+    } else if (isHovered) {
+      ctx.scale(1.06, 1.06);
     }
 
     ctx.fillStyle = item.color;
     ctx.beginPath();
     ctx.roundRect(-width / 2, -height / 2, width, height, 7);
     ctx.fill();
+
+    if (isHovered) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
 
     // Value text
     ctx.fillStyle = '#ffffff';
