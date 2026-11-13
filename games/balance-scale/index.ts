@@ -125,17 +125,24 @@ function generateLevelsForAge(age: string): Level[] {
 
   if (age === '9-11') {
     const pool = [50, 100, 150, 200, 250, 300, 400, 500, 600, 750, 1000];
+    // Lever puzzles: Left at notch 4 (outer anchor) is the primary intuitive pattern (~80%),
+    // demonstrating mechanical advantage as the right hook moves closer (notch 2, notch 1) or matches (notch 4).
     const leverTemplates: Array<{
       leftArr: number[];
       leftNotch: 1 | 2 | 3 | 4;
       solNotch: 1 | 2 | 3 | 4;
     }> = [
-      { leftArr: [400], leftNotch: 2, solNotch: 4 }, // 400*2 = 800 -> at notch 4 needs 200g (or 150+50)
-      { leftArr: [300], leftNotch: 3, solNotch: 2 }, // 300*3 = 900 -> at notch 2 needs 450g (250+200)
-      { leftArr: [600], leftNotch: 2, solNotch: 3 }, // 600*2 = 1200 -> at notch 3 needs 400g (250+150)
-      { leftArr: [500], leftNotch: 3, solNotch: 3 }, // 500*3 = 1500 -> at notch 3 needs 500g (300+200)
-      { leftArr: [400, 200], leftNotch: 2, solNotch: 3 }, // 600*2 = 1200 -> at notch 3 needs 400g (250+150)
-      { leftArr: [750], leftNotch: 2, solNotch: 3 } // 750*2 = 1500 -> at notch 3 needs 500g (250+200+50)
+      // Primary: Left at Notch 4 (Load anchor)
+      { leftArr: [200], leftNotch: 4, solNotch: 2 }, // 200*4 = 800 -> at notch 2 needs 400g (250+150 or 300+100)
+      { leftArr: [250], leftNotch: 4, solNotch: 2 }, // 250*4 = 1000 -> at notch 2 needs 500g (300+200)
+      { leftArr: [300], leftNotch: 4, solNotch: 2 }, // 300*4 = 1200 -> at notch 2 needs 600g (400+200)
+      { leftArr: [300], leftNotch: 4, solNotch: 3 }, // 300*4 = 1200 -> at notch 3 needs 400g (250+150)
+      { leftArr: [150], leftNotch: 4, solNotch: 3 }, // 150*4 = 600 -> at notch 3 needs 200g (100+100)
+      { leftArr: [150], leftNotch: 4, solNotch: 2 }, // 150*4 = 600 -> at notch 2 needs 300g (200+100)
+      { leftArr: [250], leftNotch: 4, solNotch: 1 }, // 250*4 = 1000 -> at notch 1 needs 1000g (1 kg!)
+      // Advanced variant: Inner load notch
+      { leftArr: [500], leftNotch: 2, solNotch: 4 }, // 500*2 = 1000 -> at notch 4 needs 250g (effort reduction!)
+      { leftArr: [600], leftNotch: 2, solNotch: 3 }  // 600*2 = 1200 -> at notch 3 needs 400g
     ];
 
     const picked = shuffle(leverTemplates).slice(0, 3);
