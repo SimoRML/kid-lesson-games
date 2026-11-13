@@ -47,7 +47,7 @@ const PALETTE: Record<number, { label: string; color: string }> = {
   1000: { label: '1 kg', color: '#eab308' }
 };
 
-function createWeight(grams: number): MetricWeight {
+export function createWeight(grams: number): MetricWeight {
   const p = PALETTE[grams] || { label: `${grams}g`, color: '#6366f1' };
   return {
     id: `${grams}-${Math.random().toString(36).slice(2, 7)}`,
@@ -70,7 +70,7 @@ function shuffle<T>(arr: T[]): T[] {
   return copy;
 }
 
-function findDecompositions(
+export function findDecompositions(
   targetSum: number,
   forbiddenGrams: Set<number>,
   pool: number[],
@@ -103,7 +103,7 @@ function findDecompositions(
   return results;
 }
 
-function generateLevelsForAge(age: string): Level[] {
+export function generateLevelsForAge(age: string): Level[] {
   if (age === '3-5') {
     const pool = [50, 100, 150, 200, 250, 300, 400];
     const leftCandidates: number[][] = [
@@ -224,7 +224,7 @@ function generateLevelsForAge(age: string): Level[] {
   });
 }
 
-function parseWeightItem(item: unknown): MetricWeight | null {
+export function parseWeightItem(item: unknown): MetricWeight | null {
   if (typeof item === 'number' && !isNaN(item) && item > 0) {
     return createWeight(item);
   }
