@@ -76,7 +76,14 @@ The project targets four core educational taxonomy categories across three age b
 | `marble-run-angles` | Marble Run Angles | `spatial` | `3-5`, `6-8`, `9-11` | Ramp bridging, $15^\circ$ angle rotation, acute/right/obtuse angles, specular reflection ($\theta_i = \theta_r$) | ✅ Implemented |
 | `pendulum-rhythm` | Pendulum Rhythm Lab | `numbers` | `3-5`, `6-8`, `9-11` | Momentum knockdown, Galileo's mass-invariance & BPM sync, square-root polyrhythms ($T \propto \sqrt{L}$) | ✅ Implemented |
 | `pulley-lift` | Pulley Lift & Mechanical Advantage | `logic` | `3-5`, `6-8`, `9-11` | Fixed/movable/compound pulleys ($MA = 1..4$), effort fractions, work conservation ($W = F \times d$) | ✅ Implemented |
-| `number-line` | Number Line Hopper | `numbers` / `spatial` | `3-5`, `6-8` | Frog jumping along positive/negative number lines to master addition and subtraction | 🗺️ Planned |
+| `number-line` | Number Line Hopper | `numbers` / `spatial` | `3-5`, `6-8`, `9-11` | Frog/fennec jumping along positive/negative number lines to master addition and subtraction | 🗺️ Planned |
+| `fraction-feast` | Fraction Slices & Equal Shares | `numbers` / `spatial` | `6-8`, `9-11` | Part-whole geometric partitions, equivalent fractions ($2/4 = 1/2$), and common-denominator sums | 🗺️ Planned |
+| `money-market` | Souk & Dirham Counter | `numbers` | `3-5`, `6-8`, `9-11` | Moroccan Dirhams (`DH`) & centimes, additive payment composition, and calculating change | 🗺️ Planned |
+| `electric-circuit` | Circuit Spark | `logic` | `3-5`, `6-8`, `9-11` | Complete circuits, conductors vs. insulators, series & parallel branch logic | 🗺️ Planned |
+| `food-web` | Eco-Balance | `logic` | `3-5`, `6-8`, `9-11` | Trophic chains (producers, consumers, predators) and ecological balance stability | 🗺️ Planned |
+| `clock-time` | Time Master | `numbers` / `spatial` | `3-5`, `6-8`, `9-11` | Geared clock hands, reading hours/half-hours/quarter-hours, and elapsed duration | 🗺️ Planned |
+| `shadow-theater` | Shadow & Optics Lab | `spatial` / `logic` | `3-5`, `6-8`, `9-11` | Raycasting shadows, opaque vs. transparent materials, eclipse geometry | 🗺️ Planned |
+| `axial-symmetry` | Mirror Symmetry Grid | `spatial` | `6-8`, `9-11` | Grid reflections across vertical, horizontal, and diagonal axes with distance preservation | 🗺️ Planned |
 | `letter-sound-safari` | Letter Sound Safari | `letters` | `3-5` | Audio-tactile phonics and letter-sound matching | 🗺️ Planned |
 | `letter-trace` | Letter Trace | `letters` | `3-5`, `6-8` | Guided stroke order and letter formation tracing | 🗺️ Planned |
 | `word-builder` | Word Builder | `letters` | `6-8`, `9-11` | Syllable and morpheme composition with audio feedback | 🗺️ Planned |

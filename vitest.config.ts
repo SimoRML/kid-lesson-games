@@ -5,6 +5,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     css: true,
+    include: ['src/**/*.test.ts', 'games/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

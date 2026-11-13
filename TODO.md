@@ -45,15 +45,23 @@
 ### Numbers (`"numbers"`)
 - [x] ✅ **`balance-scale` — Balance the Scale / Balance Lab** (*Ages 3–5, 6–8, 9–11*): Equal-arm metric weight equality (`g`/`kg`), additive decomposition ($500\text{g} + 500\text{g} = 1\text{ kg}$), and Archimedes lever torque ($\tau = m \times d$).
 - [x] ✅ **`pendulum-rhythm` — Pendulum Rhythm Lab** (*Ages 3–5, 6–8, 9–11*): Wrecking-ball momentum knockdown, Galileo's mass-invariance & BPM metronome sync, and square-root law ($T \propto \sqrt{L}$) harmonic polyrhythms ($2:1, 3:1, 3:2$).
-- [ ] 🗺️ **`number-line` — Number Line Hopper** (*Ages 3–5, 6–8*): Frog jumping along positive/negative number lines to solve addition and subtraction.
+- [ ] 🗺️ **`number-line` — Number Line Hopper** (*Ages 3–5, 6–8, 9–11*): Frog/fennec jumping along positive/negative number lines to solve addition, subtraction, and relative integers.
+- [ ] 🗺️ **`fraction-feast` — Fraction Slices & Equal Shares / أجزاء وكسور** (*Ages 6–8, 9–11*): Circular/rectangular visual part-whole fractions, equivalence ($2/4 = 1/2$), and common-denominator operations.
+- [ ] 🗺️ **`money-market` — Souk & Dirham Counter / متجر النقود والدرهم** (*Ages 3–5, 6–8, 9–11*): Moroccan currency counting (1, 2, 5, 10 DH coins, 20, 50, 100, 200 DH banknotes, and 10, 20, 50 centimes), additive payment composition, and calculating change returned.
+  - [ ] 🗺️ *(Low Priority)* Add switchable multi-currency support (`EUR`, `USD`, `MAD`) to `money-market`.
 
 ### Logic & Simple Machines (`"logic"`)
 - [x] ✅ **`buoyancy-tank` — Buoyancy Tank & Density Lab** (*Ages 3–5, 6–8, 9–11*): Qualitative sink vs. float, graduated cylinder volume displacement ($1\text{ cm}^3 = 1\text{ mL}$), and submarine neutral buoyancy trim ($\rho = m/V$ in freshwater & saltwater).
 - [x] ✅ **`gear-trains` — Gear Trains** (*Ages 3–5, 6–8, 9–11*): Realizes the *Pattern Cogwheels* concept—interlocking gears ($6\text{T}..24\text{T}$), odd/even rotational direction parity, tooth ratios ($N_1/N_2$), RPM kinematics, and LCM synchronization.
 - [x] ✅ **`pulley-lift` — Pulley Lift & Mechanical Advantage** (*Ages 3–5, 6–8, 9–11*): Fixed ($MA=1$), movable ($MA=2$), and compound block-and-tackle ($MA=3, 4$) cranes teaching force division and conservation of work ($W = F \times d$).
+- [ ] 🗺️ **`electric-circuit` — Circuit Spark / الدارة الكهربائية** (*Ages 3–5, 6–8, 9–11*): Simple loops, electrical conductors vs. insulators (copper, iron, saltwater vs. wood, plastic, glass), and series vs. parallel circuits.
+- [ ] 🗺️ **`food-web` — Eco-Balance / السلاسل والشبكات الغذائية** (*Ages 3–5, 6–8, 9–11*): Producers, primary/secondary consumers, predator-prey chains, and ecological stability.
 
 ### Spatial & Geometry (`"spatial"`)
 - [x] ✅ **`marble-run-angles` — Marble Run Angles** (*Ages 3–5, 6–8, 9–11*): Ramp slot bridging, $15^\circ$ discrete angle rotation, acute/right/obtuse classification, and law of specular reflection ($\theta_i = \theta_r$) with wood vs. trampoline restitution ($e$).
+- [ ] 🗺️ **`clock-time` — Time Master / عقارب الساعة والزمن** (*Ages 3–5, 6–8, 9–11*): Draggable geared hour/minute hands, reading exact/half/quarter hours, and elapsed duration calculations.
+- [ ] 🗺️ **`shadow-theater` — Shadow & Optics Lab / مسرح الظل والضوء** (*Ages 3–5, 6–8, 9–11*): Raycasting optics, transparent/translucent/opaque bodies, shadow scaling, and solar/lunar eclipses.
+- [ ] 🗺️ **`axial-symmetry` — Mirror Symmetry Grid / التماثل المحوري** (*Ages 6–8, 9–11*): Grid reflections across vertical, horizontal, and diagonal axes with distance preservation.
 
 ### Letters & Phonics (`"letters"`)
 - [ ] 🗺️ **`letter-sound-safari` — Letter Sound Safari** (*Ages 3–5*): Audio-tactile phonics and letter-sound matching.
