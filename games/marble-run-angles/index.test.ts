@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameContext, AgeGroup } from '../../src/core/types.js';
 import { SoundEngine } from '../../src/core/audio.js';
 import { I18nManager } from '../../src/core/i18n.js';
+import { DICTIONARY } from './i18n.js';
 import {
   MarbleRunAnglesGame,
   createGame,
@@ -378,21 +379,7 @@ function simulateAndTrack(
       ]);
       expect(resP3.won, 'preschool-3 distractor piece (90°) must fail').toBe(false);
 
-      // 4. elementary-1 distractor: 90° wood ramp in slot-1 (inventory[2])
-      const e1 = generateLevelsForAge('6-8')[0];
-      const resE1 = simulateLevel(e1, [
-        { slotId: e1.slots[0].id, piece: e1.inventory[2] },
-        { slotId: e1.slots[1].id, piece: e1.inventory[1] }
-      ]);
-      expect(resE1.won, 'elementary-1 distractor piece (90°) must fail').toBe(false);
-
-      // 5. elementary-2 distractor: 0° flat wood ramp in slot-1 (inventory[2])
-      const e2 = generateLevelsForAge('6-8')[1];
-      const resE2 = simulateLevel(e2, [
-        { slotId: e2.slots[0].id, piece: e2.inventory[2] },
-        { slotId: e2.slots[1].id, piece: e2.inventory[1] }
-      ]);
-      expect(resE2.won, 'elementary-2 distractor piece (0°) in slot-1 must fail').toBe(false);
+      // 4-5. (6-8 levels have no distractors: pieces are rotatable, so any ramp can be turned to any angle.)
 
       // 6. upper-1 distractor: wood ramp in place of trampoline (inventory[1]) fails to clear chasm
       const u1 = generateLevelsForAge('9-11')[0];
@@ -598,6 +585,46 @@ function simulateAndTrack(
       expect(track3.trampolineBounces).toBeGreaterThanOrEqual(2);
       expect(track3.starsCollected).toBe(2);
       track3.stars.forEach((st) => expect(st.collected).toBe(true));
+    });
+  });
+
+  describe('6-8 rotation is required (issue #15)', () => {
+    it('default slot start angles do NOT solve any 6-8 level, but the documented rotation solution does', () => {
+      const levels = generateLevelsForAge('6-8');
+      for (const lvl of levels) {
+        const asDropped = lvl.slots.map((slot, i) => ({
+          slotId: slot.id,
+          piece: { ...lvl.inventory[i], angleDeg: slot.initialAngle! }
+        }));
+        expect(simulateLevel(lvl, asDropped).won, `${lvl.id} must not win at start angles`).toBe(false);
+
+        const solved = lvl.slots.map((slot, i) => ({
+          slotId: slot.id,
+          piece: { ...lvl.inventory[i], angleDeg: slot.solutionAngle! }
+        }));
+        expect(simulateLevel(lvl, solved).won, `${lvl.id} must win at documented angles`).toBe(true);
+
+        // Every slot needs 15-90 degrees of forward rotation in 15 degree steps
+        for (const slot of lvl.slots) {
+          const need = (((slot.solutionAngle! - slot.initialAngle!) % 180) + 180) % 180;
+          expect(need).toBeGreaterThanOrEqual(15);
+          expect(need).toBeLessThanOrEqual(90);
+          expect(need % 15).toBe(0);
+        }
+      }
+    });
+
+    it('snap-mode custom inventory without own angle defaults to the slot fixedAngle', () => {
+      const parsed = parseCustomLevels([
+        {
+          emitter: { x: 10, y: 10 },
+          cup: { x: 500, y: 300 },
+          slots: [{ x: 100, y: 100, fixedAngle: 40 }],
+          inventory: ['wood', { type: 'wood', angleDeg: 80 }]
+        }
+      ])!;
+      expect(parsed[0].inventory[0].angleDeg).toBe(40);
+      expect(parsed[0].inventory[1].angleDeg).toBe(80);
     });
   });
 
@@ -868,6 +895,296 @@ function simulateAndTrack(
 
       game.destroy();
       document.body.removeChild(container);
+    });
+    // --- Real pointer input helpers (issue #14): dispatch events like a browser would ---
+    const fire = (target: EventTarget, type: string, x: number, y: number, extra: Record<string, unknown> = {}) => {
+      const ev = new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 });
+      Object.assign(ev, extra);
+      target.dispatchEvent(ev);
+    };
+    const tap = (el: Element, x = 400, y = 600, pointerType = 'mouse') => {
+      fire(el, 'pointerdown', x, y, { pointerType });
+      fire(el, 'pointerup', x, y, { pointerType });
+      if (pointerType === 'touch') {
+        el.dispatchEvent(new Event('touchstart', { bubbles: true }));
+        el.dispatchEvent(new Event('touchend', { bubbles: true }));
+      }
+      // The browser dispatches click only when the pressed element survived pointerup
+      if (el.isConnected) fire(el, 'click', x, y);
+    };
+    const drag = (el: Element, to: { x: number; y: number }, from = { x: 400, y: 600 }) => {
+      fire(el, 'pointerdown', from.x, from.y);
+      fire(window, 'pointermove', (from.x + to.x) / 2, (from.y + to.y) / 2);
+      fire(window, 'pointermove', to.x, to.y);
+      fire(window, 'pointerup', to.x, to.y);
+      if (el.isConnected) fire(el, 'click', to.x, to.y);
+    };
+    const mountGame = (age: AgeGroup, locale: 'en' | 'fr' = 'en') => {
+      context.ageGroup = age;
+      context.locale = locale;
+      const game = createMarbleRunAnglesGame() as MarbleRunAnglesGame;
+      game.mount(container, context);
+      return game;
+    };
+    const lvlOf = (game: MarbleRunAnglesGame) => {
+      const g = game as any;
+      return g.levels[g.currentLevelIndex] as MarbleLevel;
+    };
+    const tapFirst = (c: HTMLElement) => {
+      tap(c.querySelector('#inventory-tray')!.firstElementChild as HTMLElement);
+    };
+
+    it('real tap (pointerdown, pointerup, click) on a tray item snaps it into the first slot without losing the click', () => {
+      for (const pointerType of ['mouse', 'touch']) {
+        const game = mountGame('3-5');
+        const tray = container.querySelector('#inventory-tray') as HTMLElement;
+        const count = tray.children.length;
+        const item = tray.firstElementChild as HTMLElement;
+
+        fire(item, 'pointerdown', 400, 600, { pointerType });
+        fire(item, 'pointerup', 400, 600, { pointerType });
+        // pointerup must not rebuild the tray: the pressed element has to survive until click
+        expect(item.isConnected).toBe(true);
+        fire(item, 'click', 400, 600);
+
+        expect(tray.children.length).toBe(count - 1);
+        const lvl = lvlOf(game);
+        expect(lvl.slots[0].placedPiece).not.toBeNull();
+        // The piece keeps its own angle (slot no longer overwrites it)
+        expect(lvl.slots[0].placedPiece!.angleDeg).toBe(23);
+        game.destroy();
+        container.innerHTML = '';
+      }
+    });
+
+    it('3-5: a distractor keeps its own angle when placed (no silent overwrite)', () => {
+      const game = mountGame('3-5');
+      const tray = container.querySelector('#inventory-tray') as HTMLElement;
+      tap(tray.children[1]); // 75 degree distractor
+      const lvl = lvlOf(game);
+      expect(lvl.slots[0].placedPiece!.angleDeg).toBe(75);
+      expect(simulateLevel(lvl, [{ slotId: lvl.slots[0].id, piece: lvl.slots[0].placedPiece! }]).won).toBe(false);
+      game.destroy();
+    });
+
+    it('real drag from the tray drops on the nearest slot within the snap radius', () => {
+      const game = mountGame('3-5');
+      const tray = container.querySelector('#inventory-tray') as HTMLElement;
+      const count = tray.children.length;
+      const slot = lvlOf(game).slots[0];
+      drag(tray.firstElementChild as HTMLElement, { x: slot.x + 30, y: slot.y - 20 });
+      expect(lvlOf(game).slots[0].placedPiece).not.toBeNull();
+      expect(tray.children.length).toBe(count - 1);
+      expect(lvlOf(game).slots.filter((s) => s.placedPiece).length).toBe(1);
+      game.destroy();
+    });
+
+    it('dropping a tray piece outside every slot returns it to the tray', () => {
+      const game = mountGame('3-5');
+      const tray = container.querySelector('#inventory-tray') as HTMLElement;
+      const count = tray.children.length;
+      drag(tray.firstElementChild as HTMLElement, { x: 760, y: 40 });
+      expect(lvlOf(game).slots[0].placedPiece).toBeNull();
+      expect(tray.children.length).toBe(count);
+      game.destroy();
+    });
+
+    it('placed pieces can be picked up again via real canvas pointer events (granular undo)', () => {
+      const game = mountGame('3-5');
+      const canvas = container.querySelector('#marble-canvas') as HTMLCanvasElement;
+      const tray = container.querySelector('#inventory-tray') as HTMLElement;
+      tapFirst(container);
+      const slot = lvlOf(game).slots[0];
+      expect(slot.placedPiece).not.toBeNull();
+      fire(canvas, 'pointerdown', slot.x, slot.y);
+      fire(window, 'pointerup', slot.x, slot.y);
+      expect(slot.placedPiece).toBeNull();
+      expect(tray.children.length).toBeGreaterThan(0);
+      game.destroy();
+    });
+
+    it('pointer events outside the game never reset a running marble', () => {
+      const game = mountGame('3-5');
+      const g = game as any;
+      g.launchMarble();
+      g.updatePhysics(1 / 60);
+      expect(g.marble.active).toBe(true);
+      const outside = document.createElement('button');
+      document.body.appendChild(outside);
+      fire(outside, 'pointerdown', 5, 5);
+      fire(outside, 'pointerup', 5, 5);
+      fire(window, 'pointerup', 5, 5);
+      expect(g.marble.active).toBe(true);
+      // Tapping an empty canvas area does not reset it either
+      const canvas = container.querySelector('#marble-canvas') as HTMLCanvasElement;
+      fire(canvas, 'pointerdown', 700, 20);
+      fire(window, 'pointerup', 700, 20);
+      expect(g.marble.active).toBe(true);
+      outside.remove();
+      game.destroy();
+    });
+
+    it('enforces allowedTypes for tap and drag (wood cannot enter a trampoline-only slot)', () => {
+      const game = mountGame('9-11');
+      (game as any).loadLevel(1); // Wall Ricochet: slot-1 is trampoline-only
+      const lvl = lvlOf(game);
+      const tray = container.querySelector('#inventory-tray') as HTMLElement;
+      const woodItem = () =>
+        Array.from(tray.children).find((el) => el.textContent === DICTIONARY.en.woodRamp) as HTMLElement;
+
+      // Drag wood onto the trampoline-only slot: rejected
+      drag(woodItem(), { x: lvl.slots[0].x, y: lvl.slots[0].y });
+      expect(lvl.slots[0].placedPiece).toBeNull();
+      expect(lvl.slots[1].placedPiece).toBeNull();
+
+      // Tap wood: first slot that ACCEPTS it (slot-2)
+      tap(woodItem());
+      expect(lvl.slots[0].placedPiece).toBeNull();
+      expect(lvl.slots[1].placedPiece?.type).toBe('wood');
+
+      // Tap the second wood: only the trampoline-only slot is empty, so it is refused
+      tap(woodItem());
+      expect(lvl.slots[0].placedPiece).toBeNull();
+
+      // Trampoline goes into slot-1
+      const tramp = Array.from(tray.children).find((el) => el.textContent === DICTIONARY.en.trampoline) as HTMLElement;
+      tap(tramp);
+      expect(lvl.slots[0].placedPiece?.type).toBe('trampoline');
+      game.destroy();
+    });
+
+    it('6-8: dropped pieces start at the slot start angle and need real rotation taps to win', () => {
+      const game = mountGame('6-8');
+      const canvas = container.querySelector('#marble-canvas') as HTMLCanvasElement;
+      const lvl = lvlOf(game);
+      tapFirst(container);
+      tapFirst(container);
+      expect(lvl.slots.map((s) => s.placedPiece!.angleDeg)).toEqual(lvl.slots.map((s) => s.initialAngle));
+      // Rotate each piece with real canvas taps on the piece
+      for (const slot of lvl.slots) {
+        let guard = 0;
+        while (slot.placedPiece!.angleDeg !== slot.solutionAngle && guard++ < 12) {
+          fire(canvas, 'pointerdown', slot.x, slot.y);
+          fire(window, 'pointerup', slot.x, slot.y);
+        }
+      }
+      expect(lvl.slots.map((s) => s.placedPiece!.angleDeg)).toEqual(lvl.slots.map((s) => s.solutionAngle));
+      const placed = lvl.slots.map((s) => ({ slotId: s.id, piece: s.placedPiece! }));
+      expect(simulateLevel(lvl, placed).won).toBe(true);
+      game.destroy();
+    });
+
+    it('shows a localized hint and resets when the marble falls off the board (all age brackets)', () => {
+      const expected = {
+        '3-5': 'hintMissPreschool',
+        '6-8': 'hintMissElementary',
+        '9-11': 'hintMissUpperElementary'
+      } as const;
+      for (const locale of ['en', 'fr'] as const) {
+        for (const age of ['3-5', '6-8', '9-11'] as AgeGroup[]) {
+          const game = mountGame(age, locale);
+          const g = game as any;
+          g.launchMarble();
+          let steps = 0;
+          while (g.marble.active && steps++ < 1200) g.updatePhysics(1 / 30);
+          expect(g.marble.active).toBe(false);
+          const inst = container.querySelector('#instruction')!.textContent;
+          expect(inst).toBe(DICTIONARY[locale][expected[age]]);
+          // Changing something clears the hint
+          g.clearPlacedPieces();
+          expect(container.querySelector('#instruction')!.textContent).not.toBe(inst);
+          game.destroy();
+          container.innerHTML = '';
+        }
+      }
+    });
+
+    it('detects a stalled marble after ~2 s with fake timers and resets with a hint', () => {
+      vi.useFakeTimers();
+      try {
+        context.customLevels = [
+          {
+            emitter: { x: 200, y: 150, vx: 0, vy: 0 },
+            cup: { x: 700, y: 400 },
+            mode: 'reflection',
+            fixedRamps: [{ x1: 50, y1: 300, x2: 400, y2: 300, restitution: 0 }],
+            slots: [],
+            inventory: []
+          }
+        ] as any;
+        const game = mountGame('9-11');
+        const g = game as any;
+        g.launchMarble();
+        let t = 0;
+        while (g.marble.active && t < 15) {
+          g.updatePhysics(1 / 60);
+          t += 1 / 60;
+          vi.advanceTimersByTime(16);
+        }
+        expect(g.marble.active).toBe(false);
+        expect(t).toBeLessThan(10);
+        expect(container.querySelector('#instruction')!.textContent).toBe(DICTIONARY.en.hintStalled);
+        game.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('no English strings remain in FR mode for tray and HUD, and a live locale change updates them', () => {
+      for (const age of ['3-5', '6-8', '9-11'] as AgeGroup[]) {
+        const game = mountGame(age, 'en');
+        game.updateConfig({ locale: 'fr' });
+        const fr = DICTIONARY.fr;
+        const labels = Array.from(container.querySelectorAll('#inventory-tray > div')).map((el) => el.textContent);
+        for (const l of labels) expect([fr.woodRamp, fr.trampoline]).toContain(l);
+        const inst = container.querySelector('#instruction')!.textContent!;
+        expect([fr.promptPreschool, fr.promptElementary, fr.promptUpperElementary]).toContain(inst);
+        game.destroy();
+        container.innerHTML = '';
+      }
+      // Selected-piece instructions are localized too
+      const game = mountGame('6-8', 'fr');
+      tapFirst(container);
+      expect(container.querySelector('#instruction')!.textContent).toMatch(/^Angle :/);
+      game.destroy();
+    });
+
+    it('resets score, streak and timer when ageGroup changes (issue #17)', () => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date('2026-01-01T10:00:00Z'));
+        const game = mountGame('3-5');
+        const g = game as any;
+        g.score = 550;
+        g.streak = 3;
+        g.updateStaticHUD();
+        expect(container.querySelector('#score-display')!.textContent).toBe('⭐ 550');
+
+        vi.setSystemTime(new Date('2026-01-01T10:05:00Z'));
+        game.updateConfig({ ageGroup: '6-8' });
+        expect(g.score).toBe(0);
+        expect(g.streak).toBe(0);
+        expect(g.startTime).toBe(Date.now());
+        expect(container.querySelector('#score-display')!.textContent).toBe('⭐ 0');
+
+        // Re-sending the same ageGroup must not wipe progress
+        g.score = 100;
+        game.updateConfig({ ageGroup: '6-8' });
+        expect(g.score).toBe(100);
+        game.destroy();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('reserves a fixed HUD instruction height so the canvas cannot resize (issue #17)', () => {
+      const game = mountGame('3-5');
+      const inst = container.querySelector('#instruction') as HTMLElement;
+      expect(inst.style.height).not.toBe('');
+      const before = inst.style.height;
+      tapFirst(container);
+      expect(inst.style.height).toBe(before);
+      game.destroy();
     });
   });
 });
