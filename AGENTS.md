@@ -242,8 +242,8 @@ this.context.emit('game:complete', {
    - `<kid-game difficulty="easy|medium|hard">` is parsed and passed in `context.difficulty`, but the 6 existing games only branch level generation by `context.ageGroup` (`3-5`, `6-8`, `9-11`).
 9. ⚠️ **`src/index.ts` Drops `author` and `thumbnail` from `GameMetadata`**:
    - `src/index.ts` constructs `GameMetadata` without copying `raw.author` or `raw.thumbnail`, and 4 of the 6 games (`balance-scale`, `buoyancy-tank`, `marble-run-angles`, `pulley-lift`) do not yet have `assets/thumb.svg` on disk.
-10. ⚠️ **`games/balance-scale` Legacy Lifecycle Gaps**:
-    - Unlike the 5 newer cartridges, `games/balance-scale/index.ts` does not remove its `window` `mousemove`/`mouseup`/`touchmove`/`touchend` listeners or clear its level-win `setTimeout`s in `destroy()`, does not implement `pause()`/`resume()`, and calls `this.audio.close()` in `destroy()`.
+10. ✅ **`games/balance-scale` Lifecycle (resolved)**:
+    - Fixed in PR #27: `AbortController` window-listener cleanup, tracked timeouts cleared in `destroy()`, `pause()`/`resume()`, no `audio.close()`, and a `README.md` was added.
 11. ⚠️ **Unused `matter-js` Dependency in `package.json`**:
     - `matter-js` is listed in `package.json`, but zero files in `src/` or `games/` import it; all 6 cartridges use custom deterministic TypeScript physics.
 

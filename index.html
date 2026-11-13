@@ -70,11 +70,12 @@
 
       @media (max-width: 900px) {
         main {
-          grid-template-columns: 1fr;
+          grid-template-columns: minmax(0, 1fr);
         }
       }
 
       .game-container {
+        min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 16px;
