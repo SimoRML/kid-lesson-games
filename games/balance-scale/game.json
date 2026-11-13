@@ -1,0 +1,11 @@
+{
+  "id": "balance-scale",
+  "title": "Balance the Scale",
+  "version": "1.0.0",
+  "description": "Place weights on the scale to achieve balance using addition and lever physics!",
+  "author": "simorml",
+  "category": "numbers",
+  "ageGroups": ["3-5", "6-8", "9-11"],
+  "skills": ["addition", "number-sense", "visual-physics", "equilibrium"],
+  "thumbnail": "assets/thumb.svg"
+}

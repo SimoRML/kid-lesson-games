@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kid Lesson Games - Web Component Playground</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #090d16;
+        color: #f1f5f9;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        padding: 20px 32px;
+        background: rgba(15, 23, 42, 0.8);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.25rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #38bdf8, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      main {
+        flex: 1;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 32px 24px;
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 24px;
+      }
+
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .game-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .game-card {
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        overflow: hidden;
+        height: 560px;
+      }
+
+      .panel {
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .panel-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .control-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+
+      .control-label {
+        font-size: 0.9rem;
+        color: #cbd5e1;
+      }
+
+      select, button {
+        background: #1e293b;
+        color: #f8fafc;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+
+      #event-log {
+        flex: 1;
+        background: #080c14;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 12px;
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: #38bdf8;
+        overflow-y: auto;
+        max-height: 220px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .log-entry {
+        line-height: 1.4;
+      }
+
+      .log-time {
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">🚀 Kid Lesson Games</div>
+      <div style="font-size: 0.9rem; color: #94a3b8;">Web Component Testbed</div>
+    </header>
+
+    <main>
+      <div class="game-container">
+        <!-- The Web Component under test! -->
+        <div class="game-card">
+          <kid-game id="my-game" game="balance-scale" age="6-8" difficulty="medium" sound="true"></kid-game>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Component Controls</div>
+
+        <div class="control-row">
+          <span class="control-label">Age Bracket</span>
+          <select id="select-age">
+            <option value="3-5">3–5 (Preschool)</option>
+            <option value="6-8" selected>6–8 (Elementary)</option>
+            <option value="9-11">9–11 (Upper)</option>
+          </select>
+        </div>
+
+        <div class="control-row">
+          <span class="control-label">Sound FX</span>
+          <button id="btn-sound">Toggle Sound (ON)</button>
+        </div>
+
+        <div class="control-row">
+          <span class="control-label">Actions</span>
+          <button id="btn-restart">Restart Game</button>
+        </div>
+
+        <div class="panel-title" style="margin-top: 12px;">Live Event Bridge</div>
+        <div id="event-log"></div>
+      </div>
+    </main>
+
+    <script type="module" src="/src/index.ts"></script>
+    <script>
+      const game = document.getElementById('my-game');
+      const log = document.getElementById('event-log');
+      const selectAge = document.getElementById('select-age');
+      const btnSound = document.getElementById('btn-sound');
+      const btnRestart = document.getElementById('btn-restart');
+
+      function appendLog(type, detail) {
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        const now = new Date().toLocaleTimeString();
+        entry.innerHTML = `<span class="log-time">[${now}]</span> <strong>${type}</strong> ${JSON.stringify(detail)}`;
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      ['game:ready', 'game:start', 'game:progress', 'game:score', 'game:complete'].forEach((evtName) => {
+        game.addEventListener(evtName, (e) => appendLog(evtName, e.detail));
+      });
+
+      selectAge.addEventListener('change', (e) => {
+        game.setAttribute('age', e.target.value);
+        appendLog('config-changed', { age: e.target.value });
+      });
+
+      let soundOn = true;
+      btnSound.addEventListener('click', () => {
+        soundOn = !soundOn;
+        game.setAttribute('sound', soundOn ? 'true' : 'false');
+        btnSound.textContent = `Toggle Sound (${soundOn ? 'ON' : 'OFF'})`;
+        appendLog('config-changed', { sound: soundOn });
+      });
+
+      btnRestart.addEventListener('click', () => {
+        game.restart();
+        appendLog('restart', {});
+      });
+    </script>
+  </body>
+</html>
