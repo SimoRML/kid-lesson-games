@@ -11,11 +11,13 @@
 
 ---
 
-## 🚀 Phase 2: Game Enhancements & Contributor Experience
-- [ ] Add Age Bracket levels to Balance Scale (e.g. 9-11 bracket with distance lever physics: $\text{Torque} = \text{Weight} \times \text{Distance}$).
-- [ ] Add sound mute button directly in `<kid-game>` status overlay.
-- [ ] Add CLI generator / template for contributors (`npm run create-game <name>`).
-- [ ] Automated contract validator test suite (checks that every game in `games/` exports required lifecycle methods and valid `game.json`).
+## ⚖️ Phase 2: Math Grounding & Contributor Ergonomics (Completed)
+- [x] **Metric & EU Standard Defaults**: Real metric units (grams `g`, kilograms `kg`, centimeters `cm`).
+- [x] **Number Conversions**: $1\text{ kg} = 1\,000\text{ g}$, $500\text{g} + 500\text{g} = 1\text{kg}$, $250\text{g} \times 4 = 1\text{kg}$.
+- [x] **Archimedes Lever Physics (Ages 9–11)**: Torque balancing ($\tau = m \times d$).
+- [x] **Multilingual UI (i18n)**: English (`en`) and French (`fr`) with in-game sound toggle button.
+- [x] **Automatic Game Discovery**: Vite `import.meta.glob` loads any game folder dropped in `games/` without editing core files.
+- [x] **Contributor CLI**: `npm run create-game <game-id>` scaffolds starter boilerplate in seconds.
 
 ---
 

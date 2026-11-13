@@ -253,8 +253,3 @@ export class KidGameElement extends HTMLElement {
     }
   }
 }
-
-// Auto-register the custom element if in browser
-if (typeof window !== 'undefined' && !customElements.get('kid-game')) {
-  customElements.define('kid-game', KidGameElement);
-}

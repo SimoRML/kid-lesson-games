@@ -152,6 +152,14 @@
         <div class="panel-title">Component Controls</div>
 
         <div class="control-row">
+          <span class="control-label">Language / Langue</span>
+          <select id="select-lang">
+            <option value="en" selected>English (en)</option>
+            <option value="fr">Français (fr)</option>
+          </select>
+        </div>
+
+        <div class="control-row">
           <span class="control-label">Age Bracket</span>
           <select id="select-age">
             <option value="3-5">3–5 (Preschool)</option>
@@ -179,6 +187,7 @@
     <script>
       const game = document.getElementById('my-game');
       const log = document.getElementById('event-log');
+      const selectLang = document.getElementById('select-lang');
       const selectAge = document.getElementById('select-age');
       const btnSound = document.getElementById('btn-sound');
       const btnRestart = document.getElementById('btn-restart');
@@ -194,6 +203,11 @@
 
       ['game:ready', 'game:start', 'game:progress', 'game:score', 'game:complete'].forEach((evtName) => {
         game.addEventListener(evtName, (e) => appendLog(evtName, e.detail));
+      });
+
+      selectLang.addEventListener('change', (e) => {
+        game.setAttribute('locale', e.target.value);
+        appendLog('config-changed', { locale: e.target.value });
       });
 
       selectAge.addEventListener('change', (e) => {
