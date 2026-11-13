@@ -620,7 +620,7 @@ export class BalanceScaleGame implements KidGame {
       width: rect.width,
       height: rect.height,
       centerX: rect.width / 2,
-      centerY: rect.height * 0.46,
+      centerY: rect.height * 0.38,
       beamLength: Math.min(rect.width * 0.76, 480)
     };
   }
@@ -637,13 +637,17 @@ export class BalanceScaleGame implements KidGame {
   }
 
   private getLeftPanCenter() {
+    const rect = this.canvas.getBoundingClientRect();
     const anchor = this.getNotchPosition('left', this.leftNotch);
-    return { x: anchor.x, y: anchor.y + 90, anchorX: anchor.x, anchorY: anchor.y };
+    const panY = Math.min(anchor.y + 68, rect.height - 44);
+    return { x: anchor.x, y: panY, anchorX: anchor.x, anchorY: anchor.y };
   }
 
   private getRightPanCenter() {
+    const rect = this.canvas.getBoundingClientRect();
     const anchor = this.getNotchPosition('right', this.rightNotch);
-    return { x: anchor.x, y: anchor.y + 90, anchorX: anchor.x, anchorY: anchor.y };
+    const panY = Math.min(anchor.y + 68, rect.height - 44);
+    return { x: anchor.x, y: panY, anchorX: anchor.x, anchorY: anchor.y };
   }
 
   private getHitRightWeightIndex(pos: { x: number; y: number }): number {
@@ -742,8 +746,8 @@ export class BalanceScaleGame implements KidGame {
     ctx.beginPath();
     ctx.moveTo(centerX - 16, centerY);
     ctx.lineTo(centerX + 16, centerY);
-    ctx.lineTo(centerX + 34, centerY + 145);
-    ctx.lineTo(centerX - 34, centerY + 145);
+    ctx.lineTo(centerX + 34, height);
+    ctx.lineTo(centerX - 34, height);
     ctx.closePath();
     ctx.fill();
 
@@ -912,14 +916,14 @@ export class BalanceScaleGame implements KidGame {
 
     ctx.fillStyle = 'rgba(255,255,255,0.08)';
     ctx.beginPath();
-    ctx.roundRect(panX - badgeWidth / 2, panY + 20, badgeWidth, 24, 6);
+    ctx.roundRect(panX - badgeWidth / 2, panY + 16, badgeWidth, 22, 6);
     ctx.fill();
 
     ctx.fillStyle = '#f8fafc';
     ctx.font = 'bold 12px system-ui';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(displayLabel, panX, panY + 32);
+    ctx.fillText(displayLabel, panX, panY + 27);
   }
 
   private drawWeightBlock(x: number, y: number, item: MetricWeight, isDragging: boolean, isHovered: boolean) {
