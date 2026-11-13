@@ -1,5 +1,9 @@
 # Balance Scale: Grounded Math, Metric Conversions & i18n Specification
 
+> **Implementation Status (2026-11-13)**: ✅ **Implemented** (with ⚠️ minor notation differences)  
+> - **Implemented (✅)**: Equal-arm metric weight addition/decomposition (`3-5`, `6-8`), Archimedes lever torque balancing $\tau = m \times d$ (`9-11`), non-mirroring inventory generation, and English/French (`en`/`fr`) localization in [games/balance-scale/](file:///home/simo/Documents/www/kid-lesson-games/games/balance-scale/index.ts).  
+> - **Discrepancies vs. Spec (⚠️)**: The implementation uses dimensionless integer notch multipliers (`1, 2, 3, 4`) rather than `10cm, 20cm, 30cm` labels, uses procedural solid color weight blocks rather than dot-count icons for `3-5`, and uses dynamic formatter functions (`formatStandardInstruction`, `formatLeverInstruction`) in `games/balance-scale/i18n.ts` instead of static `targetGram`/`targetKg` keys.
+
 > **Educational Core**: Archimedes Law of the Lever + Metric Unit Conversions  
 > **Defaults**: Metric (grams `g`, kilograms `kg`, centimeters `cm`, meters `m`), EU locale standards.
 

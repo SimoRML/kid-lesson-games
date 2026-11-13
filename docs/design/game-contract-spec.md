@@ -1,5 +1,10 @@
 # Pluggable Game Contract Specification
 
+> **Implementation Status (2026-11-13)**: 🚧 **Partial** (Core `KidGame` contract, `GameContext`, `SoundEngine`, `I18nManager`, and lazy `import.meta.glob` loader are ✅ **Implemented**; standalone `mountGame()` helper and `defaultConfig` in `game.json` are 🗺️ **Planned**)  
+> - **Implemented (✅)**: `KidGame` lifecycle (`mount`, `start`, `pause`, `resume`, `updateConfig`, `destroy`), `GameContext` with injected `SoundEngine` (`context.audio`), `I18nManager` (`context.i18n`, `context.t`), `context.emit`, eager `game.json` / `meta.json` catalog discovery, lazy per-cartridge ES chunking, and `currentLoadToken` race-condition protection in [src/](file:///home/simo/Documents/www/kid-lesson-games/src/index.ts).  
+> - **Not Implemented / Planned (🗺️)**: Programmatic `mountGame('balance-scale', container, options)` factory from `@kid-games/core` (use `<kid-game>` or `registry.create(id)` today), and `defaultConfig` in `game.json`.  
+> - **Discrepancies vs. Spec (⚠️)**: Package name in `package.json` is `kid-lesson-games` (not `@kid-games/core`); bundle filename is `dist/kid-games.es.js` (not `/dist/kid-games.js`); and all 6 cartridges implement custom deterministic TypeScript/Canvas 2D physics rather than importing `matter-js` or external audio/sprite files in `assets/`.
+
 > **Status**: Draft Proposal  
 > **Target**: Contributor-friendly pluggable web games for youngsters (Numbers, Letters, Logic, Spatial)
 
