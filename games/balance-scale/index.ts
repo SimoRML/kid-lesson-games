@@ -347,7 +347,20 @@ export class BalanceScaleGame implements KidGame {
   private hasDraggedBeyondThreshold = false;
   private hoveredRightWeightIndex: number = -1;
   private hoveredRightNotch: number = -1;
+  private isDraggingRightNotch = false;
+  private isHoveringRightLever = false;
   private mousePos = { x: 0, y: 0 };
+
+  private getNotchFromPointer(pos: { x: number; y: number }): 1 | 2 | 3 | 4 {
+    const { centerX, centerY, beamLength } = this.getDimensions();
+    const half = beamLength / 2;
+    const dx = pos.x - centerX;
+    const dy = pos.y - centerY;
+    const localX = dx * Math.cos(this.angle) + dy * Math.sin(this.angle);
+    const ratio = localX / half;
+    const rounded = Math.round(ratio * 4);
+    return Math.max(1, Math.min(4, rounded)) as 1 | 2 | 3 | 4;
+  }
 
   mount(container: HTMLElement, context: GameContext) {
     this.container = container;
@@ -483,18 +496,7 @@ export class BalanceScaleGame implements KidGame {
     const handlePointerDown = (pos: { x: number; y: number }) => {
       this.mousePos = pos;
 
-      // In Lever Mode, check canvas click on right-side notches with generous 38px radius
-      if (this.leverMode) {
-        for (const n of [1, 2, 3, 4] as const) {
-          const anchor = this.getNotchPosition('right', n);
-          if (Math.hypot(pos.x - anchor.x, pos.y - anchor.y) < 38) {
-            this.setRightNotch(n);
-            return;
-          }
-        }
-      }
-
-      // Click on a specific stacked weight in the right pan to remove that exact weight
+      // 1. Click on a specific stacked weight in the right pan to remove that exact weight
       const hitIdx = this.getHitRightWeightIndex(pos);
       if (hitIdx !== -1) {
         const [removed] = this.rightWeights.splice(hitIdx, 1);
@@ -502,11 +504,63 @@ export class BalanceScaleGame implements KidGame {
         this.hoveredRightWeightIndex = -1;
         sound.playPop();
         this.renderInventory();
+        return;
+      }
+
+      // 2. In Lever Mode, check drag / stick interaction on right lever
+      if (this.leverMode) {
+        const { centerX, centerY, beamLength } = this.getDimensions();
+        const half = beamLength / 2;
+        const dx = pos.x - centerX;
+        const dy = pos.y - centerY;
+        const localX = dx * Math.cos(this.angle) + dy * Math.sin(this.angle);
+        const localY = -dx * Math.sin(this.angle) + dy * Math.cos(this.angle);
+
+        // Near right arm of the beam (from fulcrum to slightly beyond notch 4)
+        const isNearRightBeam = localX >= 10 && localX <= half + 40 && Math.abs(localY) <= 45;
+
+        // Near current active right hook / attachment ring
+        const activeHook = this.getNotchPosition('right', this.rightNotch);
+        const isNearActiveHook = Math.hypot(pos.x - activeHook.x, pos.y - activeHook.y) <= 44;
+
+        // Near right pan base / cords
+        const rightPan = this.getRightPanCenter();
+        const isNearRightPan = Math.hypot(pos.x - rightPan.x, pos.y - rightPan.y) <= 60;
+
+        // Near any notch anchor
+        let isNearAnyNotch = false;
+        for (const n of [1, 2, 3, 4] as const) {
+          const anchor = this.getNotchPosition('right', n);
+          if (Math.hypot(pos.x - anchor.x, pos.y - anchor.y) <= 38) {
+            isNearAnyNotch = true;
+            break;
+          }
+        }
+
+        if (isNearRightBeam || isNearActiveHook || isNearRightPan || isNearAnyNotch) {
+          this.isDraggingRightNotch = true;
+          const targetNotch = this.getNotchFromPointer(pos);
+          if (targetNotch !== this.rightNotch) {
+            this.setRightNotch(targetNotch);
+          }
+          return;
+        }
       }
     };
 
     const handlePointerMove = (pos: { x: number; y: number }) => {
       this.mousePos = pos;
+
+      // Handle active lever notch drag stickily along the bar
+      if (this.isDraggingRightNotch) {
+        const targetNotch = this.getNotchFromPointer(pos);
+        if (targetNotch !== this.rightNotch) {
+          this.setRightNotch(targetNotch);
+        }
+        this.canvas.style.cursor = 'grabbing';
+        return;
+      }
+
       if (this.draggedWeight !== null && !this.hasDraggedBeyondThreshold) {
         if (Math.hypot(pos.x - this.dragStartPos.x, pos.y - this.dragStartPos.y) > 8) {
           this.hasDraggedBeyondThreshold = true;
@@ -515,9 +569,26 @@ export class BalanceScaleGame implements KidGame {
 
       this.hoveredRightWeightIndex = this.draggedWeight === null ? this.getHitRightWeightIndex(pos) : -1;
 
-      // Check hover on right notches
+      // Check hover on right notches / beam lever
       let foundNotch = -1;
+      let isHoveringLever = false;
+
       if (this.leverMode && this.draggedWeight === null) {
+        const { centerX, centerY, beamLength } = this.getDimensions();
+        const half = beamLength / 2;
+        const dx = pos.x - centerX;
+        const dy = pos.y - centerY;
+        const localX = dx * Math.cos(this.angle) + dy * Math.sin(this.angle);
+        const localY = -dx * Math.sin(this.angle) + dy * Math.cos(this.angle);
+
+        const isNearRightBeam = localX >= 10 && localX <= half + 35 && Math.abs(localY) <= 45;
+        const activeHook = this.getNotchPosition('right', this.rightNotch);
+        const isNearActiveHook = Math.hypot(pos.x - activeHook.x, pos.y - activeHook.y) <= 42;
+
+        if (isNearRightBeam || isNearActiveHook) {
+          isHoveringLever = true;
+        }
+
         for (const n of [1, 2, 3, 4] as const) {
           const anchor = this.getNotchPosition('right', n);
           if (Math.hypot(pos.x - anchor.x, pos.y - anchor.y) < 38) {
@@ -526,16 +597,25 @@ export class BalanceScaleGame implements KidGame {
           }
         }
       }
-      this.hoveredRightNotch = foundNotch;
 
-      if (this.hoveredRightWeightIndex !== -1 || this.hoveredRightNotch !== -1) {
+      this.hoveredRightNotch = foundNotch;
+      this.isHoveringRightLever = isHoveringLever;
+
+      if (this.hoveredRightWeightIndex !== -1) {
         this.canvas.style.cursor = 'pointer';
+      } else if (isHoveringLever || this.hoveredRightNotch !== -1) {
+        this.canvas.style.cursor = 'grab';
       } else {
         this.canvas.style.cursor = 'default';
       }
     };
 
     const handlePointerUp = () => {
+      if (this.isDraggingRightNotch) {
+        this.isDraggingRightNotch = false;
+        sound.playDrop();
+      }
+
       if (this.draggedWeight !== null) {
         if (!this.hasDraggedBeyondThreshold) {
           // Quick click on available weight -> adds to right pan
@@ -631,6 +711,8 @@ export class BalanceScaleGame implements KidGame {
     this.leftNotch = lvl.leftNotch || 4;
     this.rightNotch = lvl.rightNotch || 4;
     this.leverMode = !!lvl.leverMode;
+    this.isDraggingRightNotch = false;
+    this.isHoveringRightLever = false;
     this.isLevelComplete = false;
     this.balancedTimer = 0;
     this.angle = 0;
@@ -875,6 +957,16 @@ export class BalanceScaleGame implements KidGame {
     ctx.fillStyle = '#38bdf8';
     ctx.fillRect(-half, -2, beamLength, 4);
 
+    // If Lever Mode, draw prominent slider track slot on the right arm
+    if (this.leverMode) {
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(0, -2, half, 4);
+      // Subtle slide groove border
+      ctx.strokeStyle = this.isDraggingRightNotch ? '#fbbf24' : 'rgba(251, 191, 36, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(half * 0.2 - 6, -5, half * 0.8 + 12, 10);
+    }
+
     // Draw notches 1..4 on left and right
     for (const n of [1, 2, 3, 4] as const) {
       const leftX = -half * (n / 4);
@@ -887,7 +979,7 @@ export class BalanceScaleGame implements KidGame {
       // Notch numbers above beam inside circular pill
       const isLeftActive = this.leftNotch === n;
       const isRightActive = this.rightNotch === n;
-      const isRightHovered = this.hoveredRightNotch === n;
+      const isRightHovered = this.hoveredRightNotch === n || (this.isHoveringRightLever && isRightActive);
 
       // Left pill
       ctx.fillStyle = isLeftActive ? '#0284c7' : 'rgba(30, 41, 59, 0.8)';
@@ -900,14 +992,16 @@ export class BalanceScaleGame implements KidGame {
       ctx.textBaseline = 'middle';
       ctx.fillText(String(n), leftX, -16);
 
-      // Right pill (interactive)
+      // Right pill (interactive with sticky drag feedback)
+      const isStickLocked = isRightActive && this.isDraggingRightNotch;
+      const pillRadius = isStickLocked ? 12 : (isRightActive || isRightHovered) ? 10.5 : 9;
       ctx.fillStyle = isRightActive ? '#f59e0b' : isRightHovered ? '#334155' : 'rgba(30, 41, 59, 0.8)';
       ctx.beginPath();
-      ctx.arc(rightX, -16, 10, 0, Math.PI * 2);
+      ctx.arc(rightX, -16, pillRadius, 0, Math.PI * 2);
       ctx.fill();
       if (isRightHovered || isRightActive) {
-        ctx.strokeStyle = '#fbbf24';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = isStickLocked ? '#ffffff' : '#fbbf24';
+        ctx.lineWidth = isStickLocked ? 2.5 : 1.5;
         ctx.stroke();
       }
       ctx.fillStyle = isRightActive ? '#0f172a' : '#f8fafc';
@@ -926,13 +1020,33 @@ export class BalanceScaleGame implements KidGame {
     ctx.arc(leftAnchorLocalX, 0, 7, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = '#fbbf24';
+    // Right Eyelet: Interactive Hook Ring that sticks/drags along the bar
+    const isLeverDragging = this.isDraggingRightNotch;
+    const isLeverHovered = this.isHoveringRightLever || this.hoveredRightNotch !== -1;
+
+    ctx.save();
+    if (this.leverMode && isLeverDragging) {
+      // Magnetic sticky glow ring
+      ctx.fillStyle = 'rgba(251, 191, 36, 0.35)';
+      ctx.beginPath();
+      ctx.arc(rightAnchorLocalX, 0, 16, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = isLeverDragging ? '#f59e0b' : isLeverHovered ? '#fde047' : '#fbbf24';
     ctx.beginPath();
-    ctx.arc(rightAnchorLocalX, 0, 8, 0, Math.PI * 2);
+    ctx.arc(rightAnchorLocalX, 0, isLeverDragging ? 10.5 : isLeverHovered ? 9.5 : 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = isLeverDragging ? 2.5 : 1.5;
     ctx.stroke();
+
+    // Slider pin hole
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(rightAnchorLocalX, 0, isLeverDragging ? 3.5 : 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     ctx.restore();
 
