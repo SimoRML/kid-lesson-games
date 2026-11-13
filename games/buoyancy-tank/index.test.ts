@@ -510,6 +510,101 @@ describe('Buoyancy Tank Game & Archimedes Hydrostatic Engine', () => {
       }
     });
 
+    it('#6: renderSubmarine never uses a negative ellipse radius across a full propeller cycle', () => {
+      context.ageGroup = '9-11';
+      const game = createBuoyancyTankGame() as BuoyancyTankGame;
+      game.mount(container, context);
+      const radii: number[] = [];
+      const ctx = { ...(HTMLCanvasElement.prototype.getContext as any)() } as any;
+      ctx.ellipse = vi.fn((_x: number, _y: number, rx: number, ry: number) => radii.push(rx, ry));
+      for (let a = 0; a < Math.PI * 4; a += 0.1) {
+        (game as any).propellerAngle = a;
+        expect(() => (game as any).renderSubmarine(ctx, 400, 240)).not.toThrow();
+      }
+      expect(radii.length).toBeGreaterThan(0);
+      expect(radii.every((r) => r >= 0)).toBe(true);
+      game.destroy();
+    });
+
+    it('#6: loop survives a throwing render and keeps scheduling frames', () => {
+      const game = createBuoyancyTankGame() as BuoyancyTankGame;
+      game.mount(container, context);
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      (game as any).renderCanvas = () => {
+        throw new Error('boom');
+      };
+      game.start();
+      expect(() => (game as any).loop(performance.now() + 16)).not.toThrow();
+      expect((game as any).animFrameId).not.toBeNull();
+      expect(activeRafs.size).toBeGreaterThan(0);
+      errSpy.mockRestore();
+      game.destroy();
+    });
+
+    it('#6: updateConfig restarts a dead loop but respects a paused host', () => {
+      const game = createBuoyancyTankGame() as BuoyancyTankGame;
+      game.mount(container, context);
+      game.start();
+      (game as any).animFrameId = null; // simulate a dead loop
+      game.updateConfig?.({ ageGroup: '9-11' });
+      expect((game as any).animFrameId).not.toBeNull();
+      game.pause?.();
+      game.updateConfig?.({ ageGroup: '3-5' });
+      expect((game as any).animFrameId).toBeNull();
+      game.destroy();
+    });
+
+    it('#9: changing ageGroup resets score, streak, elapsed start time and the HUD score', () => {
+      const game = createBuoyancyTankGame() as BuoyancyTankGame;
+      game.mount(container, context);
+      game.start();
+      (game as any).score = 300;
+      (game as any).streak = 3;
+      (game as any).startTimeMs = 1;
+      (game as any).updateScoreDisplay();
+      expect(container.querySelector('#hud-score')?.textContent).toContain('300');
+
+      const before = Date.now();
+      game.updateConfig?.({ ageGroup: '9-11' });
+      expect((game as any).score).toBe(0);
+      expect((game as any).streak).toBe(0);
+      expect((game as any).startTimeMs).toBeGreaterThanOrEqual(before);
+      expect(container.querySelector('#hud-score')?.textContent).toContain('0');
+      expect(container.querySelector('#hud-score')?.textContent).not.toContain('300');
+      game.destroy();
+    });
+
+    it('#9: game:complete summary is age-appropriate', () => {
+      context.ageGroup = '3-5';
+      const game = createBuoyancyTankGame() as BuoyancyTankGame;
+      game.mount(container, context);
+      vi.useFakeTimers();
+      (game as any).currentLevelIndex = (game as any).levels.length - 1;
+      (game as any).triggerWin();
+      vi.advanceTimersByTime(1300);
+      vi.useRealTimers();
+      const done = emittedEvents.find((e) => e.type === 'game:complete');
+      expect(done?.payload.summary).toBe(getTranslations('en').summaries['3-5']);
+      game.destroy();
+    });
+
+    it('#8: 9-11 HUD hint never mentions foam when the level has no foam', () => {
+      context.ageGroup = '9-11';
+      const game = createBuoyancyTankGame() as BuoyancyTankGame;
+      game.mount(container, context);
+      const lvl = (game as any).levels[0];
+      expect(lvl.modules.some((m: SubmarineModule) => m.type === 'foam')).toBe(false);
+      const ballast = lvl.modules.filter((m: SubmarineModule) => m.type === 'ballast');
+      (game as any).placedEntities = ballast.map((item: SubmarineModule) => ({ item, x: 0, y: 0, vy: 0, bobPhase: 0, isSettled: false }));
+      (game as any).currentLevel = { ...lvl, submarine: { massG: 900, volumeCm3: 400 } };
+      (game as any).updateHUDText();
+      const text = container.querySelector('#hud-instruction')?.textContent || '';
+      expect(text).toMatch(/sinks/i);
+      expect(text).not.toMatch(/foam/i);
+      expect(text).toMatch(/Remove some ballast/);
+      game.destroy();
+    });
+
     it('handles sound toggle button click', () => {
       const game = createBuoyancyTankGame() as BuoyancyTankGame;
       game.mount(container, context);
@@ -524,6 +619,43 @@ describe('Buoyancy Tank Game & Archimedes Hydrostatic Engine', () => {
       game.destroy();
       if (container.parentElement) {
         document.body.removeChild(container);
+      }
+    });
+  });
+
+  describe('Hint scaffolding does not reveal answers (#8)', () => {
+    it('6-8 hints never contain the exact remaining mL, in both locales', () => {
+      for (const locale of ['en', 'fr'] as const) {
+        const t = getTranslations(locale);
+        const under = t.formatElementaryPrompt(500, 737, 613, 237, 113); // remaining 124
+        expect(under).not.toContain('124');
+        expect(under).toContain('613');
+        expect(under).toContain('737');
+        const start = t.formatElementaryPrompt(500, 737, 500, 237, 0);
+        expect(start).not.toContain('237');
+        const over = t.formatElementaryPrompt(500, 737, 761, 237, 261); // overshoot 24
+        expect(over).not.toContain('+24');
+        expect(over).not.toMatch(/\b24 mL/);
+        expect(t.hintUnderfill(613, 737)).not.toContain('124');
+      }
+    });
+
+    it('9-11 hints adapt to the inventory in both locales', () => {
+      for (const locale of ['en', 'fr'] as const) {
+        const t = getTranslations(locale);
+        const sinksNoFoam = t.formatUpperElementaryPrompt('x', 1, 500, 400, 1.25, 'sinks', { hasFoam: false, hasBallast: true });
+        const sinksFoam = t.formatUpperElementaryPrompt('x', 1, 500, 400, 1.25, 'sinks', { hasFoam: true, hasBallast: true });
+        expect(sinksNoFoam).not.toMatch(/foam|mousse/i);
+        expect(sinksFoam).toMatch(/foam|mousse/i);
+        const floatsNoBallast = t.formatUpperElementaryPrompt('x', 1, 200, 400, 0.5, 'floats', { hasFoam: true, hasBallast: false });
+        expect(floatsNoBallast).not.toMatch(/ballast|lest/i);
+      }
+    });
+
+    it('completion summaries are distinct per age bracket in EN and FR', () => {
+      for (const locale of ['en', 'fr'] as const) {
+        const t = getTranslations(locale);
+        expect(new Set(Object.values(t.summaries)).size).toBe(3);
       }
     });
   });
