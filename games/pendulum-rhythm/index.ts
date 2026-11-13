@@ -1,7 +1,7 @@
 import confetti from 'canvas-confetti';
 import type { GameContext, KidGame, AgeGroup } from '../../src/core/types.js';
 import type { SoundEngine } from '../../src/core/audio.js';
-import { getTranslations, type PendulumTranslations } from './i18n.js';
+import { getTranslations, type PendulumTranslations, type SyncHint } from './i18n.js';
 
 // ============================================================================
 // 1. DATA TYPES & INTERFACES
@@ -143,6 +143,9 @@ export interface PendulumLevel {
   availableLengths?: number[];
   availableMasses?: number[];
 }
+
+/** Logical (design-space) scene width; the canvas scales this uniformly to fit any card size. */
+const SCENE_WIDTH = 600;
 
 // Fallback audio dummy object for test or headless environments
 const fallbackAudio: SoundEngine = {
@@ -397,6 +400,93 @@ export function checkBeatMatch(
 }
 
 /**
+ * Relative tolerance on the measured time between consecutive nadir crossings (half a period
+ * when beatsPerCycle = 2). The real pendulum period grows with amplitude
+ * (T ≈ T0 (1 + θ²/16): +1.2% at 25°, +1.7% at 30°), so 6% accepts the intended length at any
+ * allowed amplitude while still rejecting the nearest wrong length offered (≥ ~19% away).
+ */
+export const METRONOME_PERIOD_REL_TOLERANCE = 0.06;
+
+/** Largest amplitude the child may drag a metronome-mode pendulum to (keeps T ≈ T0). */
+export const METRONOME_MAX_AMPLITUDE_DEG = 30;
+
+/** Default release amplitude for metronome-mode swings. */
+export const METRONOME_RELEASE_DEG = 25;
+
+/**
+ * Time between two consecutive nadir crossings (one per beat) for a pendulum of the given length.
+ * With beatsPerCycle = 2 this is half the period: 100 cm -> 1.0 s (60 BPM), 25 cm -> 0.5 s (120 BPM).
+ */
+export function calculateCrossingIntervalForLength(
+  lengthCm: number,
+  beatsPerCycle: number = 2,
+  g: number = 9.8
+): number {
+  if (beatsPerCycle <= 0) return 0;
+  return calculatePeriod(lengthCm, g) / beatsPerCycle;
+}
+
+/**
+ * Pure period check: does the measured crossing interval equal the beat interval within a
+ * relative tolerance? Rejects harmonic (2x too fast) and subharmonic (2x too slow) swings.
+ */
+export function checkPeriodMatch(
+  measuredIntervalSec: number,
+  beatIntervalSec: number,
+  relTolerance: number = METRONOME_PERIOD_REL_TOLERANCE
+): boolean {
+  if (!(measuredIntervalSec > 0) || !(beatIntervalSec > 0)) return false;
+  return Math.abs(measuredIntervalSec - beatIntervalSec) <= beatIntervalSec * relTolerance + 1e-9;
+}
+
+/** Smallest distance (seconds) between a crossing and the beat grid, modulo the beat interval. */
+export function beatPhaseOffsetSec(
+  crossingSec: number,
+  beatSec: number,
+  beatIntervalSec: number
+): number {
+  if (!(beatIntervalSec > 0)) return Infinity;
+  const raw = Math.abs(beatSec - crossingSec) % beatIntervalSec;
+  return Math.min(raw, beatIntervalSec - raw);
+}
+
+export interface BeatEvaluation {
+  matched: boolean;
+  /** 'unknown' until a crossing interval has been measured. */
+  verdict: 'match' | SyncHint | 'unknown';
+}
+
+/**
+ * Judges one metronome beat. A beat counts only when BOTH hold:
+ *  1. the measured crossing interval equals the beat interval (period check), and
+ *  2. the latest nadir crossing lands on the beat within `toleranceSec` (phase check).
+ */
+export function evaluateMetronomeBeat(input: {
+  beatTimeSec: number;
+  lastCrossingSec: number | null;
+  crossingIntervalSec: number | null;
+  beatIntervalSec: number;
+  toleranceSec: number;
+  relTolerance?: number;
+}): BeatEvaluation {
+  const { beatTimeSec, lastCrossingSec, crossingIntervalSec, beatIntervalSec, toleranceSec } =
+    input;
+  if (lastCrossingSec === null || crossingIntervalSec === null) {
+    return { matched: false, verdict: 'unknown' };
+  }
+  const relTol = input.relTolerance ?? METRONOME_PERIOD_REL_TOLERANCE;
+  if (!checkPeriodMatch(crossingIntervalSec, beatIntervalSec, relTol)) {
+    return {
+      matched: false,
+      verdict: crossingIntervalSec < beatIntervalSec ? 'fast' : 'slow'
+    };
+  }
+  const phaseOk =
+    beatPhaseOffsetSec(lastCrossingSec, beatTimeSec, beatIntervalSec) <= toleranceSec + 1e-9;
+  return phaseOk ? { matched: true, verdict: 'match' } : { matched: false, verdict: 'offbeat' };
+}
+
+/**
  * Verifies that a level conforms to pedagogical Anti-Mirroring rules (AGENTS.md Section 4.1).
  */
 export function verifyAntiMirroring(level: PendulumLevel): boolean {
@@ -638,8 +728,8 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PendulumLevel[] {
         levelNumber: 3,
         ageGroup: '6-8',
         title: 'Allegro Rhythm (120 BPM)',
-        prompt: 'Match the fast 120 BPM beat! Remember: mass does not change speed!',
-        promptFr: 'Ajuste au rythme rapide de 120 BPM ! Rappel : la masse ne change pas la vitesse !',
+        prompt: 'Match the fast 120 BPM beat! What does the mass do?',
+        promptFr: 'Ajuste au rythme rapide de 120 BPM ! Que fait la masse ?',
         mode: 'metronome',
         pendulums: [
           {
@@ -674,8 +764,8 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PendulumLevel[] {
       levelNumber: 1,
       ageGroup: '9-11',
       title: 'The 2:1 Octave Polyrhythm',
-      prompt: 'Set Pendulum B so Pendulum A swings 2 times for every 1 swing of B (T ∝ √L).',
-      promptFr: 'Règle le pendule B pour que A fasse 2 oscillations pour 1 de B (T ∝ √L).',
+      prompt: 'Set Pendulum B so Pendulum A swings 2 times for every 1 swing of B.',
+      promptFr: 'Règle le pendule B pour que A fasse 2 oscillations pour 1 de B.',
       mode: 'polyrhythm',
       pendulums: [
         {
@@ -714,8 +804,8 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PendulumLevel[] {
       levelNumber: 2,
       ageGroup: '9-11',
       title: 'The 3:1 Triple Swing',
-      prompt: 'Set Pendulum B for a 3:1 polyrhythm. Length ratio = (3/1)² = 9!',
-      promptFr: 'Règle le pendule B pour un polyrythme 3:1. Rapport de longueur = (3/1)² = 9 !',
+      prompt: 'Set Pendulum B for a 3:1 polyrhythm: A swings 3 times for every 1 swing of B.',
+      promptFr: 'Règle le pendule B pour un polyrythme 3:1 : A fait 3 oscillations pour 1 de B.',
       mode: 'polyrhythm',
       pendulums: [
         {
@@ -754,8 +844,8 @@ export function generateLevelsForAge(ageGroup: AgeGroup): PendulumLevel[] {
       levelNumber: 3,
       ageGroup: '9-11',
       title: 'The 3:2 Musical Hemiola',
-      prompt: 'Harmonize a 3:2 polyrhythm! Length ratio = (3/2)² = 2.25!',
-      promptFr: 'Harmonise un polyrythme 3:2 ! Rapport de longueur = (3/2)² = 2,25 !',
+      prompt: 'Harmonize a 3:2 polyrhythm: A swings 3 times while B swings 2.',
+      promptFr: 'Harmonise un polyrythme 3:2 : A fait 3 oscillations pendant que B en fait 2.',
       mode: 'polyrhythm',
       pendulums: [
         {
@@ -946,7 +1036,20 @@ export class PendulumRhythmGame implements KidGame {
     crossingCount: number;
     lastPeakTime: number;
     lastNegPeakTime: number;
+    /** Simulation-clock time (s) of the latest nadir crossing, null until one happens. */
+    lastCrossSim: number | null;
+    /** Measured time (s) between consecutive nadir crossings, null until measured. */
+    crossingIntervalSec: number | null;
+    /** Simulation-clock time (s) when the pendulum was last released from rest. */
+    swingStartSim: number | null;
   }> = [];
+
+  // Deterministic simulation clock (seconds), advanced by dt in updatePhysics
+  private simTime: number = 0;
+  private syncHint: SyncHint | null = null;
+  private massChanged: boolean = false;
+  private isSwingReleased: boolean = false;
+  private lastRemainingBlocks: number = -1;
 
   // Active blocks for preschool knockdown mode
   private activeBlocks: BlockItem[] = [];
@@ -954,7 +1057,6 @@ export class PendulumRhythmGame implements KidGame {
   // Metronome timing state
   private metronomeTimer: number = 0;
   private metronomeBeatCount: number = 0;
-  private lastMetronomeBeatTime: number = 0;
   private beatMatchStreak: number = 0;
 
   // Polyrhythm state
@@ -1048,6 +1150,7 @@ export class PendulumRhythmGame implements KidGame {
       this.context.locale = newContext.locale;
       this.t = getTranslations(newContext.locale);
       this.updateHUDStaticLabels();
+      this.renderControlsTray();
       this.updateDynamicInstruction();
     }
 
@@ -1062,6 +1165,8 @@ export class PendulumRhythmGame implements KidGame {
 
     if (newContext.ageGroup && newContext.ageGroup !== this.context.ageGroup) {
       this.context.ageGroup = newContext.ageGroup;
+      // Score convention: a new age bracket is a fresh run (score, streak, elapsed time).
+      this.resetRunProgress();
       this.loadLevels();
       this.setupLevel(0);
     }
@@ -1103,6 +1208,12 @@ export class PendulumRhythmGame implements KidGame {
   // INTERNAL LOGIC & RENDERING
   // ============================================================================
 
+  private resetRunProgress(): void {
+    this.score = 0;
+    this.streak = 0;
+    this.startTime = Date.now();
+  }
+
   private loadLevels(): void {
     let loaded: PendulumLevel[] | null = null;
     if (this.context.customLevels) {
@@ -1122,6 +1233,10 @@ export class PendulumRhythmGame implements KidGame {
     this.settlingFrames = 0;
     this.beatMatchStreak = 0;
     this.polyrhythmCoincidences = 0;
+    this.syncHint = null;
+    this.massChanged = false;
+    this.isSwingReleased = false;
+    this.lastRemainingBlocks = -1;
     if (lvl.mode === 'metronome') {
       const bpm = lvl.metronome?.bpm || 60;
       const beatIntervalSec = 60 / bpm;
@@ -1130,7 +1245,6 @@ export class PendulumRhythmGame implements KidGame {
       this.metronomeTimer = 0;
     }
     this.metronomeBeatCount = 0;
-    this.lastMetronomeBeatTime = 0;
     this.activeDragIndex = -1;
     this.isDraggingBeyondThreshold = false;
 
@@ -1146,7 +1260,10 @@ export class PendulumRhythmGame implements KidGame {
         lastNadirCrossingTime: 0,
         crossingCount: 0,
         lastPeakTime: 0,
-        lastNegPeakTime: 0
+        lastNegPeakTime: 0,
+        lastCrossSim: null,
+        crossingIntervalSec: null,
+        swingStartSim: this.simTime
       };
     });
 
@@ -1171,42 +1288,64 @@ export class PendulumRhythmGame implements KidGame {
 
   private renderDOM(): void {
     this.container.innerHTML = `
-      <div id="game-shell" style="display:flex; flex-direction:column; width:100%; height:100%; background:#0f172a; color:#f8fafc; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; user-select:none; overflow:hidden;">
+      <style>
+        #game-shell { container-type:inline-size; box-sizing:border-box; display:flex; flex-direction:column; width:100%; max-width:100%; height:100%; min-width:0; background:#0f172a; color:#f8fafc; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; user-select:none; overflow-x:hidden; overflow-y:auto; }
+        #game-shell * { box-sizing:border-box; }
+        #hud-header { flex:0 0 auto; padding:8px 12px; background:#1e293b; border-bottom:1px solid rgba(255,255,255,0.08); display:grid; grid-template-columns:auto 1fr auto; grid-template-areas:"brand instr actions"; align-items:center; gap:6px 12px; z-index:10; }
+        #hud-brand { grid-area:brand; display:flex; align-items:center; gap:8px; min-width:0; }
+        #hud-actions { grid-area:actions; display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
+        #hud-instruction { grid-area:instr; text-align:center; font-weight:600; font-size:0.9rem; line-height:1.35; color:#f8fafc; padding:0 8px; min-width:0; height:4.05em; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; align-content:center; }
+        #canvas-container { position:relative; flex:1 1 260px; min-height:260px; width:100%; min-width:0; overflow:hidden; }
+        #pendulum-canvas { position:absolute; inset:0; display:block; width:100%; height:100%; touch-action:none; }
+        #controls-tray { flex:0 0 auto; min-height:64px; background:#1e293b; border-top:1px solid rgba(255,255,255,0.08); padding:8px 12px; display:flex; align-items:center; justify-content:center; gap:8px 12px; flex-wrap:wrap; z-index:10; }
+        #controls-tray .ctl-group { display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:center; }
+        #controls-tray button { min-height:44px; min-width:44px; }
+        #hud-actions button { min-height:44px; min-width:44px; }
+        @container (max-width: 760px) {
+          #hud-header { grid-template-columns:1fr auto; grid-template-areas:"brand actions" "instr instr"; }
+          #hud-instruction { height:5.4em; -webkit-line-clamp:4; }
+        }
+        @container (max-width: 480px) {
+          #hud-title { display:none; }
+          #level-badge { white-space:nowrap; }
+          #hud-actions button { padding:6px 8px !important; font-size:0.78rem !important; }
+          #controls-tray { padding:6px 8px; gap:4px 8px; }
+          #controls-tray .ctl-group button { padding:6px 8px !important; }
+        }
+      </style>
+      <div id="game-shell">
         <!-- HUD Header -->
-        <header id="hud-header" style="min-height:50px; padding:8px 16px; background:#1e293b; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:10;">
+        <header id="hud-header">
           <!-- Left: Title & Level Badge -->
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div id="hud-brand">
             <span id="hud-title" style="font-weight:800; font-size:1.05rem; color:#38bdf8;">${this.t.title}</span>
-            <span id="level-badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 8px; border-radius:12px; font-weight:700; font-size:0.8rem; border:1px solid rgba(56,189,248,0.3);">
+            <span id="level-badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 8px; border-radius:12px; font-weight:700; font-size:0.8rem; border:1px solid rgba(56,189,248,0.3); white-space:nowrap;">
               ${this.t.level} 1/${this.levels.length}
             </span>
           </div>
 
-          <!-- Center: Dynamic Pedagogical Instruction -->
-          <div id="hud-instruction" style="flex:1; text-align:center; font-weight:600; font-size:0.9rem; color:#f8fafc; padding:0 8px;">
-            ${this.currentLevel.prompt}
-          </div>
+          <!-- Center: Dynamic Pedagogical Instruction (fixed height so the canvas never resizes) -->
+          <div id="hud-instruction">${this.currentLevel.prompt}</div>
 
           <!-- Right: Score, Sound & Reset -->
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span id="score-display" style="font-weight:700; color:#fbbf24; font-size:0.95rem;">⭐ ${this.score}</span>
-            <button id="btn-sound-toggle" type="button" style="min-height:44px; min-width:44px; padding:6px 12px; border-radius:8px; border:1px solid #334155; background:#1e293b; color:#cbd5e1; font-weight:600; font-size:0.82rem; cursor:pointer;">
+          <div id="hud-actions">
+            <span id="score-display" style="font-weight:700; color:#fbbf24; font-size:0.95rem; white-space:nowrap;">⭐ ${this.score}</span>
+            <button id="btn-sound-toggle" type="button" style="padding:6px 12px; border-radius:8px; border:1px solid #334155; background:#1e293b; color:#cbd5e1; font-weight:600; font-size:0.82rem; cursor:pointer;">
               ${this.audio.enabled ? this.t.soundOn : this.t.soundOff}
             </button>
-            <button id="btn-reset" type="button" style="min-height:44px; min-width:44px; padding:6px 12px; border-radius:8px; border:1px solid rgba(239,68,68,0.4); background:rgba(239,68,68,0.12); color:#fca5a5; font-weight:600; font-size:0.82rem; cursor:pointer;">
+            <button id="btn-reset" type="button" style="padding:6px 12px; border-radius:8px; border:1px solid rgba(239,68,68,0.4); background:rgba(239,68,68,0.12); color:#fca5a5; font-weight:600; font-size:0.82rem; cursor:pointer;">
               ${this.t.reset}
             </button>
           </div>
         </header>
 
         <!-- Main Canvas Area -->
-        <div id="canvas-container" style="position:relative; flex:1; width:100%; height:100%; min-height:0; overflow:hidden;">
-          <canvas id="pendulum-canvas" style="display:block; width:100%; height:100%; touch-action:none;"></canvas>
+        <div id="canvas-container">
+          <canvas id="pendulum-canvas"></canvas>
         </div>
 
-        <!-- Controls Tray -->
-        <footer id="controls-tray" style="min-height:64px; background:#1e293b; border-top:1px solid rgba(255,255,255,0.08); padding:8px 16px; display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; z-index:10;">
-        </footer>
+        <!-- Controls Tray (normal flow below the canvas, never overlapping it) -->
+        <footer id="controls-tray"></footer>
       </div>
     `;
 
@@ -1242,7 +1381,7 @@ export class PendulumRhythmGame implements KidGame {
 
     if (lvl.mode === 'knockdown') {
       tray.innerHTML = `
-        <span style="font-size:0.85rem; color:#94a3b8; font-weight:600;">Presets:</span>
+        <span style="font-size:0.85rem; color:#94a3b8; font-weight:600;">${this.t.presetsLabel}</span>
         <button type="button" data-angle="20" class="btn-preset" style="min-height:44px; padding:6px 14px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#38bdf8; font-weight:600; cursor:pointer;">
           ${this.t.gentlePreset}
         </button>
@@ -1282,15 +1421,15 @@ export class PendulumRhythmGame implements KidGame {
         .join('');
 
       tray.innerHTML = `
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:0.85rem; color:#94a3b8; font-weight:600;">Length:</span>
+        <div class="ctl-group">
+          <span style="font-size:0.85rem; color:#94a3b8; font-weight:600;">${this.t.lengthLabel}</span>
           ${lengthsHtml}
         </div>
-        <div style="display:flex; align-items:center; gap:6px; margin-left:12px;">
-          <span style="font-size:0.85rem; color:#94a3b8; font-weight:600;">Mass:</span>
+        <div class="ctl-group">
+          <span style="font-size:0.85rem; color:#94a3b8; font-weight:600;">${this.t.massLabel}</span>
           ${massesHtml}
         </div>
-        <button type="button" id="btn-release-swing" style="min-height:44px; padding:6px 14px; border-radius:8px; border:1px solid #10b981; background:rgba(16,185,129,0.2); color:#10b981; font-weight:700; cursor:pointer; margin-left:8px;">
+        <button type="button" id="btn-release-swing" style="min-height:44px; padding:6px 14px; border-radius:8px; border:1px solid #10b981; background:rgba(16,185,129,0.2); color:#10b981; font-weight:700; cursor:pointer;">
           ${this.t.resetSwing}
         </button>
       `;
@@ -1309,11 +1448,11 @@ export class PendulumRhythmGame implements KidGame {
         .join('');
 
       tray.innerHTML = `
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:0.85rem; color:#fbbf24; font-weight:600;">Pendulum B Length:</span>
+        <div class="ctl-group">
+          <span style="font-size:0.85rem; color:#fbbf24; font-weight:600;">${this.t.pendulumBLengthLabel}</span>
           ${lengthsHtml}
         </div>
-        <button type="button" id="btn-release-both" style="min-height:44px; padding:6px 14px; border-radius:8px; border:1px solid #38bdf8; background:rgba(56,189,248,0.2); color:#38bdf8; font-weight:700; cursor:pointer; margin-left:12px;">
+        <button type="button" id="btn-release-both" style="min-height:44px; padding:6px 14px; border-radius:8px; border:1px solid #38bdf8; background:rgba(56,189,248,0.2); color:#38bdf8; font-weight:700; cursor:pointer;">
           ${this.t.releaseBoth}
         </button>
       `;
@@ -1351,18 +1490,18 @@ export class PendulumRhythmGame implements KidGame {
       const angleDeg = Math.round(
         Math.abs(((this.pendulumsState[0]?.theta || 0) * 180) / Math.PI)
       );
-      instructionEl.textContent = this.t.formatPreschoolPrompt(angleDeg, remaining);
+      const phase =
+        this.isSwingReleased && !this.pendulumsState[0]?.isDragging ? 'swinging' : 'aim';
+      instructionEl.textContent = this.t.formatPreschoolPrompt(angleDeg, remaining, phase);
     } else if (lvl.mode === 'metronome') {
       const bpm = lvl.metronome?.bpm || 60;
       const targetStreak = lvl.metronome?.targetStreak || 3;
-      const curL = this.pendulumsState[0]?.config.length || 45;
-      const curM = this.pendulumsState[0]?.config.mass || 100;
       instructionEl.textContent = this.t.formatElementaryPrompt(
         bpm,
-        curL,
-        curM,
         this.beatMatchStreak,
-        targetStreak
+        targetStreak,
+        this.syncHint,
+        this.massChanged
       );
     } else if (lvl.mode === 'polyrhythm') {
       const p = lvl.polyrhythm?.ratioP || 2;
@@ -1374,13 +1513,15 @@ export class PendulumRhythmGame implements KidGame {
       const currentRatioStr = `${approxFreqRatio.toFixed(2)}:1`;
       const targetCoincidences = lvl.polyrhythm?.targetCoincidences || 2;
 
+      const lengthRule = `(${p}/${q})² = ${Number((Math.pow(p / q, 2)).toFixed(2))}`;
       instructionEl.textContent = this.t.formatUpperPrompt(
         targetRatioStr,
         lenA,
         lenB,
         currentRatioStr,
         this.polyrhythmCoincidences,
-        targetCoincidences
+        targetCoincidences,
+        lengthRule
       );
     }
   }
@@ -1430,6 +1571,7 @@ export class PendulumRhythmGame implements KidGame {
           if (this.pendulumsState[0]) {
             this.pendulumsState[0].theta = -(angleDeg * Math.PI) / 180;
             this.pendulumsState[0].omega = 0;
+            this.isSwingReleased = true;
             this.audio.playClick();
             this.updateDynamicInstruction();
           }
@@ -1439,6 +1581,8 @@ export class PendulumRhythmGame implements KidGame {
         // Reset blocks in preschool
         if (target.id === 'btn-reset-blocks') {
           this.audio.playPop();
+          this.isSwingReleased = false;
+          this.lastRemainingBlocks = -1;
           if (this.currentLevel.blocks) {
             this.activeBlocks = this.currentLevel.blocks.map((b) => ({
               ...b,
@@ -1459,13 +1603,7 @@ export class PendulumRhythmGame implements KidGame {
           const newLen = Number(lenBtn.dataset.length);
           if (this.pendulumsState[0]) {
             this.pendulumsState[0].config.length = newLen;
-            this.pendulumsState[0].theta = (25 * Math.PI) / 180;
-            this.pendulumsState[0].omega = 0;
-            this.pendulumsState[0].lastNadirCrossingTime = 0;
-            this.beatMatchStreak = 0;
-            const bpm = this.currentLevel.metronome?.bpm || 60;
-            const beatIntervalSec = 60 / bpm;
-            this.metronomeTimer = beatIntervalSec / 2;
+            this.restartMetronomeSwing(METRONOME_RELEASE_DEG);
             this.audio.playClick();
             this.renderControlsTray();
             this.updateDynamicInstruction();
@@ -1478,6 +1616,7 @@ export class PendulumRhythmGame implements KidGame {
         if (massBtn && massBtn.dataset.mass) {
           const newMass = Number(massBtn.dataset.mass);
           if (this.pendulumsState[0]) {
+            if (newMass !== this.pendulumsState[0].config.mass) this.massChanged = true;
             this.pendulumsState[0].config.mass = newMass;
             this.audio.playPop();
             this.renderControlsTray();
@@ -1489,9 +1628,8 @@ export class PendulumRhythmGame implements KidGame {
         // Elementary Release / Reset swing
         if (target.id === 'btn-release-swing') {
           if (this.pendulumsState[0]) {
-            this.pendulumsState[0].theta = (25 * Math.PI) / 180;
-            this.pendulumsState[0].omega = 0;
-            this.beatMatchStreak = 0;
+            // Swing and metronome restart together, so a correct length always lines up.
+            this.restartMetronomeSwing(METRONOME_RELEASE_DEG);
             this.audio.playPop();
             this.updateDynamicInstruction();
           }
@@ -1553,8 +1691,8 @@ export class PendulumRhythmGame implements KidGame {
       'pointerdown',
       (e: PointerEvent) => {
         const rect = this.canvas.getBoundingClientRect();
-        const px = e.clientX - rect.left;
-        const py = e.clientY - rect.top;
+        const { x: px, y: py } = this.toScene(e.clientX - rect.left, e.clientY - rect.top);
+        const sceneScale = this.getSceneTransform(rect.width || 800, rect.height || 480).scale;
         this.pointerDownPos = { x: px, y: py };
         this.isDraggingBeyondThreshold = false;
 
@@ -1564,7 +1702,7 @@ export class PendulumRhythmGame implements KidGame {
           const lenPx = this.getLengthInPixels(p.config.length);
           const bobX = p.config.pivotX + lenPx * Math.sin(p.theta);
           const bobY = p.config.pivotY + lenPx * Math.cos(p.theta);
-          const hitRadius = Math.max(30, p.config.bobRadius || 22);
+          const hitRadius = Math.max(30, p.config.bobRadius || 22, 26 / sceneScale);
 
           const dist = Math.hypot(px - bobX, py - bobY);
           if (dist <= hitRadius) {
@@ -1585,12 +1723,12 @@ export class PendulumRhythmGame implements KidGame {
       (e: PointerEvent) => {
         if (this.activeDragIndex === -1) return;
         const rect = this.canvas.getBoundingClientRect();
-        const px = e.clientX - rect.left;
-        const py = e.clientY - rect.top;
+        const { x: px, y: py } = this.toScene(e.clientX - rect.left, e.clientY - rect.top);
+        const dragScale = this.getSceneTransform(rect.width || 800, rect.height || 480).scale;
 
         if (
           !this.isDraggingBeyondThreshold &&
-          Math.hypot(px - this.pointerDownPos.x, py - this.pointerDownPos.y) > 5
+          Math.hypot(px - this.pointerDownPos.x, py - this.pointerDownPos.y) * dragScale > 5
         ) {
           this.isDraggingBeyondThreshold = true;
         }
@@ -1600,8 +1738,10 @@ export class PendulumRhythmGame implements KidGame {
           const dx = px - p.config.pivotX;
           const dy = py - p.config.pivotY;
           let angle = Math.atan2(dx, dy); // 0 is hanging straight down
-          // Clamp angle within [-75°, 75°]
-          const maxRad = (75 * Math.PI) / 180;
+          // Clamp angle within [-75°, 75°]; metronome mode stays in the small-angle regime
+          // so the measured period reflects string length rather than amplitude.
+          const maxDeg = this.currentLevel.mode === 'metronome' ? METRONOME_MAX_AMPLITUDE_DEG : 75;
+          const maxRad = (maxDeg * Math.PI) / 180;
           angle = Math.max(-maxRad, Math.min(maxRad, angle));
           p.theta = angle;
           p.omega = 0;
@@ -1621,15 +1761,22 @@ export class PendulumRhythmGame implements KidGame {
           p.lastNegPeakTime = 0;
           p.lastNadirCrossingTime = 0;
         }
-        if (this.currentLevel.mode === 'polyrhythm') {
+        if (this.currentLevel.mode === 'knockdown') {
+          if (p && this.isDraggingBeyondThreshold && Math.abs(p.theta) > 0.05) {
+            this.isSwingReleased = true;
+          }
+          this.updateDynamicInstruction();
+        } else if (this.currentLevel.mode === 'polyrhythm') {
           this.polyrhythmCoincidences = 0;
           this.settlingFrames = 0;
           this.lastCoincidenceTime = performance.now();
         } else if (this.currentLevel.mode === 'metronome') {
-          const bpm = this.currentLevel.metronome?.bpm || 60;
-          const beatIntervalSec = 60 / bpm;
-          this.metronomeTimer = beatIntervalSec / 2;
-          this.beatMatchStreak = 0;
+          if (p) {
+            p.isDragging = false;
+            const keepDeg = (p.theta * 180) / Math.PI;
+            this.restartMetronomeSwing(keepDeg);
+            this.updateDynamicInstruction();
+          }
         }
         this.activeDragIndex = -1;
         this.audio.playDrop();
@@ -1638,6 +1785,42 @@ export class PendulumRhythmGame implements KidGame {
 
     window.addEventListener('pointerup', onPointerUp, { signal });
     window.addEventListener('pointercancel', onPointerUp, { signal });
+  }
+
+  /**
+   * Releases the metronome-mode pendulum from rest at `angleDeg` and restarts the metronome so
+   * both start in phase: the first nadir crossing falls T/4 later, exactly half a beat for the
+   * intended length, which is when the metronome's first beat lands.
+   */
+  private restartMetronomeSwing(angleDeg: number): void {
+    const p = this.pendulumsState[0];
+    if (!p) return;
+    const bpm = this.currentLevel.metronome?.bpm || 60;
+    p.theta = (angleDeg * Math.PI) / 180;
+    p.omega = 0;
+    p.alpha = 0;
+    p.lastNadirCrossingTime = 0;
+    p.lastCrossSim = null;
+    p.crossingIntervalSec = null;
+    p.swingStartSim = this.simTime;
+    this.metronomeTimer = 60 / bpm / 2;
+    this.beatMatchStreak = 0;
+    this.syncHint = null;
+  }
+
+  /** Converts canvas CSS pixels to scene (design-space) coordinates. */
+  private getSceneTransform(width: number, height: number): { scale: number; ox: number; oy: number; sw: number; sh: number } {
+    const mode = this.currentLevel?.mode;
+    const sw = SCENE_WIDTH;
+    const sh = mode === 'knockdown' ? 430 : mode === 'metronome' ? 380 : 360;
+    const scale = Math.max(0.2, Math.min(width / sw, height / sh));
+    return { scale, ox: (width - sw * scale) / 2, oy: (height - sh * scale) / 2, sw, sh };
+  }
+
+  private toScene(px: number, py: number): Vec2 {
+    const rect = this.canvas.getBoundingClientRect();
+    const t = this.getSceneTransform(rect.width || 800, rect.height || 480);
+    return { x: (px - t.ox) / t.scale, y: (py - t.oy) / t.scale };
   }
 
   private getLengthInPixels(lengthCm: number): number {
@@ -1664,6 +1847,8 @@ export class PendulumRhythmGame implements KidGame {
 
   private updatePhysics(dt: number, timestamp: number): void {
     const lvl = this.currentLevel;
+    const stepStartSim = this.simTime;
+    this.simTime += dt;
 
     // 1. Update Pendulums via symplectic semi-implicit Euler
     for (let i = 0; i < this.pendulumsState.length; i++) {
@@ -1690,6 +1875,16 @@ export class PendulumRhythmGame implements KidGame {
       if ((prevTheta < 0 && p.theta >= 0) || (prevTheta > 0 && p.theta <= 0)) {
         p.crossingCount++;
         p.lastNadirCrossingTime = timestamp;
+        // Sub-step interpolated crossing time on the deterministic simulation clock
+        const frac = Math.abs(prevTheta) / (Math.abs(prevTheta) + Math.abs(p.theta) || 1);
+        const crossSim = stepStartSim + dt * frac;
+        if (p.lastCrossSim !== null) {
+          p.crossingIntervalSec = crossSim - p.lastCrossSim;
+        } else if (p.swingStartSim !== null) {
+          // Released from rest at an extreme: first crossing is a quarter period away
+          p.crossingIntervalSec = 2 * (crossSim - p.swingStartSim);
+        }
+        p.lastCrossSim = crossSim;
         if (this.audio.enabled && !this.isRoundOver) {
           if (lvl.mode === 'polyrhythm') {
             const freq = i === 0 ? 880 : 440;
@@ -1713,7 +1908,7 @@ export class PendulumRhythmGame implements KidGame {
     if (lvl.mode === 'knockdown') {
       this.updateKnockdownMode(dt);
     } else if (lvl.mode === 'metronome') {
-      this.updateMetronomeMode(dt, timestamp);
+      this.updateMetronomeMode(dt);
     } else if (lvl.mode === 'polyrhythm') {
       this.updatePolyrhythmMode(timestamp);
     }
@@ -1802,6 +1997,19 @@ export class PendulumRhythmGame implements KidGame {
       }
     }
 
+    // Keep the HUD honest: refresh when the block count changes or the ball comes to rest
+    const remainingNow = this.activeBlocks.filter((b) => !b.isKnocked).length;
+    const atRest = Math.abs(p.theta) < 0.03 && Math.abs(p.omega) < 0.1 && !p.isDragging;
+    let hudStale = remainingNow !== this.lastRemainingBlocks;
+    if (this.isSwingReleased && atRest) {
+      this.isSwingReleased = false;
+      hudStale = true;
+    }
+    if (hudStale) {
+      this.lastRemainingBlocks = remainingNow;
+      this.updateDynamicInstruction();
+    }
+
     if (allKnocked && !this.isRoundOver) {
       this.settlingFrames++;
       if (this.settlingFrames > 35) {
@@ -1811,7 +2019,7 @@ export class PendulumRhythmGame implements KidGame {
     }
   }
 
-  private updateMetronomeMode(dt: number, timestamp: number): void {
+  private updateMetronomeMode(dt: number): void {
     const lvl = this.currentLevel;
     const bpm = lvl.metronome?.bpm || 60;
     const beatIntervalSec = 60 / bpm;
@@ -1830,33 +2038,31 @@ export class PendulumRhythmGame implements KidGame {
     if (this.metronomeTimer >= beatIntervalSec) {
       this.metronomeTimer -= beatIntervalSec;
       this.metronomeBeatCount++;
-      this.lastMetronomeBeatTime = timestamp;
 
       // Acoustic & visual tick
       this.audio.playClick();
 
-      // Check synchronization with pendulum swing using pure checkBeatMatch
+      // Judge the beat: swing period must equal the beat interval AND land on the beat
       const p = this.pendulumsState[0];
-      if (p && !p.isDragging && p.lastNadirCrossingTime > 0) {
+      if (p && !p.isDragging) {
         const tolerance = (lvl.metronome?.toleranceMs || 140) / 1000;
-        const timeDiff = Math.abs(this.lastMetronomeBeatTime - p.lastNadirCrossingTime) / 1000;
-        const isMatched =
-          checkBeatMatch(
-            p.lastNadirCrossingTime / 1000,
-            this.lastMetronomeBeatTime / 1000,
-            tolerance
-          ) || Math.abs(timeDiff - beatIntervalSec) <= tolerance;
+        const result = evaluateMetronomeBeat({
+          beatTimeSec: this.simTime - this.metronomeTimer,
+          lastCrossingSec: p.lastCrossSim,
+          crossingIntervalSec: p.crossingIntervalSec,
+          beatIntervalSec,
+          toleranceSec: tolerance
+        });
 
-        if (isMatched) {
+        if (result.matched) {
           this.beatMatchStreak++;
+          this.syncHint = null;
           this.audio.playChime();
           this.updateDynamicInstruction();
-        } else {
-          // If out of sync, reset streak
-          if (this.beatMatchStreak > 0) {
-            this.beatMatchStreak = 0;
-            this.updateDynamicInstruction();
-          }
+        } else if (result.verdict !== 'unknown') {
+          this.beatMatchStreak = 0;
+          this.syncHint = result.verdict === 'match' ? null : result.verdict;
+          this.updateDynamicInstruction();
         }
       }
     }
@@ -1935,6 +2141,13 @@ export class PendulumRhythmGame implements KidGame {
     });
 
     const isLastLevel = this.currentLevelIndex >= this.levels.length - 1;
+    this.isSwingReleased = false;
+    this.updateHUDStaticLabels();
+    if (this.currentLevel.mode === 'knockdown') {
+      this.updateDynamicInstruction();
+    } else if (isLastLevel) {
+      this.updateDynamicInstruction();
+    }
 
     // Emit telemetry score & progress
     this.context.emit('game:score', {
@@ -1959,10 +2172,28 @@ export class PendulumRhythmGame implements KidGame {
           timeElapsed: Math.round((Date.now() - this.startTime) / 1000),
           summary: this.t.summary
         });
+        this.showCompletionAndRestart();
       } else {
         this.setupLevel(this.currentLevelIndex + 1);
       }
     }, 1200);
+    this.pendingTimeouts.add(timeoutId);
+  }
+
+  /**
+   * After game:complete, show the celebration banner briefly and then start a fresh run
+   * (levels regenerated, score/streak/time reset) so the board is never a dead end.
+   */
+  private showCompletionAndRestart(): void {
+    const instructionEl = this.container.querySelector('#hud-instruction');
+    if (instructionEl) instructionEl.textContent = `${this.t.wellDone} ${this.t.summary}`;
+    const timeoutId = setTimeout(() => {
+      this.pendingTimeouts.delete(timeoutId);
+      if (this.isDestroyed) return;
+      this.resetRunProgress();
+      this.loadLevels();
+      this.setupLevel(0);
+    }, 3500);
     this.pendingTimeouts.add(timeoutId);
   }
 
@@ -1986,21 +2217,28 @@ export class PendulumRhythmGame implements KidGame {
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
+    // Uniformly scale the fixed design-space scene to fit the canvas at any card size
+    const tf = this.getSceneTransform(width, height);
+    ctx.save();
+    ctx.translate(tf.ox, tf.oy);
+    ctx.scale(tf.scale, tf.scale);
+
     const lvl = this.currentLevel;
 
     // Render mode background elements
     if (lvl.mode === 'knockdown') {
       this.renderPedestalAndBlocks(ctx);
     } else if (lvl.mode === 'metronome') {
-      this.renderMetronome(ctx, width);
+      this.renderMetronome(ctx, SCENE_WIDTH);
     } else if (lvl.mode === 'polyrhythm') {
-      this.renderPolyrhythmGrid(ctx, width);
+      this.renderPolyrhythmGrid(ctx, SCENE_WIDTH);
     }
 
     // Render pendulums
     for (let i = 0; i < this.pendulumsState.length; i++) {
       this.renderPendulum(ctx, this.pendulumsState[i], i);
     }
+    ctx.restore();
   }
 
   private renderPendulum(
@@ -2114,7 +2352,7 @@ export class PendulumRhythmGame implements KidGame {
 
   private renderMetronome(ctx: CanvasRenderingContext2D, width: number): void {
     const bpm = this.currentLevel.metronome?.bpm || 60;
-    const mx = width - 140;
+    const mx = width - 90;
     const my = 180;
 
     ctx.save();
@@ -2183,7 +2421,7 @@ export class PendulumRhythmGame implements KidGame {
     ctx.fillStyle = '#fbbf24';
     ctx.font = '800 16px system-ui';
     ctx.textAlign = 'center';
-    ctx.fillText(`Polyrhythm Ratio ${p}:${q}`, width / 2, 28);
+    ctx.fillText(`${this.t.polyrhythmRatioLabel} ${p}:${q}`, width / 2, 28);
 
     // Coincidence indicator
     const targetCoincidences = lvl.polyrhythm?.targetCoincidences || 2;
