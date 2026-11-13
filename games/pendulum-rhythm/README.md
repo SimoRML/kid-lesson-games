@@ -22,7 +22,8 @@ Periodic motion and rhythm form the physical foundation of clocks, musical tempo
   - The goal is presented acoustically and visually as a musical tempo ($60\text{ BPM}$, $90\text{ BPM}$, $120\text{ BPM}$).
   - The tray provides multiple string lengths ($25\text{ cm}$, $45\text{ cm}$, $64\text{ cm}$, $100\text{ cm}$) AND multiple bob masses ($50\text{ g}$, $100\text{ g}$, $200\text{ g}$).
   - The child discovers that swapping a $50\text{ g}$ mass for a $200\text{ g}$ mass leaves the period unchanged, while shortening the string dramatically speeds up the swing.
-- **Victory Condition**: Synchronize swing beats with the metronome for 3 consecutive beats within $\pm 120\text{ ms}$.
+- **Victory Condition**: 3 consecutive beats where (1) the measured time between nadir crossings equals the beat interval within 6% (rejects 2x too fast / too slow swings; `checkPeriodMatch`) and (2) the crossing lands on the beat within the level tolerance. Dragging is limited to 30 deg so the period reflects string length, and *Reset Swing* restarts swing and metronome in phase.
+- **Scaffolding**: no answer is stated up front. The HUD asks questions about the mass, gives a directional hint when out of sync ("faster/slower than the beat"), and explains the invariance only after success.
 
 ### Age Bracket 3: Ages 9–11 (Upper Elementary) — "Harmonic Polyrhythms & Square-Root Law ($T \propto \sqrt{L}$)"
 - **Focus**: Proportional and non-linear reasoning, fractions, and musical polyrhythms ($2:1$, $3:1$, $3:2$).

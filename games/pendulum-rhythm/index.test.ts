@@ -15,6 +15,10 @@ import {
   checkCircleBoxCollision,
   resolveCollisionImpulse,
   checkBeatMatch,
+  checkPeriodMatch,
+  beatPhaseOffsetSec,
+  evaluateMetronomeBeat,
+  calculateCrossingIntervalForLength,
   verifyAntiMirroring,
   generateLevelsForAge,
   parseCustomLevels,
@@ -630,7 +634,7 @@ describe('Pendulum Rhythm Game & Harmonic Oscillator Engine', () => {
       const badgeEl = container.querySelector('#level-badge');
       expect(badgeEl?.textContent).toContain('1/3');
       const tray = container.querySelector('#controls-tray');
-      expect(tray?.textContent).toContain('Pendulum B Length');
+      expect(tray?.textContent).toContain('Longueur du pendule B');
 
       game.destroy();
     });
@@ -937,6 +941,330 @@ describe('Pendulum Rhythm Game & Harmonic Oscillator Engine', () => {
 
       game.destroy();
     });
+
+    // ---------------------------------------------------------------------
+    // Issue #23: period-validated beat matching
+    // ---------------------------------------------------------------------
+    describe('beat matching validates the swing period (issue #23)', () => {
+      it('pure period check: accepts only the beat interval, rejects 2x too fast and 2x too slow', () => {
+        expect(checkPeriodMatch(1.0, 1.0)).toBe(true);
+        expect(checkPeriodMatch(1.03, 1.0)).toBe(true);
+        expect(checkPeriodMatch(0.5, 1.0)).toBe(false); // harmonic (2x too fast)
+        expect(checkPeriodMatch(2.0, 1.0)).toBe(false); // subharmonic (2x too slow)
+        expect(checkPeriodMatch(0, 1.0)).toBe(false);
+        expect(checkPeriodMatch(1.0, 0)).toBe(false);
+      });
+
+      it('phase offset is measured modulo the beat interval', () => {
+        expect(beatPhaseOffsetSec(0.5, 1.5, 1.0)).toBeCloseTo(0, 9);
+        expect(beatPhaseOffsetSec(0.4, 1.5, 1.0)).toBeCloseTo(0.1, 9);
+        expect(beatPhaseOffsetSec(0.2, 1.0, 1.0)).toBeCloseTo(0.2, 9);
+      });
+
+      it('evaluateMetronomeBeat reports unknown, fast, slow, offbeat and match', () => {
+        const base = { beatTimeSec: 3, beatIntervalSec: 1, toleranceSec: 0.14 };
+        expect(
+          evaluateMetronomeBeat({ ...base, lastCrossingSec: null, crossingIntervalSec: null }).verdict
+        ).toBe('unknown');
+        expect(
+          evaluateMetronomeBeat({ ...base, lastCrossingSec: 2.5, crossingIntervalSec: 0.5 }).verdict
+        ).toBe('fast');
+        expect(
+          evaluateMetronomeBeat({ ...base, lastCrossingSec: 2, crossingIntervalSec: 2 }).verdict
+        ).toBe('slow');
+        expect(
+          evaluateMetronomeBeat({ ...base, lastCrossingSec: 2.5, crossingIntervalSec: 1 }).verdict
+        ).toBe('offbeat');
+        expect(
+          evaluateMetronomeBeat({ ...base, lastCrossingSec: 2.95, crossingIntervalSec: 1.0 })
+        ).toEqual({ matched: true, verdict: 'match' });
+      });
+
+      it('for every 6-8 level only the intended length wins, for any start phase (pure)', () => {
+        for (const lvl of generateLevelsForAge('6-8')) {
+          const beat = 60 / lvl.metronome!.bpm;
+          const tol = (lvl.metronome!.toleranceMs || 140) / 1000;
+          const intended = calculateLengthForBpm(lvl.metronome!.bpm, 2, 9.8);
+          for (const len of lvl.availableLengths!) {
+            // real swing at 25 deg: T ~ T0 * (1 + theta^2/16)
+            const half = calculateCrossingIntervalForLength(len) * 1.012;
+            let everMatched = false;
+            for (let k = 0; k < 40; k++) {
+              const phase = (k / 40) * beat; // time of the first nadir crossing
+              for (let n = 1; n <= 12; n++) {
+                const beatT = n * beat;
+                if (beatT < phase + half) continue; // need two crossings to measure
+                const crossings = Math.floor((beatT - phase) / half);
+                const last = phase + crossings * half;
+                const r = evaluateMetronomeBeat({
+                  beatTimeSec: beatT,
+                  lastCrossingSec: last,
+                  crossingIntervalSec: half,
+                  beatIntervalSec: beat,
+                  toleranceSec: tol
+                });
+                if (r.matched) everMatched = true;
+              }
+            }
+            if (Math.abs(len - intended) < 2) {
+              expect(everMatched).toBe(true);
+            } else {
+              expect(everMatched, `${beat}s beat, ${len} cm`).toBe(false);
+            }
+          }
+        }
+      });
+
+      it('25 cm no longer solves the 60 BPM level (simulation, several metronome phases)', () => {
+        for (const phaseOffset of [0, 0.1, 0.25, 0.4]) {
+          const game = createGame();
+          game.mount(container, context);
+          game.start();
+          const anyGame = game as any;
+          (container.querySelector('.btn-length[data-length="25"]') as HTMLElement).click();
+          anyGame.metronomeTimer += phaseOffset;
+          let now = performance.now();
+          for (let i = 0; i < 1600; i++) {
+            now += 16;
+            anyGame.updatePhysics(0.016, now);
+          }
+          expect(anyGame.beatMatchStreak).toBeLessThan(3);
+          expect(anyGame.isRoundOver).toBe(false);
+          game.destroy();
+        }
+      });
+
+      it('every 6-8 level: only the intended length reaches the target streak (also after Reset Swing)', () => {
+        const levels = generateLevelsForAge('6-8');
+        levels.forEach((lvl, levelIdx) => {
+          const intended = calculateLengthForBpm(lvl.metronome!.bpm, 2, 9.8);
+          for (const len of lvl.availableLengths!) {
+            const game = createGame();
+            game.mount(container, context);
+            game.start();
+            const anyGame = game as any;
+            anyGame.setupLevel(levelIdx);
+            (container.querySelector(`.btn-length[data-length="${len}"]`) as HTMLElement).click();
+            // Reset Swing restarts the swing and the metronome together
+            (container.querySelector('#btn-release-swing') as HTMLElement).click();
+            let now = performance.now();
+            for (let i = 0; i < 1200; i++) {
+              now += 16;
+              anyGame.updatePhysics(0.016, now);
+              if (anyGame.isRoundOver) break;
+            }
+            const solved = anyGame.isRoundOver || anyGame.beatMatchStreak >= 3;
+            expect(solved, `level ${levelIdx + 1}, ${len} cm`).toBe(Math.abs(len - intended) < 2);
+            game.destroy();
+          }
+        });
+      });
+
+      it('dragging a metronome pendulum is limited to the small-angle regime', () => {
+        const game = createGame();
+        game.mount(container, context);
+        game.start();
+        const anyGame = game as any;
+        const p = anyGame.pendulumsState[0];
+        const t = anyGame.getSceneTransform(800, 480);
+        anyGame.activeDragIndex = 0;
+        p.isDragging = true;
+        const ev = new Event('pointermove') as any;
+        ev.clientX = (p.config.pivotX + 400) * t.scale + t.ox;
+        ev.clientY = (p.config.pivotY + 10) * t.scale + t.oy;
+        window.dispatchEvent(ev);
+        expect(Math.abs(p.theta)).toBeLessThanOrEqual((30 * Math.PI) / 180 + 1e-9);
+        game.destroy();
+      });
+    });
+
+    // ---------------------------------------------------------------------
+    // Issue #24: hints guide without revealing the lesson
+    // ---------------------------------------------------------------------
+    describe('hints guide without giving away the lesson (issue #24)', () => {
+      const LEAKS = [
+        /Galile/i,
+        /only string length/i,
+        /only the string length/i,
+        /seule la longueur/i,
+        /²/,
+        /√/,
+        /squared/i,
+        /carré/i,
+        /Length:\s*\d/,
+        /Longueur\s*:\s*\d+\s*cm,/
+      ];
+
+      it('no pre-success instruction contains the Galileo hint or squared-length rule (EN + FR)', () => {
+        for (const locale of ['en', 'fr'] as const) {
+          const t = getTranslations(locale);
+          const texts: string[] = [];
+          for (const sync of [null, 'fast', 'slow', 'offbeat'] as const) {
+            for (const mc of [false, true]) {
+              for (const streak of [0, 1, 2]) {
+                texts.push(t.formatElementaryPrompt(60, streak, 3, sync, mc));
+              }
+            }
+          }
+          for (const c of [0, 1]) texts.push(t.formatUpperPrompt('2:1', 25, 100, '1.41:1', c, 2));
+          for (const lvl of [...generateLevelsForAge('6-8'), ...generateLevelsForAge('9-11')]) {
+            texts.push(lvl.prompt, lvl.promptFr || '');
+          }
+          for (const txt of texts) {
+            for (const re of LEAKS) expect(txt, `${locale}: ${txt}`).not.toMatch(re);
+          }
+        }
+      });
+
+      it('post-success text reveals the rule (6-8 invariance, 9-11 square law)', () => {
+        const en = getTranslations('en');
+        expect(en.formatElementaryPrompt(60, 3, 3, null, true)).toMatch(/mass .* same/i);
+        expect(en.formatUpperPrompt('2:1', 25, 100, '2.00:1', 2, 2, '(2/1)² = 4')).toContain(
+          'square'
+        );
+      });
+
+      it('shows a question about mass, not the answer', () => {
+        const en = getTranslations('en');
+        expect(en.formatElementaryPrompt(60, 0, 3, null, true)).toContain('?');
+        expect(en.formatElementaryPrompt(60, 0, 3, null, false)).toContain('?');
+      });
+
+      it('directional out-of-sync hint appears within 2 beats, EN and FR', () => {
+        for (const [locale, fastRe, slowRe] of [
+          ['en', /faster than the beat/, /slower than the beat/],
+          ['fr', /plus vite/, /plus lentement/]
+        ] as const) {
+          for (const [len, re] of [
+            [25, fastRe],
+            [100, slowRe]
+          ] as const) {
+            const game = createGame();
+            game.mount(container, { ...context, locale } as GameContext);
+            game.start();
+            const anyGame = game as any;
+            anyGame.setupLevel(1); // 90 BPM, beat 0.667 s: 25 cm too fast, 100 cm too slow
+            (container.querySelector(`.btn-length[data-length="${len}"]`) as HTMLElement).click();
+            let now = performance.now();
+            let frames = 0;
+            while (anyGame.syncHint === null && frames < 400) {
+              now += 16;
+              anyGame.updatePhysics(0.016, now);
+              frames++;
+            }
+            expect(frames * 0.016).toBeLessThanOrEqual(2 * (60 / 90) + 0.05);
+            expect(container.querySelector('#hud-instruction')!.textContent).toMatch(re);
+            game.destroy();
+          }
+        }
+      });
+
+      it('HUD never shows the live length/mass readout in 6-8', () => {
+        const game = createGame();
+        game.mount(container, context);
+        game.start();
+        const txt = container.querySelector('#hud-instruction')!.textContent!;
+        expect(txt).not.toMatch(/Length|Mass|\d+cm|\d+g\b/);
+        game.destroy();
+      });
+    });
+
+    // ---------------------------------------------------------------------
+    // Issue #26 polish
+    // ---------------------------------------------------------------------
+    describe('polish (issue #26)', () => {
+      it('changing ageGroup resets score, streak and elapsed-time start and updates the HUD', () => {
+        const game = createGame();
+        game.mount(container, context);
+        const anyGame = game as any;
+        anyGame.score = 700;
+        anyGame.streak = 4;
+        anyGame.startTime = Date.now() - 90_000;
+        anyGame.updateHUDStaticLabels();
+        expect(container.querySelector('#score-display')!.textContent).toContain('700');
+
+        const before = Date.now();
+        game.updateConfig?.({ ageGroup: '9-11' });
+        expect(anyGame.score).toBe(0);
+        expect(anyGame.streak).toBe(0);
+        expect(anyGame.startTime).toBeGreaterThanOrEqual(before);
+        expect(container.querySelector('#score-display')!.textContent).toContain('0');
+        expect(container.querySelector('#score-display')!.textContent).not.toContain('700');
+        game.destroy();
+      });
+
+      it('French locale translates tray labels in all three modes', () => {
+        const frContext = { ...context, locale: 'fr' } as GameContext;
+        const tray = () => container.querySelector('#controls-tray')!.textContent!;
+
+        const g68 = createGame();
+        g68.mount(container, frContext);
+        expect(tray()).toContain('Longueur');
+        expect(tray()).toContain('Masse');
+        expect(tray()).not.toMatch(/Length:|Mass:/);
+        g68.destroy();
+
+        const g35 = createGame();
+        g35.mount(container, { ...frContext, ageGroup: '3-5' } as GameContext);
+        expect(tray()).toContain('Préréglages');
+        expect(tray()).not.toContain('Presets:');
+        g35.destroy();
+
+        const g911 = createGame();
+        g911.mount(container, { ...frContext, ageGroup: '9-11' } as GameContext);
+        expect(tray()).toContain('Longueur du pendule B');
+        expect(tray()).not.toContain('Pendulum B Length');
+        g911.destroy();
+      });
+
+      it('switching locale live re-renders the tray labels', () => {
+        const game = createGame();
+        game.mount(container, context);
+        expect(container.querySelector('#controls-tray')!.textContent).toContain('Length:');
+        game.updateConfig?.({ locale: 'fr' });
+        expect(container.querySelector('#controls-tray')!.textContent).toContain('Longueur');
+        game.destroy();
+      });
+
+      it('3-5 HUD updates on release and on win (no stale angle text)', () => {
+        const game = createGame();
+        game.mount(container, { ...context, ageGroup: '3-5' } as GameContext);
+        game.start();
+        const anyGame = game as any;
+        const hud = () => container.querySelector('#hud-instruction')!.textContent!;
+        (container.querySelector('.btn-preset[data-angle="60"]') as HTMLElement).click();
+        expect(hud()).not.toMatch(/Angle|High power/);
+        expect(hud()).toMatch(/Whoosh/);
+
+        anyGame.activeBlocks.forEach((b: any) => (b.isKnocked = true));
+        let now = performance.now();
+        for (let i = 0; i < 3; i++) {
+          now += 16;
+          anyGame.updatePhysics(0.016, now);
+        }
+        expect(hud()).not.toMatch(/Angle|Whoosh/);
+        game.destroy();
+      });
+
+      it('after the last level the game emits complete, then restarts a fresh run', () => {
+        vi.useFakeTimers();
+        const game = createGame();
+        game.mount(container, { ...context, ageGroup: '3-5' } as GameContext);
+        game.start();
+        const anyGame = game as any;
+        anyGame.setupLevel(anyGame.levels.length - 1);
+        anyGame.completeRound();
+        vi.advanceTimersByTime(1300);
+        expect(emittedEvents.some((e) => e.type === 'game:complete')).toBe(true);
+        expect(anyGame.currentLevelIndex).toBe(anyGame.levels.length - 1);
+        vi.advanceTimersByTime(4000);
+        expect(anyGame.currentLevelIndex).toBe(0);
+        expect(anyGame.score).toBe(0);
+        expect(anyGame.isRoundOver).toBe(false);
+        expect(anyGame.pendingTimeouts.size).toBe(0);
+        game.destroy();
+      });
+    });
   });
 
   // =========================================================================
@@ -952,12 +1280,12 @@ describe('Pendulum Rhythm Game & Harmonic Oscillator Engine', () => {
 
       // Formatters in EN
       expect(tEn.formatPreschoolPrompt(20, 2)).toContain('20°');
-      expect(tEn.formatElementaryPrompt(60, 100, 50, 0, 3)).toContain('60 BPM');
+      expect(tEn.formatElementaryPrompt(60, 0, 3)).toContain('60 BPM');
       expect(tEn.formatUpperPrompt('2:1', 25, 100, '2.00:1', 0, 2)).toContain('2:1 polyrhythm');
 
       // Formatters in FR
       expect(tFr.formatPreschoolPrompt(40, 1)).toContain('40°');
-      expect(tFr.formatElementaryPrompt(90, 45, 100, 1, 3)).toContain('90 BPM');
+      expect(tFr.formatElementaryPrompt(90, 1, 3)).toContain('90 BPM');
       expect(tFr.formatUpperPrompt('3:1', 10, 90, '3.00:1', 1, 2)).toContain('polyrythme 3:1');
     });
 
