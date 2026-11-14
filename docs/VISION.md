@@ -45,7 +45,7 @@
 - ✅ **Shared Procedural Web Audio (`SoundEngine`)**: Zero-asset synthesized clicks, pops, drops, chimes, victory fanfares, error buzzes, and custom tones in [audio.ts](../src/core/audio.ts).
 - ✅ **Shared Bilingual i18n (`I18nManager` & `createI18nResolver`)**: English (`en`) and French (`fr`) translations with parameter interpolation in [i18n.ts](../src/core/i18n.ts).
 - ✅ **Per-Cartridge Code-Split ES Chunks**: In ES module builds (`dist/kid-games.es.js`), each game cartridge is split into its own on-demand chunk (`dist/<game-id>-*.js`).
-- ⚠️ **UMD Bundle Code-Splitting Limitation**: UMD (`dist/kid-games.umd.js`) cannot code-split dynamic imports in Vite/Rolldown library mode and instead bundles all cartridges into a single 236 kB file.
+- ⚠️ **UMD Bundle Code-Splitting Limitation**: UMD (`dist/kid-games.umd.js`) cannot code-split dynamic imports in Vite/Rolldown library mode and instead bundles all cartridges into a single 309 kB file.
 - ✅ **`difficulty` Modifier Integration**: `<kid-game difficulty="easy|medium|hard">` is parsed by the core element and injected into `GameContext.difficulty`; all 6 cartridges scale puzzle distractor counts, physical parameters, and tolerances via `generateLevelsForAge(ageGroup, difficulty)` and react live in `updateConfig()`.
 - 🗺️ **Published npm Package (`npm i kid-lesson-games`)**: Currently unpublished (`"private": true` in `package.json`); today consumers install via git dependency, local path, or built bundle script tag.
 - 🗺️ **TypeScript Declaration Output (`dist/index.d.ts`)**: `tsconfig.json` currently uses `"noEmit": true`; generating standalone `.d.ts` files in `dist/` for published npm consumers is planned.
@@ -61,7 +61,7 @@ The project targets four core educational taxonomy categories across three age b
 
 | Category | Educational Focus | Current Coverage | Status |
 | :--- | :--- | :--- | :--- |
-| **`numbers`** | Counting, addition, decomposition, metric conversions, periodicity, harmonic fractions | 2 games (`balance-scale`, `pendulum-rhythm`) | ✅ Implemented |
+| **`numbers`** | Counting, addition, decomposition, metric conversions, periodicity, harmonic fractions, division | 3 games (`balance-scale`, `pendulum-rhythm` ✅; `number-workshop` 🚧 1 of 4 modes) | ✅ Implemented / 🚧 |
 | **`logic`** | Simple machines, mechanical advantage, gear ratios, Archimedes density & hydrostatics | 3 games (`buoyancy-tank`, `gear-trains`, `pulley-lift`) | ✅ Implemented |
 | **`spatial`** | Geometry, slope angles, acute/right/obtuse classification, specular reflection | 1 game (`marble-run-angles`) | ✅ Implemented |
 | **`letters`** | Phonetics, letter recognition, audio-tactile phonics, word building | 0 games in `games/` | 🗺️ Planned |
@@ -76,6 +76,7 @@ The project targets four core educational taxonomy categories across three age b
 | `marble-run-angles` | Marble Run Angles | `spatial` | `3-5`, `6-8`, `9-11` | Ramp bridging, $15^\circ$ angle rotation, acute/right/obtuse angles, specular reflection ($\theta_i = \theta_r$) | ✅ Implemented |
 | `pendulum-rhythm` | Pendulum Rhythm Lab | `numbers` | `3-5`, `6-8`, `9-11` | Momentum knockdown, Galileo's mass-invariance & BPM sync, square-root polyrhythms ($T \propto \sqrt{L}$) | ✅ Implemented |
 | `pulley-lift` | Pulley Lift & Mechanical Advantage | `logic` | `3-5`, `6-8`, `9-11` | Fixed/movable/compound pulleys ($MA = 1..4$), effort fractions, work conservation ($W = F \times d$) | ✅ Implemented |
+| `number-workshop` | Division Workshop | `numbers` | `3-5`, `6-8`, `9-11` | Division as fair sharing and grouping, `a = b × q + r` with `r < b` (mode `facts` ✅; `shift`, `euclid`, `long` 🗺️) | 🚧 1 of 4 modes |
 | `number-line` | Number Line Hopper | `numbers` / `spatial` | `3-5`, `6-8`, `9-11` | Frog/fennec jumping along positive/negative number lines to master addition and subtraction | 🗺️ Planned |
 | `fraction-feast` | Fraction Slices & Equal Shares | `numbers` / `spatial` | `6-8`, `9-11` | Part-whole geometric partitions, equivalent fractions ($2/4 = 1/2$), and common-denominator sums | 🗺️ Planned |
 | `money-market` | Souk & Dirham Counter | `numbers` | `3-5`, `6-8`, `9-11` | Moroccan Dirhams (`DH`) & centimes, additive payment composition, and calculating change | 🗺️ Planned |
@@ -99,7 +100,7 @@ The project targets four core educational taxonomy categories across three age b
 | :--- | :--- | :---: | :--- |
 | `<kid-game>` Web Component & Shadow DOM | Implemented in [KidGameElement.ts](../src/core/KidGameElement.ts) with Shadow DOM, status overlay, and event bridge | ✅ | Complete for browser environments |
 | Telemetry DOM Events (`game:*`) | All 6 events dispatched with `bubbles: true, composed: true` | ✅ | Complete |
-| Lazy Per-Game Code Splitting | ES build (`dist/kid-games.es.js`) splits all 6 games into separate chunks | ✅ | UMD build (`dist/kid-games.umd.js`) bundles all games together due to UMD format constraints (⚠️) |
+| Lazy Per-Game Code Splitting | ES build (`dist/kid-games.es.js`) splits all 7 games into separate chunks | ✅ | UMD build (`dist/kid-games.umd.js`) bundles all games together due to UMD format constraints (⚠️) |
 | Bilingual Localization (`en` / `fr`) | Core `I18nManager` + all 6 cartridges support `en` and `fr` | ✅ | Additional EU locales (`es`, `de`, `it`, `nl`) are 🗺️ Planned |
 | Procedural Web Audio (`SoundEngine`) | Shared `SoundEngine` injected via `context.audio` across all games | ✅ | Complete |
 | `numbers`, `logic`, `spatial` Categories | 6 full physics/math games implemented and tested (277 Vitest tests) | ✅ | Expand with Moroccan curriculum games: `money-market`, `number-line`, `fraction-feast` (🗺️) |
@@ -107,6 +108,7 @@ The project targets four core educational taxonomy categories across three age b
 | `difficulty` Attribute (`easy`/`medium`/`hard`) | Parsed on `<kid-game>` and passed in `context.difficulty`; all 6 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)` | ✅ | Complete across all cartridges |
 | Cartridge Metadata (`author`, `thumbnail`) | Preserved during registration in `src/index.ts`; all 6 games feature `assets/thumb.svg` vector badges on disk | ✅ | Complete |
 | `balance-scale` Lifecycle Teardown | Zero-leak teardown, pause/resume, README | ✅ | Fixed in PR #27 (AbortController teardown, tracked timeouts, `pause()`/`resume()`, README) |
+| `number-workshop` cartridge (division) | `games/number-workshop/`: shell, `facts` mode (share / deal / array tiers), group builder, drag helper, EN/FR, custom `levels` + procedural fallback, pure maths and parser (WP1) | 🚧 | 1 of 4 modes. Next: `euclid` (WP3), `shift` (WP4), `long` (WP5), end-to-end polish (WP6); see [number-workshop plan](design/number-workshop/06-delivery-plan.md) |
 | Scaffolding CLI (`npm run create-game`) | Scaffolds `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md` with complete zero-leak lifecycle contracts | ✅ | Complete |
 | npm Registry Package (`kid-lesson-games`) | Not published to npm (`"private": true`); installable via git or local bundle | 🗺️ | Emit `.d.ts` declarations, guard `HTMLElement` for Node SSR, and publish to npm |
 | Programmatic `mountGame()` Helper & Named Slots | Documented in early design specs (`docs/design/`) | 🗺️ | Optional convenience wrapper around `registry.create(id)` and `<slot name="loading\|error">` in `KidGameElement` |

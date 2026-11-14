@@ -300,6 +300,7 @@
             <option value="marble-run-angles">Marble Run Angles</option>
             <option value="pendulum-rhythm">Pendulum Rhythm Lab</option>
             <option value="pulley-lift">Pulley Lift &amp; Mechanical Advantage</option>
+            <option value="number-workshop">Division Workshop</option>
           </select>
         </div>
 
@@ -360,6 +361,19 @@
       const metaSkills = document.getElementById('meta-skills');
 
       const customPresetsByGame = {
+        'number-workshop': {
+          'auto': { label: 'Auto-Generate (Default)', value: null },
+          'custom-facts': {
+            label: 'Custom: Sharing & arrays (facts)',
+            value: /*nw-facts-preset*/ [
+              { "mode": "facts", "dividend": 12, "divisor": 3, "theme": "apples" },
+              { "mode": "facts", "dividend": 27, "divisor": 3, "theme": "dates" },
+              { "mode": "facts", "dividend": 25, "divisor": 4, "theme": "marbles" },
+              { "mode": "facts", "dividend": 63, "divisor": 7, "theme": "stars" },
+              { "mode": "facts", "dividend": 47, "divisor": 8 }
+            ] /*end-nw-facts-preset*/
+          }
+        },
         'balance-scale': {
           'auto': { label: 'Auto-Generate (Default)', value: null },
           'custom-addition': {
