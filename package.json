@@ -6,10 +6,10 @@
   "type": "module",
   "main": "./dist/kid-games.umd.js",
   "module": "./dist/kid-games.es.js",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/kid-games.es.js",
       "require": "./dist/kid-games.umd.js",
       "default": "./dist/kid-games.es.js"
@@ -23,7 +23,8 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build": "tsc && vite build && npm run build:types",
     "build:pages": "tsc && vite build --mode pages",
     "prepare": "npm run build",
     "preview": "vite preview",
