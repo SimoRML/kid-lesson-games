@@ -103,7 +103,7 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 
 ### P2: publishable package
 - [x] ✅ **T-09** `LICENSE` file (MIT, copyright `Simo (@SimoRML)`).
-- [ ] **T-10** `tsconfig.build.json` + `.d.ts` emission; repoint `types` ([§6](#6-phase-p2-make-the-package-publishable-still-private-true)).
+- [x] ✅ **T-10** `tsconfig.build.json` + `.d.ts` emission; repoint `types` ([§6](#6-phase-p2-make-the-package-publishable-still-private-true)).
 - [ ] **T-11** Trim `files`, add `sideEffects`/`repository`/`publishConfig`, swap `prepare` → `prepack`.
 - [ ] **T-12** Rename to `@simorml/kid-lesson-games` and update docs/install examples.
 - [ ] **T-13** Add `publint` + `@arethetypeswrong/cli` + tarball smoke test to CI.
