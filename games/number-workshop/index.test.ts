@@ -383,6 +383,27 @@ describe('number-workshop shell', () => {
       expect(q(s, '.nw-equation')?.hidden).toBe(true);
     });
 
+    it('an age change during settle, celebrate or the end screen never re-opens the level', () => {
+      s = setup({ ageGroup: '6-8', customLevels: SET_A });
+      solveShare(s, 2);
+      s.game.updateConfig({ ageGroup: '9-11' });
+      plateBtns(s).forEach((b) => b.click());
+      expect(events(s, 'game:progress')).toHaveLength(1);
+      expect(q(s, '.nw-score')?.textContent).toContain('150');
+      vi.advanceTimersByTime(SETTLE_MS);
+      s.game.updateConfig({ ageGroup: '6-8' });
+      expect(events(s, 'game:progress')).toHaveLength(1);
+      vi.advanceTimersByTime(CELEBRATE_MS);
+      expect(badge(s)).toBe('2/2');
+      solveShare(s, 3);
+      settleAndAdvance();
+      expect(q(s, '.nw-end')?.hidden).toBe(false);
+      s.game.updateConfig({ ageGroup: '3-5' });
+      expect(q(s, '.nw-end')?.hidden).toBe(false);
+      expect(q(s, '.nw-stage')?.children).toHaveLength(0);
+      expect(events(s, 'game:complete')).toHaveLength(1);
+    });
+
     it('ignores updates after destroy', () => {
       s = setup({ customLevels: SET_A });
       s.game.destroy();

@@ -376,11 +376,11 @@ this.context.emit('game:complete', {
 8. ✅ **`context.difficulty` Wiring (resolved)**:
    - `<kid-game difficulty="easy|medium|hard">` is parsed and passed in `context.difficulty`. All 6 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(ageGroup, difficulty)` and reload on `updateConfig`.
 9. ✅ **`src/index.ts` Preserves `author` and `thumbnail` & Thumbnails Present (resolved)**:
-   - `src/index.ts` registers `GameMetadata` with `raw.author` and `raw.thumbnail`, and all 6 games feature on-theme `assets/thumb.svg` vector badges.
+   - `src/index.ts` registers `GameMetadata` with `raw.author` and `raw.thumbnail`, and all 7 games feature on-theme `assets/thumb.svg` vector badges.
 10. ✅ **`games/balance-scale` Lifecycle (resolved)**:
     - Fixed in PR #27: `AbortController` window-listener cleanup, tracked timeouts cleared in `destroy()`, `pause()`/`resume()`, no `audio.close()`, and a `README.md` was added.
 11. ⚠️ **Unused `matter-js` Dependency in `package.json`**:
-    - `matter-js` is listed in `package.json`, but zero files in `src/` or `games/` import it; all 6 cartridges use custom deterministic TypeScript physics.
+    - `matter-js` is listed in `package.json`, but zero files in `src/` or `games/` import it; no cartridge uses it (physics cartridges use custom deterministic TypeScript, `number-workshop` needs none).
 
 ---
 

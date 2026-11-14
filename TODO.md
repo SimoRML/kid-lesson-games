@@ -20,7 +20,7 @@
 - [x] ✅ Implement shared procedural Web Audio engine (`SoundEngine` in [src/core/audio.ts](src/core/audio.ts)) with zero external audio assets.
 - [x] ✅ Implement shared bilingual (`en`/`fr`) localization manager (`I18nManager` & `createI18nResolver` in [src/core/i18n.ts](src/core/i18n.ts)).
 - [x] ✅ Build interactive browser testbed & event inspector ([index.html](index.html)) with live cartridge selector, custom level presets, and telemetry log.
-- [x] ✅ Wire `context.difficulty` (`easy` | `medium` | `hard`) into cartridge puzzle generators and `updateConfig` across all 6 cartridges.
+- [x] ✅ Wire `context.difficulty` (`easy` | `medium` | `hard`) into cartridge puzzle generators and `updateConfig` across all 7 cartridges.
 - [x] ✅ Preserve `author` and `thumbnail` fields when registering `GameMetadata` in [src/index.ts](src/index.ts).
 - [ ] 🗺️ Add named Shadow DOM customization slots (`<slot name="loading">` and `<slot name="error">`) to `KidGameElement`.
 - [ ] 🗺️ Add optional programmatic `mountGame(gameId, container, options)` convenience helper alongside `<kid-game>`.
@@ -36,7 +36,7 @@
 - [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, 13 test files / 277 tests passing).
 - [x] ✅ Upgrade `scripts/create-game.js` to scaffold `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, `pause()`/`resume()`, and `AbortController` zero-leak teardown boilerplate.
 - [x] ✅ Bring `games/balance-scale` lifecycle teardown up to the strict zero-leak standard of the newer 5 cartridges (remove `window` mouse/touch listeners via `AbortController`, clear win `setTimeout`s in `destroy()`, implement `pause()`/`resume()`, and add `games/balance-scale/README.md`).
-- [x] ✅ Add missing `assets/thumb.svg` thumbnails for `balance-scale`, `buoyancy-tank`, `marble-run-angles`, and `pulley-lift` (all 6 games now have vector SVG thumbnails).
+- [x] ✅ Add missing `assets/thumb.svg` thumbnails for `balance-scale`, `buoyancy-tank`, `marble-run-angles`, and `pulley-lift` (all 7 games now have vector SVG thumbnails).
 - [x] ✅ Document the mandatory agent workflow (plan, branch, multi-agent safety, security, semver, PR, independent review/merge) in `AGENTS.md` §0 and add `CHANGELOG.md`.
 - [ ] 🗺️ Add a PR CI workflow (`.github/workflows/ci.yml`: `npm ci`, `tsc`, `npm test`, `npm run build`, `npm run build:pages`, `npm audit --omit=dev`) so PRs are tested before merge (today only `main` pushes deploy Pages).
 - [ ] 🗺️ Enable GitHub branch protection on `main` (require PR, require CI, block force-push/deletion) and add `.github/pull_request_template.md` mirroring AGENTS.md Gate 7.

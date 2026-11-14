@@ -51,8 +51,8 @@ flowchart TD
 When [src/index.ts](../src/index.ts) is imported:
 1. **Eager Metadata Discovery** (lines 6–9):
    - Uses `import.meta.glob(['../games/*/game.json', '../games/*/meta.json'], { eager: true })`.
-   - ⚠️ **Known discrepancy**: Earlier README sections referred to `meta.json` while `balance-scale` used `game.json`. In reality, [scripts/create-game.js](../scripts/create-game.js) generates `game.json` and all 6 cartridges in `games/*/` use `game.json`. `src/index.ts` accepts both `game.json` (canonical) and `meta.json` (fallback alias).
-   - ✅ **Resolved**: `src/index.ts` (lines 19–29) preserves `author` and `thumbnail` when constructing `GameMetadata`, and all 6 games feature `assets/thumb.svg` vector badges on disk.
+   - ⚠️ **Known discrepancy**: Earlier README sections referred to `meta.json` while `balance-scale` used `game.json`. In reality, [scripts/create-game.js](../scripts/create-game.js) generates `game.json` and all 7 cartridges in `games/*/` use `game.json`. `src/index.ts` accepts both `game.json` (canonical) and `meta.json` (fallback alias).
+   - ✅ **Resolved**: `src/index.ts` (lines 19–29) preserves `author` and `thumbnail` when constructing `GameMetadata`, and all 7 games feature `assets/thumb.svg` vector badges on disk.
 2. **Lazy Cartridge Code-Splitting** (lines 12–48):
    - Uses `import.meta.glob('../games/*/index.ts')` (lazy by default).
    - Registers an async factory with `registry.register(meta, async () => ...)` that resolves `mod.createGame || mod.default || mod.createBalanceScaleGame`.
@@ -90,7 +90,7 @@ When [src/index.ts](../src/index.ts) is imported:
 | `difficulty` | `el.difficulty` | *(use `setAttribute('difficulty', val)`)* | `'easy' \| 'medium' \| 'hard'` | `'medium'` | ✅ Parsed and forwarded in `context.difficulty`. All 6 cartridges scale distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)`. |
 | `sound` | `el.sound` | *(use `setAttribute('sound', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ Updates `el.audio.enabled` and calls `updateConfig()`. |
 | `autostart` | `el.autostart` | *(use `setAttribute('autostart', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ When `true`, automatically calls `game.start()` and emits `game:start` after `mount()`. |
-| `locale` | `el.locale` | *(use `setAttribute('locale', val)`)* | `string` | `'en'` | ✅ Updates `el.i18n.locale` and calls `updateConfig()`. Core & all 6 games bundle `'en'` and `'fr'`. |
+| `locale` | `el.locale` | *(use `setAttribute('locale', val)`)* | `string` | `'en'` | ✅ Updates `el.i18n.locale` and calls `updateConfig()`. Core & all 7 games bundle `'en'` and `'fr'`. |
 | `levels` | `el.levels` | `el.levels = [...]` | `unknown` | `null` | ✅ Accepts a JS value via property `el.levels = [...]` or a JSON string via `setAttribute('levels', '...')`. ⚠️ Once `el.levels` is set to a non-null value via property, it takes precedence over the HTML attribute until `el.levels = null` is set. |
 
 #### Public Element Methods

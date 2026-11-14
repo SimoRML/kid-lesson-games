@@ -221,7 +221,13 @@ export class NumberWorkshopGame implements KidGame {
       } else if (difficultyChanged) {
         this.beginRun();
       } else if (ageChanged) {
-        this.mountLevel(this.levelIndex);
+        // Re-render for the new presentation, but never re-open a level that is
+        // already solved (settle/celebrate window) or the end screen.
+        if (this.phase === 'playing') this.mountLevel(this.levelIndex);
+        else {
+          this.updateChrome();
+          this.renderEquation();
+        }
       }
     } else if (this.customActive || ageChanged || difficultyChanged) {
       this.loadLevels();
