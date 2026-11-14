@@ -1,6 +1,6 @@
 # `number-workshop` — Division Workshop: Implementation Plan (v2)
 
-> **Status (2026-11-14): 🗺️ Planned — plan approved by the owner on 2026-11-14, with the recommended default accepted for every question Q1–Q7 (§4).** Nothing described here exists on disk yet. Implementation proceeds one work package at a time ([06-delivery-plan.md](06-delivery-plan.md)).
+> **Status: ✅ Implemented as `games/number-workshop` `1.0.0` (WP1–WP6).** The plan was approved by the owner on 2026-11-14 with the recommended default accepted for every question Q1–Q7 (§4). Where the build differs from the text of this folder, §7 says so; the code and the cartridge `README.md` are the ground truth.
 > Legend used below: ✅ verified in this repo on 2026-11-14 · ⚠️ unverified / judgment call · ❓ owner decision.
 
 This folder replaces the single-file first draft. It is written so that an agent starting cold can pick up **one work package** and deliver it without re-deriving the design.
@@ -93,3 +93,22 @@ Other corrections made during review: the sheet item `3 400 ÷ 100` is exact (34
 3. If this plan and the code disagree, the code is the truth: stop, tell the owner, and fix the plan in the same PR as a separate commit.
 4. If something is not specified here, do not guess: ask. The plan is deliberately explicit so that guessing is never needed.
 5. Quality over speed. A mode is done when a child can understand *why* the answer is right from what happens on screen, not when the tests pass.
+
+## 7. Deviations from the plan, as built
+
+Recorded at `1.0.0` so nobody reads the plan as if it were the code. Everything not listed here was built as written.
+
+| Topic | Plan said | As built |
+|---|---|---|
+| `shift` slide cap | not specified | at most 4 slides; digits that fell off stay visible, dimmed, in a hatched area; a refused slide (non-zero digit would leave) is gentle feedback, not a mistake |
+| `shift` column width | fit 375 px | sized from the stage width with a viewport fallback (`cqw` container units behind `@supports`) |
+| `euclid` anchor and hints | equality written by the child | shell anchor reads `78 = (8 × ?) + ?`; a missing remainder is a reminder, not a mistake; the false-equality hint does not mention the gap at `hard` (the gap is not drawn there) |
+| `long` equality step | "placing" the quotient and the remainder | two sequential keypad entries (quotient, then remainder), each judged and locked on Check |
+| `long` height | four-digit dividends fit 375 px × 400 px | width yes; the stage (work area + keypad) is 366 px at 375 px width, but the whole game scrolls in a 400 px viewport ⚠️ |
+| `long` layout | potence | compact rows from three steps up; keypad packs into two rows of 44 px keys |
+| Keypad | 0–9 and backspace | `maxDigits` may be a function (per-entry limits in `long`) |
+| Drag helper | tap or drag | `onDrop` also reports the movement since the press (used by `shift`) |
+| Hints after a locale change | not specified | a visible hint is rebuilt from a function, so it follows the language |
+| French place-value abbreviations | to be confirmed by the owner | `CM DM UM C D U` shipped unconfirmed ⚠️ (tracked in [TODO.md](../../../TODO.md)) |
+| Version | `1.0.0` when all four modes are ✅ | `1.0.0`; the library version in `package.json` was not touched |
+| Play-test | human play-test script (04 §9) at every age × difficulty | automated: `playthrough.test.ts` plays complete sessions through the real controls at every age × difficulty and the 25-level sheet at every difficulty; a human/real-device pass was not done ⚠️ |

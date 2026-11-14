@@ -1,6 +1,6 @@
 # 02 — Level Schema, Parser, Generator
 
-> Part of the [`number-workshop` plan](README.md). Status: 🗺️ Planned.
+> Part of the [`number-workshop` plan](README.md). Status: ✅ Implemented in `1.0.0`; deviations from this text are recorded in [README §7](README.md).
 > This is the contract between a lesson generator (LLM) and the cartridge. Treat every byte of `levels` as hostile input (AGENTS.md security rules).
 
 ## 1. Shape

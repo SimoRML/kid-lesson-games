@@ -1,6 +1,6 @@
 # 05 — Test Plan and Golden Values
 
-> Part of the [`number-workshop` plan](README.md). Status: 🗺️ Planned.
+> Part of the [`number-workshop` plan](README.md). Status: ✅ Implemented in `1.0.0`; deviations from this text are recorded in [README §7](README.md).
 > All numbers in this file were computed by script on 2026-11-14 ✅, not typed from memory. Tests must hard-code these values, not recompute them with the function under test.
 
 ## 1. Fixture: the sample sheet (25 levels)

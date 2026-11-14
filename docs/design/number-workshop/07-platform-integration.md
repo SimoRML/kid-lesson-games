@@ -1,6 +1,6 @@
 # 07 — Platform Integration (Lesson Generator → `levels`)
 
-> Part of the [`number-workshop` plan](README.md). Status: 🗺️ Planned.
+> Part of the [`number-workshop` plan](README.md). Status: ✅ Implemented in `1.0.0`; deviations from this text are recorded in [README §7](README.md).
 > Audience: whoever builds the external lesson-generator platform. ⚠️ We only know that platform as a general idea: a file, image, or text prompt goes to an LLM behind a queue, which returns a gamified lesson grounded in the input. Everything below is this repo's side of the contract; nothing here assumes how the platform is built.
 
 ## 1. The division of labour ("Reading A")

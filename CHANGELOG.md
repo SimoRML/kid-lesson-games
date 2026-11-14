@@ -7,6 +7,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ## [Unreleased]
 
 ### Added
+- `number-workshop` `1.0.0` (WP6): the cartridge is ✅ with all four modes. Adds the 25-level sample-sheet playground preset, an automated cross-mode play-through (`playthrough.test.ts`: complete sessions at every age × difficulty and the sheet at every difficulty, all solvable through the real controls), the full cartridge README (purpose, formulas, level schema, known limitations), and records the deviations from the plan in `docs/design/number-workshop/README.md` §7. Known limitations ⚠️ are tracked in `TODO.md` (unconfirmed French column abbreviations, whole-game height at 400 px, no real-device play-test).
 - `AGENTS.md` §0 Mandatory Agent Workflow (plan, branch, multi-agent safety, security, semver, PR, independent review/merge).
 - This changelog.
 - `number-workshop` `long` mode (WP5, 🚧 all 4 modes built): written long division in the potence layout, walked step by step from the computed trace (divide, multiply, subtract, bring down by tapping the next digit), then the equality step `a = (b × q) + r`. What the child types follows difficulty (easy: digit; medium: digit and step remainder; hard: digit, product, step remainder). Too-big / too-small / wrong-product / wrong-remainder / wrong-equality hints never give the answer. Cartridge `0.4.0`, "Long division" playground preset; `keypad` accepts a limit function. Procedural sets now use `long` (9-11).

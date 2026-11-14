@@ -363,6 +363,36 @@
       const customPresetsByGame = {
         'number-workshop': {
           'auto': { label: 'Auto-Generate (Default)', value: null },
+          'custom-sheet': {
+            label: 'Custom: Sample sheet, 25 levels (all modes)',
+            value: /*nw-sheet-preset*/ [
+              { "mode": "shift", "dividend": 60000, "divisor": 100 },
+              { "mode": "shift", "dividend": 5000, "divisor": 10 },
+              { "mode": "shift", "dividend": 10, "divisor": 10 },
+              { "mode": "shift", "dividend": 200, "divisor": 100 },
+              { "mode": "shift", "dividend": 3400, "divisor": 100 },
+              { "mode": "shift", "dividend": 789000, "divisor": 1000 },
+              { "mode": "facts", "dividend": 27, "divisor": 3 },
+              { "mode": "facts", "dividend": 42, "divisor": 7 },
+              { "mode": "facts", "dividend": 64, "divisor": 8 },
+              { "mode": "facts", "dividend": 48, "divisor": 6 },
+              { "mode": "facts", "dividend": 16, "divisor": 4 },
+              { "mode": "facts", "dividend": 36, "divisor": 6 },
+              { "mode": "facts", "dividend": 63, "divisor": 7 },
+              { "mode": "facts", "dividend": 25, "divisor": 5 },
+              { "mode": "euclid", "dividend": 78, "divisor": 8 },
+              { "mode": "euclid", "dividend": 57, "divisor": 7 },
+              { "mode": "euclid", "dividend": 59, "divisor": 9 },
+              { "mode": "euclid", "dividend": 39, "divisor": 4 },
+              { "mode": "euclid", "dividend": 22, "divisor": 3 },
+              { "mode": "euclid", "dividend": 47, "divisor": 8 },
+              { "mode": "euclid", "dividend": 98, "divisor": 8 },
+              { "mode": "euclid", "dividend": 75, "divisor": 5 },
+              { "mode": "euclid", "dividend": 59, "divisor": 4 },
+              { "mode": "long", "dividend": 806, "divisor": 5 },
+              { "mode": "long", "dividend": 568, "divisor": 8 }
+            ] /*end-nw-sheet-preset*/
+          },
           'custom-facts': {
             label: 'Custom: Sharing & arrays (facts)',
             value: /*nw-facts-preset*/ [

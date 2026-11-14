@@ -1,4 +1,4 @@
-# 🧮 Division Workshop (`number-workshop`) — 🚧 4 of 4 modes, polishing
+# 🧮 Division Workshop (`number-workshop`) — ✅ 1.0.0
 
 Teaches **division as fair sharing and grouping**, and the one statement behind it:
 
@@ -8,7 +8,13 @@ a = b × q + r      with   0 ≤ r < b
 
 dividend `a`, divisor `b`, quotient `q`, remainder `r`. Every mode shows that `r < b` visibly: what is left over is smaller than the number of plates.
 
-Plan and decisions: [docs/design/number-workshop/](../../docs/design/number-workshop/README.md). Status of each mode:
+**Purpose and skills** (`game.json`): `division`, `equal-sharing`, `euclidean-division`, `place-value`, `long-division`. Division is met as fair sharing (`facts`), as the written equality `78 = (8 × 9) + 6` (`euclid`), as a place-value shift when dividing by 10, 100 or 1000 (`shift`), and as the school algorithm (`long`).
+
+**Formulas the cartridge relies on** (all in `division.ts`, pure and tested against the sample sheet's golden values): `q = ⌊a / b⌋`, `r = a − b × q` (so `0 ≤ r < b`); dividing by `10ᵏ` is `k` one-place shifts of the digits to the right (exact only if the last `k` digits are zeros); long division produces one step per quotient digit: `digit = ⌊partial / b⌋`, `product = digit × b`, `remainder = partial − product`, then the next dividend digit is brought down.
+
+**Design rule:** level data carries operands only. The cartridge computes every answer itself, so a wrong answer in LLM-generated or hand-written levels can never reach a child.
+
+Plan, decisions and the deviations from the plan as built: [docs/design/number-workshop/](../../docs/design/number-workshop/README.md) (§7). Status of each mode:
 
 | Mode | What the child does | Status |
 |---|---|---|
@@ -17,7 +23,7 @@ Plan and decisions: [docs/design/number-workshop/](../../docs/design/number-work
 | `euclid` | Completes `78 = (8 × ☐) + ☐`: fits groups on a number track, types the remainder | ✅ playable |
 | `long` | Written long division in the potence layout, digit by digit, then the equality | ✅ playable |
 
-All four modes are built, so every slot of the procedural generator is filled by its own mode and custom levels of any of the four modes are accepted. The cartridge stays 🚧 (`0.4.0`) until WP6 (polish, play-test, `1.0.0`).
+All four modes are built, so every slot of the procedural generator is filled by its own mode and custom levels of any of the four modes are accepted. The cartridge is ✅ at `1.0.0`; the known limitations are listed at the end of this file.
 
 ## `long`: the written algorithm
 
@@ -118,6 +124,18 @@ Tested example (also the "Custom: Sharing & arrays" preset in the playground; th
 ## Files
 
 `index.ts` (shell, lifecycle) · `modes/facts.ts` · `modes/shift.ts` · `modes/euclid.ts` · `modes/long.ts` · `modes/index.ts` (registry) · `modes/types.ts` · `widgets/drag.ts` · `widgets/group-builder.ts` · `widgets/keypad.ts` · `i18n.ts` · `styles.ts` · pure logic `division.ts`, `levels.ts`, `session.ts` · a test file beside each module.
+
+## Known limitations ⚠️
+
+- **French place-value abbreviations** (`CM DM UM C D U`) come from the plan and have not been confirmed against the classroom's habit; they are plain strings in `i18n.ts`.
+- **Whole-game height:** the long-division stage fits within 400 px, but HUD plus equation line plus stage is taller than a 400 px viewport, so the page scrolls (as for `euclid`).
+- **French wording** was written by the implementing agent and has not been reviewed by a native teacher.
+- Brackets, not the French potence, are the convention in many `en` classrooms; the potence is used for both locales (decision D11).
+- Two-digit divisors, decimals and other operations are out of scope for `1.0.0` (see the plan, "After 1.0.0").
+
+## Tests
+
+One test file beside each module (`division`, `levels`, `session`, `i18n`, the shell, each mode and widget), plus `playthrough.test.ts`: a scripted child plays complete sessions through the shell's real controls at every age × difficulty and on the 25-level sample sheet at every difficulty, and every level must be solvable with no mistake.
 
 ## Not verified by tests
 

@@ -1,8 +1,8 @@
 {
   "id": "number-workshop",
   "title": "Division Workshop",
-  "version": "0.4.0",
-  "description": "Share tokens equally between plates, build rows, and fit groups on a number track, slide digits in a place-value table, and walk through written long division to discover what division means, what the quotient is, and why the remainder is always smaller than the divisor.",
+  "version": "1.0.0",
+  "description": "Division from four angles: share tokens fairly, fit groups on a number track, slide digits through a place-value table, and work the written long division step by step. Teaches the quotient and why the remainder is always smaller than the divisor.",
   "author": "Contributor",
   "category": "numbers",
   "ageGroups": ["3-5", "6-8", "9-11"],

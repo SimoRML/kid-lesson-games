@@ -1,6 +1,6 @@
 # 06 — Delivery Plan (Work Packages)
 
-> Part of the [`number-workshop` plan](README.md). Status: 🗺️ Planned.
+> Part of the [`number-workshop` plan](README.md). Status: ✅ Implemented in `1.0.0`; deviations from this text are recorded in [README §7](README.md).
 > One work package (WP) = one branch = one PR = one agent, delivered in order, each following AGENTS.md §0 Gates 1–10 including independent review. A WP starts only after the previous one is merged.
 
 ## Overview
@@ -23,7 +23,9 @@ graph LR
 | 3 | `feat/number-workshop-euclid` | yes | 🚧 `0.2.0` | minor |
 | 4 | `feat/number-workshop-shift` | yes | 🚧 `0.3.0` | minor |
 | 5 | `feat/number-workshop-long` | yes | 🚧 `0.4.0` | minor |
-| 6 | `feat/number-workshop-finish` | yes | ✅ `1.0.0` | patch |
+| 6 | `feat/number-workshop-finish` (built on `feat/number-workshop-polish`) | yes | ✅ `1.0.0` | patch |
+
+All six packages are delivered; see the README §7 for deviations.
 
 Version note: AGENTS.md says feature PRs never bump versions (multi-agent rule 4) and also that a cartridge change updates that cartridge's `game.json` version (Gate 6, Gate 9). This plan reads that as: the author sets the **cartridge** version shown above; the **library** version in `package.json` is touched only by the Merger. The owner confirmed this reading (Q7).
 
