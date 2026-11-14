@@ -419,25 +419,37 @@ export class NumberWorkshopGame implements KidGame {
 
     const visual = el('span', 'nw-eq-visual');
     visual.setAttribute('aria-hidden', 'true');
-    visual.append(
-      term(this.fmt(level.dividend), 'dividend', t.dividend),
-      op('÷'),
-      term(this.fmt(level.divisor), 'divisor', t.divisor),
-      op('=')
-    );
-    if (solved) {
-      visual.appendChild(term(this.fmt(q), 'quotient', t.quotient));
-      if (r > 0) visual.appendChild(term(this.fmt(r), 'remainder', `${t.remainder} (r)`));
-      box.classList.add('nw-equation-solved');
+    const a = this.fmt(level.dividend);
+    const b = this.fmt(level.divisor);
+    let spoken: string;
+
+    if (level.mode === 'euclid') {
+      // a = (b × q) + r, the written Euclidean equality.
+      visual.append(
+        term(a, 'dividend', t.dividend),
+        op('= ('),
+        term(b, 'divisor', t.divisor),
+        op('×'),
+        term(solved ? this.fmt(q) : '?', 'quotient', t.quotient),
+        op(') +'),
+        term(solved ? this.fmt(r) : '?', 'remainder', t.remainder)
+      );
+      spoken = solved ? t.resultEuclid(a, b, this.fmt(q), this.fmt(r)) : `${a} = (${b} × ?) + ?`;
     } else {
-      visual.appendChild(term('?', 'quotient', t.quotient));
+      visual.append(term(a, 'dividend', t.dividend), op('÷'), term(b, 'divisor', t.divisor), op('='));
+      if (solved) {
+        visual.appendChild(term(this.fmt(q), 'quotient', t.quotient));
+        if (r > 0) visual.appendChild(term(this.fmt(r), 'remainder', `${t.remainder} (r)`));
+      } else {
+        visual.appendChild(term('?', 'quotient', t.quotient));
+      }
+      spoken = solved ? t.resultEquality(a, b, this.fmt(q), this.fmt(r)) : `${a} ÷ ${b} = ?`;
     }
+    if (solved) box.classList.add('nw-equation-solved');
     box.appendChild(visual);
 
     const sr = el('span', 'nw-sr');
-    sr.textContent = solved
-      ? t.resultEquality(this.fmt(level.dividend), this.fmt(level.divisor), this.fmt(q), this.fmt(r))
-      : `${this.fmt(level.dividend)} ÷ ${this.fmt(level.divisor)} = ?`;
+    sr.textContent = spoken;
     box.appendChild(sr);
   }
 

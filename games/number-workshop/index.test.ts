@@ -100,6 +100,63 @@ describe('number-workshop shell', () => {
       // The preset exercises every tier and a remainder.
       expect(parsed?.map((l) => l.dividend)).toEqual([12, 27, 25, 63, 47]);
     });
+
+    it('the euclid preset in index.html round-trips through parseCustomLevels', () => {
+      const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+      const match = /\/\*nw-euclid-preset\*\/([\s\S]*?)\/\*end-nw-euclid-preset\*\//.exec(html);
+      expect(match).not.toBeNull();
+      const raw: unknown = JSON.parse(match![1]);
+      const parsed = parseCustomLevels(raw);
+      expect(parsed).toHaveLength((raw as unknown[]).length);
+      expect(parsed?.every((l) => l.mode === 'euclid')).toBe(true);
+    });
+  });
+
+  describe('euclid levels in the shell', () => {
+    const EUCLID = [{ mode: 'euclid', dividend: 78, divisor: 8 }];
+
+    it('shows the written equality as the anchor and writes the result into it', () => {
+      s = setup({ customLevels: EUCLID });
+      expect(q(s, '.nw-sr')?.textContent).toBe('78 = (8 × ?) + ?');
+      expect(q(s, '.nw-equation .nw-role-remainder .nw-lab')?.textContent).toBe('remainder');
+      const add = s.container.querySelectorAll<HTMLButtonElement>('.nw-gb-btn')[1];
+      for (let k = 0; k < 9; k++) add.click();
+      Array.from(s.container.querySelectorAll<HTMLButtonElement>('.nw-key')).find((k) => k.textContent === '6')?.click();
+      q(s, '.nw-check')?.click();
+      expect(q(s, '.nw-sr')?.textContent).toBe('78 = (8 × 9) + 6');
+      expect(q(s, '.nw-equation .nw-role-quotient .nw-num')?.textContent).toBe('9');
+      expect(q(s, '.nw-equation .nw-role-remainder .nw-num')?.textContent).toBe('6');
+      expect(events(s, 'game:progress')).toEqual([{ step: 1, total: 1, detail: 'euclid 78÷8' }]);
+      expect(events(s, 'game:score')).toEqual([{ points: 150, streak: 1, delta: 150 }]);
+    });
+
+    it('a wrong Check costs the clean-level bonus', () => {
+      s = setup({ customLevels: EUCLID });
+      const add = s.container.querySelectorAll<HTMLButtonElement>('.nw-gb-btn')[1];
+      for (let k = 0; k < 10; k++) add.click();
+      Array.from(s.container.querySelectorAll<HTMLButtonElement>('.nw-key')).find((k) => k.textContent === '0')?.click();
+      q(s, '.nw-check')?.click();
+      expect(events(s, 'game:progress')).toHaveLength(0);
+      s.container.querySelectorAll<HTMLButtonElement>('.nw-gb-btn')[0].click();
+      const back = q(s, '.nw-key-back');
+      back?.click();
+      Array.from(s.container.querySelectorAll<HTMLButtonElement>('.nw-key')).find((k) => k.textContent === '6')?.click();
+      q(s, '.nw-check')?.click();
+      expect(events(s, 'game:score')).toEqual([{ points: 100, streak: 0, delta: 100 }]);
+    });
+
+    it('mixes with facts in a custom set and procedural 6-8 medium ends with euclid', () => {
+      s = setup({ customLevels: [...SET_B, ...EUCLID] });
+      expect(badge(s)).toBe('1/2');
+      solveShare(s, 4);
+      settleAndAdvance();
+      expect(badge(s)).toBe('2/2');
+      expect(q(s, '.nw-euclid')).not.toBeNull();
+      s.game.destroy();
+
+      s = setup({ ageGroup: '6-8', difficulty: 'medium' });
+      expect(badge(s)).toBe('1/4');
+    });
   });
 
   describe('mount and start', () => {

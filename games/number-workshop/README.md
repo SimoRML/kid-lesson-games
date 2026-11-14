@@ -1,4 +1,4 @@
-# 🧮 Division Workshop (`number-workshop`) — 🚧 1 of 4 modes
+# 🧮 Division Workshop (`number-workshop`) — 🚧 2 of 4 modes
 
 Teaches **division as fair sharing and grouping**, and the one statement behind it:
 
@@ -14,10 +14,22 @@ Plan and decisions: [docs/design/number-workshop/](../../docs/design/number-work
 |---|---|---|
 | `facts` | Shares tokens equally onto plates, or builds rows of `b` | ✅ playable |
 | `shift` | Slides digits to divide by 10, 100, 1000 | 🗺️ planned (WP4) |
-| `euclid` | Completes `78 = (8 × ☐) + ☐` | 🗺️ planned (WP3) |
+| `euclid` | Completes `78 = (8 × ☐) + ☐`: fits groups on a number track, types the remainder | ✅ playable |
 | `long` | Written long division, digit by digit | 🗺️ planned (WP5) |
 
-While only `facts` is built, the procedural generator and the custom-level parser only produce and accept `facts` levels. Ages `9-11` therefore play `facts` levels in the **array** tier (tables 2–9, dividends above 30, remainders at `medium` and `hard`). A level of a mode that is not built yet is skipped, never rendered.
+While only `facts` and `euclid` are built, the procedural generator and the custom-level parser only produce and accept those two modes; a slot of a mode that is not built yet is filled by `facts` (or `euclid`), and a custom level of an unbuilt mode is skipped, never rendered. Ages `9-11` therefore play `facts` (array tier) and `euclid` levels until `shift` and `long` land.
+
+## `euclid`: fit the groups
+
+The anchor above the stage reads `78 = (8 × ?) + ?`. The child builds the quotient with the same **group builder** as `facts`' array tier (bars of length `b` laid on a number track from 0 to the dividend) and types the remainder on a **keypad** (buttons, or digit keys and Backspace anywhere in the stage). The gap between the last bar and the end of the track is drawn as countable unit squares at `easy` and `medium`, and left unmarked at `hard`. Going past the dividend is allowed and drawn hatched ("too far"). **Check** accepts only the Euclidean answer (`r < b`), and each wrong path has its own hint (never the answer):
+
+| Wrong path | Example for 78 ÷ 8 | Hint says |
+|---|---|---|
+| Too far | 10 groups | the groups pass the dividend, take one away |
+| False equality | 9 groups, remainder 5 | they do not add up to 78, count the gap again |
+| True equality, `r ≥ b` | 8 groups, remainder 14 | the equality is true, but another group of 8 still fits |
+
+Forgetting to type the remainder shows a reminder and is not a mistake. Undo (− group, backspace) never is.
 
 ## `facts` interaction tiers (chosen by dividend size, not by age)
 
@@ -36,8 +48,8 @@ With a remainder, the tray relabels itself **left over** and the HUD says why: *
 | Age | Levels | Rules |
 |---|---|---|
 | `3-5` | 3 | `facts` share tier, always exact, divisor 2–4 by difficulty. **No `÷` and no equation anywhere**: sentences only ("Give each of the 3 friends…", "Each friend has 4 dates."). |
-| `6-8` | 4 | Divisor 2–5, dividend ≤ 30, remainders at `medium`/`hard`. `÷` appears beside the picture. (The `euclid` finale arrives with WP3.) |
-| `9-11` | 5 | Array tier, tables 2–9, dividend above 30, remainders at `medium`/`hard`. |
+| `6-8` | 4 | `facts` with divisor 2–5, dividend ≤ 30, remainders at `medium`/`hard`; at `medium` and `hard` the last level is `euclid`. `÷` appears beside the picture. |
+| `9-11` | 5 | `facts` in the array tier (tables 2–9, dividend above 30) plus `euclid` levels (remainder always > 0), remainders at `medium`/`hard`. |
 
 `easy` is exact-only and has smaller numbers; see the slot plan in [01-pedagogy-and-modes.md](../../docs/design/number-workshop/01-pedagogy-and-modes.md) §4. Levels never repeat in a set.
 
@@ -59,7 +71,7 @@ All pass WCAG AA (4.5 : 1) for text.
 
 Operands only: the cartridge computes every answer itself, so a wrong answer in the data can never reach a child. Out-of-range or unbuilt-mode levels are skipped; if nothing usable remains, procedural levels are used. Schema: [levels.schema.json](levels.schema.json), rules: [02-level-schema.md](../../docs/design/number-workshop/02-level-schema.md).
 
-Tested example (also the "Custom: Sharing & arrays" preset in the playground):
+Tested example (also the "Custom: Sharing & arrays" preset in the playground; a second preset, "Fit the groups", holds `euclid` levels from the sample sheet such as `{ "mode": "euclid", "dividend": 78, "divisor": 8 }`):
 
 ```json
 [
@@ -83,7 +95,7 @@ Tested example (also the "Custom: Sharing & arrays" preset in the playground):
 
 ## Files
 
-`index.ts` (shell, lifecycle) · `modes/facts.ts` · `modes/index.ts` (registry) · `modes/types.ts` · `widgets/drag.ts` · `widgets/group-builder.ts` · `i18n.ts` · `styles.ts` · pure logic `division.ts`, `levels.ts`, `session.ts` · a test file beside each module.
+`index.ts` (shell, lifecycle) · `modes/facts.ts` · `modes/euclid.ts` · `modes/index.ts` (registry) · `modes/types.ts` · `widgets/drag.ts` · `widgets/group-builder.ts` · `widgets/keypad.ts` · `i18n.ts` · `styles.ts` · pure logic `division.ts`, `levels.ts`, `session.ts` · a test file beside each module.
 
 ## Not verified by tests
 

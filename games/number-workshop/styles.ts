@@ -55,7 +55,7 @@ export const STYLES = `
 .nw-equation-solved { animation: nw-write 0.4s ease both; }
 .nw-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-.nw-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; }
+.nw-stage { flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; }
 .nw-stage.nw-solved .nw-facts { filter: drop-shadow(0 0 10px rgba(74, 222, 128, 0.45)); }
 .nw-paused .nw-stage { opacity: 0.5; pointer-events: none; }
 
@@ -102,6 +102,22 @@ export const STYLES = `
 .nw-hint { min-height: 1.4em; color: var(--nw-remainder); font-weight: 600; text-align: center; }
 .nw-check { min-width: 140px; }
 
+.nw-euclid { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.nw-live-eq { font-size: 1.25rem; font-weight: 800; text-align: center; min-height: 1.6em; }
+.nw-gb-visual.nw-track-wrap { display: block; width: min(100%, 620px); max-height: none; overflow: visible; }
+.nw-track { display: flex; width: 100%; min-height: 34px; border-radius: 8px; background: rgba(56, 189, 248, 0.1); border: 2px solid var(--nw-dividend); overflow: hidden; }
+.nw-bar { height: 30px; background: var(--nw-divisor); border-right: 2px solid var(--nw-bg); animation: nw-land 0.2s ease both; }
+.nw-bar-over { background: repeating-linear-gradient(45deg, #fb7185, #fb7185 6px, #be123c 6px, #be123c 12px); }
+.nw-gap { display: flex; height: 30px; border-left: 2px dashed var(--nw-remainder); }
+.nw-gap-hidden { background: rgba(251, 146, 60, 0.08); }
+.nw-unit { flex: 1; min-width: 0; border-right: 1px solid rgba(251, 146, 60, 0.7); background: rgba(251, 146, 60, 0.22); }
+.nw-axis { position: relative; height: 1.4em; font-size: 0.8rem; font-weight: 700; }
+.nw-axis-zero { position: absolute; left: 0; color: var(--nw-muted); }
+.nw-axis-end { position: absolute; transform: translateX(-100%); }
+.nw-rem-row { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+.nw-rem-display { min-width: 3ch; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0 12px; border: 2px dashed var(--nw-remainder); border-radius: 10px; font-size: 1.5rem; background: var(--nw-surface); }
+.nw-keypad { display: grid; grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 6px; width: min(100%, 300px); }
+.nw-key { padding: 6px; font-size: 1.15rem; }
 .nw-shake { animation: nw-shake 0.4s ease; }
 .nw-pulse { animation: nw-pulse 0.45s ease; }
 
