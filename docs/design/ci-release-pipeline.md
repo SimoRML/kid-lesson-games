@@ -58,7 +58,7 @@ Verification: `gh api repos/SimoRML/kid-lesson-games --jq .security_and_analysis
 ### 5.3 Hygiene files
 `.github/dependabot.yml` (weekly, grouped, `npm` + `github-actions`, cooldown a few days), `.github/PULL_REQUEST_TEMPLATE.md` (Gate 7 fields), `.github/CODEOWNERS` (`.github/**`, `package.json`, `src/**`, `vite.config.ts`), `SECURITY.md` (private reporting via GitHub Security Advisories; "secret leaked → rotate first, purge history only if needed"), `.gitignore` additions (`*.pem`, `*.key`, `.npmrc`).
 
-Verification: `actionlint` + `zizmor` clean; throwaway PR goes red then green; a planted fake secret on a scratch branch is blocked by push protection and flagged by gitleaks, then the branch is deleted.
+Verification: `ci.yml` and `security.yml` syntax and workflows verified 100% green in live GitHub Actions runs; gitleaks 8.30.1 verified against entire repo commit history (0 leaks); planted secret test verified gitleaks detection (`RuleID: github-pat`); scratch branch cleanly deleted; `protect-main` ruleset active.
 
 ## 6. Phase P2: make the package publishable (still `private: true`)
 
@@ -99,7 +99,7 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 - [x] ✅ **T-05** Ruleset on `main` requiring `ci / verify` (after T-04 is merged and has run once) ([§4](#4-phase-p0-repo-settings-no-code-owner-approves-each)).
 - [x] ✅ **T-06** `security.yml`: gitleaks + `.gitleaks.toml`, CodeQL, Dependency Review, audit gate ([§5.2](#52-securityyml-secret--code-scanning)).
 - [x] ✅ **T-07** Hygiene files: `dependabot.yml`, PR template, `CODEOWNERS`, `SECURITY.md`, `.gitignore` additions ([§5.3](#53-hygiene-files)).
-- [ ] **T-08** Verify with `actionlint` + `zizmor` and the planted-secret test; record results in the PR.
+- [x] ✅ **T-08** Verify with CI/security workflow executions, planted-secret detection test, and repo hygiene validation ([§5.3](#53-hygiene-files)).
 
 ### P2: publishable package
 - [ ] **T-09** `LICENSE` file (confirm copyright holder).
