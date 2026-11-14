@@ -14,8 +14,8 @@ export interface KeypadLabels {
 export interface KeypadOptions {
   signal: AbortSignal;
   isEnabled: () => boolean;
-  /** Digits kept at most. */
-  maxDigits: number;
+  /** Digits kept at most; a function lets the limit change from one entry to the next. */
+  maxDigits: number | (() => number);
   onChange: (value: string) => void;
   labels: KeypadLabels;
   /** Element whose subtree receives keyboard digits. Defaults to the keypad. */
@@ -45,8 +45,10 @@ export function createKeypad(parent: HTMLElement, opts: KeypadOptions): Keypad {
     opts.onChange(value);
   }
 
+  const limit = (): number => (typeof opts.maxDigits === 'function' ? opts.maxDigits() : opts.maxDigits);
+
   function pressDigit(d: string): void {
-    if (!opts.isEnabled() || value.length >= opts.maxDigits) return;
+    if (!opts.isEnabled() || value.length >= limit()) return;
     // No leading zeros: "0" followed by a digit replaces the zero.
     change(value === '0' ? d : value + d);
   }
@@ -92,7 +94,7 @@ export function createKeypad(parent: HTMLElement, opts: KeypadOptions): Keypad {
     element: root,
     getValue: () => value,
     setValue(next: string) {
-      value = next.replace(/[^0-9]/g, '').slice(0, opts.maxDigits);
+      value = next.replace(/[^0-9]/g, '').slice(0, limit());
     },
     setLabels(labels) {
       root.setAttribute('aria-label', labels.group);

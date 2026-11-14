@@ -12,7 +12,9 @@ import createGameDefault, {
   parseCustomLevels,
   SETTLE_MS
 } from './index.js';
+import { longDivisionTrace } from './division.js';
 import { MODE_REGISTRY } from './modes/index.js';
+import { buildPlan, quotientOf } from './modes/long.js';
 import { BUILT_MODES } from './modes/types.js';
 
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
@@ -101,6 +103,16 @@ describe('number-workshop shell', () => {
       expect(parsed?.map((l) => l.dividend)).toEqual([12, 27, 25, 63, 47]);
     });
 
+    it('the long preset in index.html round-trips through parseCustomLevels', () => {
+      const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+      const match = /\/\*nw-long-preset\*\/([\s\S]*?)\/\*end-nw-long-preset\*\//.exec(html);
+      expect(match).not.toBeNull();
+      const raw: unknown = JSON.parse(match![1]);
+      const parsed = parseCustomLevels(raw);
+      expect(parsed).toHaveLength((raw as unknown[]).length);
+      expect(parsed?.every((l) => l.mode === 'long')).toBe(true);
+    });
+
     it('the shift preset in index.html round-trips through parseCustomLevels', () => {
       const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
       const match = /\/\*nw-shift-preset\*\/([\s\S]*?)\/\*end-nw-shift-preset\*\//.exec(html);
@@ -119,6 +131,29 @@ describe('number-workshop shell', () => {
       const parsed = parseCustomLevels(raw);
       expect(parsed).toHaveLength((raw as unknown[]).length);
       expect(parsed?.every((l) => l.mode === 'euclid')).toBe(true);
+    });
+  });
+
+  describe('long levels in the shell', () => {
+    it('walks 806 / 5 to the end and writes the quotient and remainder into the anchor', () => {
+      s = setup({ customLevels: [{ mode: 'long', dividend: 806, divisor: 5 }], difficulty: 'medium' });
+      expect(q(s, '.nw-sr')?.textContent).toBe('806 ÷ 5 = ?');
+      const trace = longDivisionTrace(806, 5);
+      const key = (d: string) =>
+        Array.from(s.container.querySelectorAll<HTMLButtonElement>('.nw-key')).find((k) => k.textContent === d)?.click();
+      for (const item of buildPlan(trace.length, 'medium')) {
+        const step = trace[item.step];
+        if (item.kind === 'bring') q(s, '.nw-lbring')?.click();
+        else {
+          const value = item.kind === 'digit' ? step.digit : item.kind === 'remainder' ? step.remainder
+            : item.kind === 'eqQ' ? quotientOf(trace) : trace[trace.length - 1].remainder;
+          for (const d of String(value)) key(d);
+          q(s, '.nw-check')?.click();
+        }
+      }
+      expect(q(s, '.nw-sr')?.textContent).toBe('806 ÷ 5 = 161 r 1');
+      expect(events(s, 'game:progress')).toEqual([{ step: 1, total: 1, detail: 'long 806÷5' }]);
+      expect(events(s, 'game:score')).toEqual([{ points: 150, streak: 1, delta: 150 }]);
     });
   });
 

@@ -1,4 +1,4 @@
-# 🧮 Division Workshop (`number-workshop`) — 🚧 3 of 4 modes
+# 🧮 Division Workshop (`number-workshop`) — 🚧 4 of 4 modes, polishing
 
 Teaches **division as fair sharing and grouping**, and the one statement behind it:
 
@@ -15,9 +15,23 @@ Plan and decisions: [docs/design/number-workshop/](../../docs/design/number-work
 | `facts` | Shares tokens equally onto plates, or builds rows of `b` | ✅ playable |
 | `shift` | Slides digits in a place-value table to divide by 10, 100, 1000 | ✅ playable |
 | `euclid` | Completes `78 = (8 × ☐) + ☐`: fits groups on a number track, types the remainder | ✅ playable |
-| `long` | Written long division, digit by digit | 🗺️ planned (WP5) |
+| `long` | Written long division in the potence layout, digit by digit, then the equality | ✅ playable |
 
-While only `facts`, `shift` and `euclid` are built, the procedural generator and the custom-level parser only produce and accept those three modes; a slot of a mode that is not built yet is filled by `facts` (or `euclid`), and a custom level of an unbuilt mode is skipped, never rendered. Ages `9-11` therefore play `facts` (array tier), `shift` and `euclid` levels until `long` lands (its slot is filled by `facts`).
+All four modes are built, so every slot of the procedural generator is filled by its own mode and custom levels of any of the four modes are accepted. The cartridge stays 🚧 (`0.4.0`) until WP6 (polish, play-test, `1.0.0`).
+
+## `long`: the written algorithm
+
+The French "potence" layout: dividend on the left, divisor top right, quotient under it. The cartridge computes the trace and walks the child through one step per quotient digit: **divide** (type the digit, the partial dividend is highlighted), **multiply**, **subtract**, then **bring down** by tapping the highlighted next digit of the dividend. After the last digit comes the **equality step**: the child writes `806 = (5 × ☐) + ☐` (the quotient, then the remainder).
+
+What the child types depends on `difficulty`:
+
+| Difficulty | Child types | Cartridge shows |
+|---|---|---|
+| `easy` | quotient digit | product and subtraction |
+| `medium` | quotient digit, step remainder | product |
+| `hard` | quotient digit, product, step remainder | nothing |
+
+Hints never give the digit: too big → "5 × 2 = 10 is more than 8", too small → "There is room for one more 5 in 8". A wrong product, a wrong step remainder (and a remainder that is not smaller than the divisor) and a wrong equality entry each have their own hint and count one mistake; an empty Check is only a reminder. `568 ÷ 8` starts with the two-digit partial `56`, and `816 ÷ 8` has a step where the child types `0`; both are tested end to end. Undo is the keypad's backspace; a step that was accepted stays.
 
 ## `shift`: slide the digits
 
@@ -57,7 +71,7 @@ With a remainder, the tray relabels itself **left over** and the HUD says why: *
 |---|---|---|
 | `3-5` | 3 | `facts` share tier, always exact, divisor 2–4 by difficulty. **No `÷` and no equation anywhere**: sentences only ("Give each of the 3 friends…", "Each friend has 4 dates."). |
 | `6-8` | 4 | `facts` with divisor 2–5, dividend ≤ 30, remainders at `medium`/`hard`; at `medium` and `hard` the last level is `euclid`. `÷` appears beside the picture. |
-| `9-11` | 5 | `facts` in the array tier (tables 2–9, dividend above 30), a `shift` level (by 10/100, and 1000 at `medium`/`hard`) and `euclid` levels (remainder always > 0), remainders at `medium`/`hard`. |
+| `9-11` | 5 | `facts` in the array tier (tables 2–9, dividend above 30), a `shift` level (by 10/100, and 1000 at `medium`/`hard`), `euclid` levels (remainder always > 0) and a `long` level (3-digit dividend, 4-digit at `hard`), remainders at `medium`/`hard`. |
 
 `easy` is exact-only and has smaller numbers; see the slot plan in [01-pedagogy-and-modes.md](../../docs/design/number-workshop/01-pedagogy-and-modes.md) §4. Levels never repeat in a set.
 
@@ -79,7 +93,7 @@ All pass WCAG AA (4.5 : 1) for text.
 
 Operands only: the cartridge computes every answer itself, so a wrong answer in the data can never reach a child. Out-of-range or unbuilt-mode levels are skipped; if nothing usable remains, procedural levels are used. Schema: [levels.schema.json](levels.schema.json), rules: [02-level-schema.md](../../docs/design/number-workshop/02-level-schema.md).
 
-Tested example (also the "Custom: Sharing & arrays" preset in the playground; two more presets, "Slide the digits" (`shift`, e.g. `{ "mode": "shift", "dividend": 60000, "divisor": 100 }`) and "Fit the groups", hold `euclid` levels from the sample sheet such as `{ "mode": "euclid", "dividend": 78, "divisor": 8 }`):
+Tested example (also the "Custom: Sharing & arrays" preset in the playground; three more presets, "Long division" (`long`, the four golden traces), "Slide the digits" (`shift`, e.g. `{ "mode": "shift", "dividend": 60000, "divisor": 100 }`) and "Fit the groups", hold `euclid` levels from the sample sheet such as `{ "mode": "euclid", "dividend": 78, "divisor": 8 }`):
 
 ```json
 [
@@ -103,7 +117,7 @@ Tested example (also the "Custom: Sharing & arrays" preset in the playground; tw
 
 ## Files
 
-`index.ts` (shell, lifecycle) · `modes/facts.ts` · `modes/shift.ts` · `modes/euclid.ts` · `modes/index.ts` (registry) · `modes/types.ts` · `widgets/drag.ts` · `widgets/group-builder.ts` · `widgets/keypad.ts` · `i18n.ts` · `styles.ts` · pure logic `division.ts`, `levels.ts`, `session.ts` · a test file beside each module.
+`index.ts` (shell, lifecycle) · `modes/facts.ts` · `modes/shift.ts` · `modes/euclid.ts` · `modes/long.ts` · `modes/index.ts` (registry) · `modes/types.ts` · `widgets/drag.ts` · `widgets/group-builder.ts` · `widgets/keypad.ts` · `i18n.ts` · `styles.ts` · pure logic `division.ts`, `levels.ts`, `session.ts` · a test file beside each module.
 
 ## Not verified by tests
 
