@@ -50,7 +50,7 @@
 - [x] ✅ **`balance-scale` — Balance the Scale / Balance Lab** (*Ages 3–5, 6–8, 9–11*): Equal-arm metric weight equality (`g`/`kg`), additive decomposition ($500\text{g} + 500\text{g} = 1\text{ kg}$), and Archimedes lever torque ($\tau = m \times d$).
 - [x] ✅ **`pendulum-rhythm` — Pendulum Rhythm Lab** (*Ages 3–5, 6–8, 9–11*): Wrecking-ball momentum knockdown, Galileo's mass-invariance & BPM metronome sync, and square-root law ($T \propto \sqrt{L}$) harmonic polyrhythms ($2:1, 3:1, 3:2$).
 - [ ] 🗺️ **`number-line` — Number Line Hopper** (*Ages 3–5, 6–8, 9–11*): Frog/fennec jumping along positive/negative number lines to solve addition, subtraction, and relative integers.
-- [ ] 🗺️ **`number-workshop` — Division Workshop / ورشة القسمة** (*Ages 3–5, 6–8, 9–11*): LLM-friendly arithmetic cartridge, division first: sharing/tables, `a = b × q + r`, ÷10/100/1000 place value, written long division. Plan (awaiting owner approval): [docs/design/number-workshop/](docs/design/number-workshop/README.md), delivered as work packages WP1–WP6, one small PR each.
+- [ ] 🗺️ **`number-workshop` — Division Workshop / ورشة القسمة** (*Ages 3–5, 6–8, 9–11*): LLM-friendly arithmetic cartridge, division first: sharing/tables, `a = b × q + r`, ÷10/100/1000 place value, written long division. Approved plan: [docs/design/number-workshop/](docs/design/number-workshop/README.md), delivered as work packages WP1–WP6, one small PR each.
 - [ ] 🗺️ **`fraction-feast` — Fraction Slices & Equal Shares / أجزاء وكسور** (*Ages 6–8, 9–11*): Circular/rectangular visual part-whole fractions, equivalence ($2/4 = 1/2$), and common-denominator operations.
 - [ ] 🗺️ **`money-market` — Souk & Dirham Counter / متجر النقود والدرهم** (*Ages 3–5, 6–8, 9–11*): Moroccan currency counting (1, 2, 5, 10 DH coins, 20, 50, 100, 200 DH banknotes, and 10, 20, 50 centimes), additive payment composition, and calculating change returned.
   - [ ] 🗺️ *(Low Priority)* Add switchable multi-currency support (`EUR`, `USD`, `MAD`) to `money-market`.
@@ -99,7 +99,7 @@
 
 - [x] ✅ Decision: **Reading A**. An external platform's LLM generates `levels` JSON for existing cartridges; it never generates or runs game code (games are discovered at build time and must stay inside the cartridge contract).
 - [ ] 🗺️ Build `number-workshop` so division-style school exercises have a matching cartridge (see Theme 3 and the plan doc).
-- [ ] 🗺️ Verifier for LLM-made levels: planned as cartridge-side recompute plus a shipped `levels.schema.json`, with no `src/` change (plan decision D12; pending owner approval).
-- [ ] 🗺️ Approve the `number-workshop` plan and answer its open questions Q1–Q7 ([plan README §4](docs/design/number-workshop/README.md)).
+- [ ] 🗺️ Verifier for LLM-made levels: planned as cartridge-side recompute plus a shipped `levels.schema.json`, with no `src/` change (plan decision D12).
+- [x] ✅ `number-workshop` plan approved by the owner (2026-11-14), recommended defaults accepted for Q1–Q7 ([plan README §4](docs/design/number-workshop/README.md)).
 - [ ] 🗺️ Document a per-cartridge `levels` JSON schema that a platform can feed to an LLM (today each cartridge has its own shape, e.g. `balance-scale` vs `pulley-lift`). The platform-side contract for `number-workshop` is drafted in [07-platform-integration.md](docs/design/number-workshop/07-platform-integration.md).
 - [ ] 🗺️ Delivery rule for all of the above: small chunks, one concern per branch/PR, small Conventional Commits, following AGENTS.md §0 (plan, branch, verify, docs, independent review).

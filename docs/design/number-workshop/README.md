@@ -1,6 +1,6 @@
 # `number-workshop` — Division Workshop: Implementation Plan (v2)
 
-> **Status (2026-11-14): 🗺️ Planned — awaiting owner approval.** Nothing described here exists on disk. No code is written until the owner approves this plan (AGENTS.md §0, Gate 2) and answers, or accepts the defaults for, the open questions in §4.
+> **Status (2026-11-14): 🗺️ Planned — plan approved by the owner on 2026-11-14, with the recommended default accepted for every question Q1–Q7 (§4).** Nothing described here exists on disk yet. Implementation proceeds one work package at a time ([06-delivery-plan.md](06-delivery-plan.md)).
 > Legend used below: ✅ verified in this repo on 2026-11-14 · ⚠️ unverified / judgment call · ❓ owner decision.
 
 This folder replaces the single-file first draft. It is written so that an agent starting cold can pick up **one work package** and deliver it without re-deriving the design.
@@ -60,11 +60,11 @@ Each decision is a default the plan is built on. The owner can overturn any of t
 
 Other corrections made during review: the sheet item `3 400 ÷ 100` is exact (34) and is now a golden test; the sheet's block 4 also asks for the final equality, so `long` ends with an equality step; `updateConfig` behaviour, locale handling, and jsdom limits are now specified from the actual code (see [03-architecture.md](03-architecture.md) §6).
 
-## 4. Open questions for the owner
+## 4. Owner decisions on the open questions
 
-Every question has a default so the plan is complete either way. "Approve as is" means all defaults stand.
+**Settled on 2026-11-14: the owner accepted the default in every row.** The alternatives are kept for the record; reopening one is an owner decision.
 
-| # | Question | Default (recommended) | Alternative |
+| # | Question | Decided (the recommended default) | Alternative not taken |
 |---|---|---|---|
 | Q1 | Rendering technology (D4) | DOM + SVG + CSS | Canvas 2D like the physics cartridges, for visual consistency, at higher cost and weaker accessibility |
 | Q2 | LLM-written text (D7) | None in v1; `theme` enum only | Allow a short per-level `instruction` string, `textContent` only, capped at 120 chars, accepting the moderation risk |

@@ -25,7 +25,7 @@ graph LR
 | 5 | `feat/number-workshop-long` | yes | 🚧 `0.4.0` | minor |
 | 6 | `feat/number-workshop-finish` | yes | ✅ `1.0.0` | patch |
 
-Version note: AGENTS.md says feature PRs never bump versions (multi-agent rule 4) and also that a cartridge change updates that cartridge's `game.json` version (Gate 6, Gate 9). This plan reads that as: the author sets the **cartridge** version shown above; the **library** version in `package.json` is touched only by the Merger. ❓ Q7: if the owner reads it differently, the Merger sets both.
+Version note: AGENTS.md says feature PRs never bump versions (multi-agent rule 4) and also that a cartridge change updates that cartridge's `game.json` version (Gate 6, Gate 9). This plan reads that as: the author sets the **cartridge** version shown above; the **library** version in `package.json` is touched only by the Merger. The owner confirmed this reading (Q7).
 
 Rules common to every WP:
 
@@ -40,7 +40,7 @@ Rules common to every WP:
 
 ## WP0 — This plan
 
-**Done when**: the owner has approved the plan and settled Q1–Q7 ([README.md](README.md) §4); the docs PR is reviewed and merged. Any answer that differs from a default is edited into these files in the same PR.
+**Done when**: the docs PR is reviewed and merged. The owner approved the plan and accepted every default for Q1–Q7 on 2026-11-14 ([README.md](README.md) §4).
 
 ---
 
