@@ -215,9 +215,29 @@ export class KidGameElement extends HTMLElement {
     this.loadAndMountGame();
   }
 
-  private showStatus(html: string) {
-    this.statusScreen.innerHTML = html;
+  // Status content is built with DOM APIs and textContent only: error messages can
+  // carry externally derived text (e.g. the raw `game` attribute) and must never be
+  // parsed as markup.
+  private showStatus(...children: HTMLElement[]) {
+    this.statusScreen.replaceChildren(...children);
     this.statusScreen.style.display = 'flex';
+  }
+
+  private statusLine(text: string, className?: string): HTMLDivElement {
+    const line = document.createElement('div');
+    if (className) line.className = className;
+    line.textContent = text;
+    return line;
+  }
+
+  private showLoadingStatus() {
+    const spinner = document.createElement('div');
+    spinner.className = 'spinner';
+    this.showStatus(spinner, this.statusLine(this.i18n.t('loading')));
+  }
+
+  private showErrorStatus(message: string) {
+    this.showStatus(this.statusLine(this.i18n.t('error'), 'error-title'), this.statusLine(message));
   }
 
   private hideStatus() {
@@ -244,10 +264,7 @@ export class KidGameElement extends HTMLElement {
     const loadToken = ++this.currentLoadToken;
 
     this.cleanupGame();
-    this.showStatus(`
-      <div class="spinner"></div>
-      <div>${this.i18n.t('loading')}</div>
-    `);
+    this.showLoadingStatus();
 
     try {
       const { game } = await registry.create(id);
@@ -314,10 +331,7 @@ export class KidGameElement extends HTMLElement {
       if (this.currentLoadToken !== loadToken || !this.isMounted) return;
 
       const message = err instanceof Error ? err.message : String(err);
-      this.showStatus(`
-        <div class="error-title">${this.i18n.t('error')}</div>
-        <div>${message}</div>
-      `);
+      this.showErrorStatus(message);
       this.dispatchEvent(
         new CustomEvent('game:error', {
           detail: { message },

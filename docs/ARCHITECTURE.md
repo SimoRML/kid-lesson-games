@@ -78,7 +78,7 @@ When [src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.t
 
 `KidGameElement` attaches an open Shadow DOM (`this.attachShadow({ mode: 'open' })`) containing:
 - `<div class="viewport">`
-  - `<div class="status-screen" id="status">` — displays a CSS spinner + localized loading text during async import/mount, or an error screen if loading fails.
+  - `<div class="status-screen" id="status">` — displays a CSS spinner + localized loading text during async import/mount, or an error screen if loading fails. Its content is built with DOM APIs and `textContent` (never `innerHTML`), so error messages are always shown as plain text.
   - `<div class="game-slot" id="slot">` — the `HTMLElement` container passed to `game.mount(container, context)`.
 
 #### Observed Attributes & DOM Properties
