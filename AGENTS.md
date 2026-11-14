@@ -12,7 +12,7 @@
 6. **Scaffold a Game**: Run `npm run create-game <game-id>` (generates all 6 files: `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, `README.md`; verified in `scripts/create-game.js`).
 7. **Run Dev Playground**: `npm run dev` (starts Vite server on `http://localhost:3000/kid-lesson-games/`, serving `index.html`).
 8. **Run Unit Tests**: `npm test` (`vitest run` across `src/**/*.test.ts` and `games/**/*.test.ts`).
-9. **Build Library**: `npm run build` (`tsc && vite build` $\rightarrow$ ES chunks `dist/kid-games.es.js` + `dist/<game>-*.js`, and monolithic UMD `dist/kid-games.umd.js`).
+9. **Build Library**: `npm run build` (`tsc && vite build` $\rightarrow$ ES chunks `dist/kid-games.es.js` + `dist/<game>-*.js`, and monolithic UMD `dist/kid-games.umd.cjs`).
 10. **Build Playground (GitHub Pages)**: `npm run build:pages` (`tsc && vite build --mode pages` $\rightarrow$ `dist/index.html` + `dist/assets/*.js`).
 
 ---
@@ -147,7 +147,7 @@ Merge only when **all** are true: approved by the Reviewer; Gate 5 re-verified o
 1. Rebase/merge `origin/main` into the branch if behind, re-run the Gate 5 commands.
 2. **Squash-merge** from the **main checkout** with the branch not checked out (`git switch main` first; otherwise the local delete fails): `gh pr merge --squash --delete-branch`, with a Conventional Commit title. Do not enable auto-merge unless the user asked.
    **The source branch must be removed after merging**: remote (confirm `git ls-remote --heads origin <branch>` is empty), local (`git branch -D <branch>`; `-D` is expected after a squash-merge), and its worktree (`git worktree remove <path>`; `git worktree prune`). `gh --delete-branch` has been seen to leave the remote branch behind, so after merging always check and, if needed, run `git push origin --delete <branch>`. Then `git fetch --prune`. Delete only the branch of the PR you just merged, never anyone else's.
-3. **Semver** ([semver.org](https://semver.org), currently `0.x`, package is `"private": true`):
+3. **Semver** ([semver.org](https://semver.org), currently `0.x`, published as `@simorml/kid-lesson-games` on npm):
    | Change | Bump |
    |---|---|
    | Breaking change to `<kid-game>` attributes/events, `GameContext`/`KidGame` types, `game.json` schema, or removal of a game/level format | **MAJOR** (while `0.x`: bump **MINOR** and mark `BREAKING` in the changelog) |
@@ -360,12 +360,12 @@ this.context.emit('game:complete', {
 
 1. ⚠️ **Metadata Filename (`game.json` vs `meta.json`)**:
    - Old README text mentioned `meta.json`. In fact, `scripts/create-game.js` generates `game.json`, and all 7 cartridges use `game.json`. `src/index.ts` globs both `game.json` and `meta.json`, so **always use `game.json`** as the canonical filename.
-2. ⚠️ **UMD Bundle Cannot Code-Split (`dist/kid-games.umd.js`)**:
-   - ES module builds (`dist/kid-games.es.js`, ~14.0 kB) split each cartridge into its own on-demand chunk (`dist/<game-id>-*.js`). However, UMD format does not support code-splitting dynamic imports, so `dist/kid-games.umd.js` (~343 kB) bundles all 7 games into a single file.
+2. ⚠️ **UMD Bundle Cannot Code-Split (`dist/kid-games.umd.cjs`)**:
+   - ES module builds (`dist/kid-games.es.js`, ~14.0 kB) split each cartridge into its own on-demand chunk (`dist/<game-id>-*.js`). However, UMD format does not support code-splitting dynamic imports, so `dist/kid-games.umd.cjs` (~343 kB) bundles all 7 games into a single CommonJS-compatible UMD file.
 3. ⚠️ **Library Build vs. Playground Build (`vite.config.ts`)**:
    - Default `npm run build` runs Vite in library mode (`build.lib`), which outputs JS bundles to `dist/` and ignores `index.html`. To build the interactive playground static site (`dist/index.html` + `dist/assets/`), use `npm run build:pages` (`vite build --mode pages`).
-4. ⚠️ **Not Published to npm Yet (`"private": true`)**:
-   - `@simorml/kid-lesson-games` is not published on the public npm registry yet (🗺️ Planned). Do not instruct users to run `npm install @simorml/kid-lesson-games`; use git dependency (`npm i github:simorml/kid-lesson-games`), local path, or built `./dist/kid-games.es.js`.
+4. ✅ **Published to npm Registry (`@simorml/kid-lesson-games`)**:
+   - `@simorml/kid-lesson-games` is configured for npm registry distribution. Consumers can install via `npm install @simorml/kid-lesson-games`, git dependency (`npm i github:simorml/kid-lesson-games`), local path, or built `./dist/kid-games.es.js`.
 5. ✅ **TypeScript Declarations in `dist/` (`tsconfig.build.json`)**:
    - `build:types` compiles `.d.ts` declaration bundles into `dist/` using `tsconfig.build.json` (excluding tests), and `package.json` points `"types"` and `exports["."].types` to `./dist/index.d.ts`.
 6. ✅ **Node.js SSR Safe Import**:

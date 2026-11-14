@@ -77,24 +77,24 @@
 
 ## 📦 Theme 4: Packaging, Distribution & Discoverability
 
-- [x] ✅ Configure Vite library build (`npm run build`) producing code-split ES modules (`dist/kid-games.es.js` + per-game chunks) and UMD bundle (`dist/kid-games.umd.js`, ⚠️ single-file bundle without code-splitting).
-- [x] ✅ Configure `package.json` entrypoints (`main`, `module`, `types`, `exports`, `files`, `prepare`) for local and git-based installation (`npm i github:simorml/kid-lesson-games`).
+- [x] ✅ Configure Vite library build (`npm run build`) producing code-split ES modules (`dist/kid-games.es.js` + per-game chunks) and UMD bundle (`dist/kid-games.umd.cjs`, ⚠️ single-file bundle without code-splitting).
+- [x] ✅ Configure `package.json` entrypoints (`main`, `module`, `types`, `exports`, `files`, `prepack`) for local and git-based installation (`npm i github:simorml/kid-lesson-games`).
 - [x] ✅ Add GitHub Pages deployment workflow ([.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)) and `npm run build:pages` with `base: '/kid-lesson-games/'`.
-- [ ] 🗺️ Emit standalone TypeScript declaration files (`dist/index.d.ts`) during build (`tsconfig.json` currently sets `"noEmit": true`).
-- [ ] 🗺️ Publish `kid-lesson-games` to the public npm registry (remove `"private": true` once `.d.ts` generation and SSR guard are complete).
+- [x] ✅ Emit standalone TypeScript declaration files (`dist/index.d.ts`) during build (`tsconfig.build.json` in PR #58).
+- [x] ✅ Publish `@simorml/kid-lesson-games` to the public npm registry (remove `"private": true`, Trusted Publisher OIDC provenance, release workflow).
 - [ ] 🗺️ Add additional European locales (`es`, `de`, `it`, `nl`) to core `I18nManager` and cartridge dictionaries.
 
 ---
 
 ## 🛡️ Theme 7: CI, Security & npm Release Pipeline
 
-Full plan, decisions and per-task detail: [docs/design/ci-release-pipeline.md](docs/design/ci-release-pipeline.md) (all 🗺️ Planned; priority P0 → P3).
+Full plan, decisions and per-task detail: [docs/design/ci-release-pipeline.md](docs/design/ci-release-pipeline.md) (priority P0 → P3).
 
 - [x] ✅ **P0** Repo settings: secret scanning + push protection, read-only token, `npm-publish` Environment, npm 2FA ([T-01..03](docs/design/ci-release-pipeline.md#p0-settings-owner-action-no-pr)).
 - [x] ✅ **P1** PR CI with `verify` aggregate check + `main` ruleset ([T-04, T-05](docs/design/ci-release-pipeline.md#p1-ci--security-prs-start-here)).
 - [x] ✅ **P1** gitleaks, CodeQL, Dependency Review, audit gate, Dependabot, `SECURITY.md`, `CODEOWNERS`, PR template ([T-06..08](docs/design/ci-release-pipeline.md#p1-ci--security-prs-start-here)).
 - [x] ✅ **P2** Publishable package: `LICENSE`, `.d.ts`, trimmed `files`, `prepack`, rename to `@simorml/kid-lesson-games`, publint/attw, remove `matter-js`, SSR guard ([T-09..14, T-17](docs/design/ci-release-pipeline.md#p2-publishable-package)).
-- [ ] 🗺️ **P3** Tag-triggered OIDC release with provenance, Pages deploy hardening, un-private + first `rc` ([T-15, T-16, T-18](docs/design/ci-release-pipeline.md#p3-release)).
+- [x] ✅ **P3** Tag-triggered OIDC release with provenance, Pages deploy hardening, un-private + first `rc` ([T-15, T-16, T-18](docs/design/ci-release-pipeline.md#p3-release)).
 
 ---
 
