@@ -55,6 +55,8 @@ export interface Dictionary {
     friends: boolean;
   }): string;
   leftOverWhy(r: string, plates: string, theme: FactsTheme, friends: boolean): string;
+  /** Left-over explanation in the array tier, where the child builds rows. */
+  arrayLeftOver(r: string, b: string, theme: FactsTheme): string;
   plateLabel(index: string, count: string, friends: boolean): string;
   takeBackLabel(index: string, friends: boolean): string;
   trayLabel(count: string, theme: FactsTheme, left: boolean): string;
@@ -112,6 +114,8 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
       `${r} ${EN_NOUNS[theme][r === '1' ? 0 : 1]} left over: fewer than ${plates} ${
         friends ? 'friends' : 'plates'
       }, so they cannot be shared equally.`,
+    arrayLeftOver: (r, b, theme) =>
+      `${r} ${EN_NOUNS[theme][r === '1' ? 0 : 1]} left over: fewer than ${b}, so they cannot make another row of ${b}.`,
     plateLabel: (i, c, friends) =>
       `${friends ? 'Friend' : 'Plate'} ${i}: ${c}. Press to add one.`,
     takeBackLabel: (i, friends) => `Take one back from ${friends ? 'friend' : 'plate'} ${i}`,
@@ -160,9 +164,11 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
       `${r} ${FR_NOUNS[theme][r === '1' || r === '0' ? 0 : 1]} qui restent : moins que ${plates} ${
         friends ? 'amis' : 'assiettes'
       }, donc impossible de les partager équitablement.`,
+    arrayLeftOver: (r, b, theme) =>
+      `${r} ${FR_NOUNS[theme][r === '1' || r === '0' ? 0 : 1]} qui restent : moins que ${b}, donc pas assez pour une autre rangée de ${b}.`.replace(' : ', '\u202f: '),
     plateLabel: (i, c, friends) =>
       `${friends ? 'Ami' : 'Assiette'} ${i} : ${c}. Appuie pour en ajouter un.`,
-    takeBackLabel: (i, friends) => `Reprendre un ${friends ? 'de l’ami' : 'de l’assiette'} ${i}`,
+    takeBackLabel: (i, friends) => `Reprendre un élément ${friends ? 'de l’ami' : 'de l’assiette'} ${i}`,
     trayLabel: (c, theme, left) =>
       left
         ? `${c} qui restent`
@@ -172,7 +178,7 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
     arrayReadout: (b, g, total, symbolFree) =>
       symbolFree ? `${g} rangées de ${b} font ${total}` : `${b} × ${g} = ${total}`,
     hintTooMany: 'C’est plus que ce que tu as. Enlève une rangée.',
-    hintRoomForMore: (b) => `Il y a encore la place pour une rangée de ${b}.`,
+    hintRoomForMore: (b) => `Il reste de la place pour une autre rangée de ${b}.`,
     resultEquality: (a, b, q, r) => (r === '0' ? `${a} ÷ ${b} = ${q}` : `${a} ÷ ${b} = ${q}, reste ${r}`),
     resultSentence: (q, theme, friends, r) =>
       `Chaque ${friends ? 'ami' : 'assiette'} a ${q} ${FR_NOUNS[theme][q === '1' ? 0 : 1]}.${

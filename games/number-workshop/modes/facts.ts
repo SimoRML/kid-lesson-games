@@ -477,7 +477,7 @@ export class FactsMode implements ModeController {
     if (this.done) {
       this.host.setInstruction(
         this.r > 0
-          ? `${this.prefix()}${t.leftOverWhy(this.fmt(this.r), this.fmt(this.b), this.theme, this.host.symbolFree)}`
+          ? `${this.prefix()}${t.arrayLeftOver(this.fmt(this.r), this.fmt(this.b), this.theme)}`
           : `${this.prefix()}${t.arrayReadout(this.fmt(this.b), this.fmt(g), this.fmt(total), this.host.symbolFree)}`
       );
     } else if (g === 0) {

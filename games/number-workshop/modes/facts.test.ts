@@ -332,7 +332,7 @@ describe('facts: array tier (> 30)', () => {
     check(r);
     expect(r.solved()).toBe(1);
     expect(r.stage.querySelectorAll('.nw-gb-left .nw-gb-dot-left')).toHaveLength(7);
-    expect(last(r)).toContain('7 dates left over');
+    expect(last(r)).toContain('7 dates left over: fewer than 8, so they cannot make another row of 8');
   });
 
   it('uses a sentence read-out when symbol-free', () => {

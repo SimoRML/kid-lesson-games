@@ -78,6 +78,13 @@ describe('dictionary', () => {
     expect(DICTIONARY.fr.sharePrompt('12', 'dates', '3', true)).toContain(' :');
   });
 
+  it('uses natural French for the take-back label, the row hint and the array left-over', () => {
+    expect(DICTIONARY.fr.takeBackLabel('2', false)).toContain('Reprendre un élément');
+    expect(DICTIONARY.fr.hintRoomForMore('8')).toBe('Il reste de la place pour une autre rangée de 8.');
+    expect(DICTIONARY.fr.arrayLeftOver('7', '8', 'dates')).toContain('\u202f: moins que 8');
+    expect(DICTIONARY.en.arrayLeftOver('1', '8', 'dates')).toContain('1 date left over');
+  });
+
   it('describes mistakes in both languages', () => {
     expect(mistakesText('en', '0', 0)).toBe('no mistakes');
     expect(mistakesText('en', '1', 1)).toBe('1 mistake');
