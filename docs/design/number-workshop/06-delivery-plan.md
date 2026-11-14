@@ -110,7 +110,7 @@ Rules common to every WP:
 - [x] Digit strip moves by drag and by button; a non-zero digit cannot leave the table.
 - [x] Over-shift and under-shift each fail Check with a hint that names the number of slides.
 - [x] Six-digit dividends (`789 000`) fit at 375 px width.
-- [x] Column labels in `en` and `fr` (⚠️ French abbreviations confirmed by the owner or flagged in the PR).
+- [x] Column labels in `en` and `fr` (French abbreviations flagged in the PR, later checked against French primary-school materials).
 
 ---
 

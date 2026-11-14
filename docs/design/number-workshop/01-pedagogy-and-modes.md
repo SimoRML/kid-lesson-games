@@ -49,7 +49,7 @@ A place-value table with one column per position and the dividend's digits sitti
 - The child presses Check when they believe the shift matches the divisor. Too few or too many slides gets a hint that names the count, not the answer: "÷100 is two slides".
 - This teaches the place-value shift, not the "cross out the zeros" trick, because the trick breaks later with decimals.
 
-Column labels: `en` uses `HTh TTh Th H T O`; `fr` uses `CM DM UM C D U`. ⚠️ Confirm the French abbreviations match the classroom's habit.
+Column labels: `en` uses `HTh TTh Th H T O`; `fr` uses `CM DM UM C D U`. ✅ Checked on the web against French primary-school materials (see [README §7](README.md)); a classroom with other habits only needs to change two strings in `i18n.ts`.
 
 ### 2.3 `euclid` — fit the groups
 

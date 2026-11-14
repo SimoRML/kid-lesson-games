@@ -41,7 +41,7 @@ Hints never give the digit: too big → "5 × 2 = 10 is more than 8", too small 
 
 ## `shift`: slide the digits
 
-A place-value table with one column per position (`HTh TTh Th H T O` in English, `CM DM UM C D U` in French ⚠️ the French abbreviations still need confirming against the classroom's habit) holds the dividend's digits. The child slides the whole digit strip one column to the right, by the **÷10 →** button or by dragging the strip (whole columns, stopping at the first refusal), and **← ×10** slides back. A counter reads `÷10 × 2 = ÷100`. Every slide is one division by ten, so the lesson is place value, not "cross out the zeros".
+A place-value table with one column per position (`HTh TTh Th H T O` in English, `CM DM UM C D U` in French, the abbreviations used in French primary-school place-value tables) holds the dividend's digits. The child slides the whole digit strip one column to the right, by the **÷10 →** button or by dragging the strip (whole columns, stopping at the first refusal), and **← ×10** slides back. A counter reads `÷10 × 2 = ÷100`. Every slide is one division by ten, so the lesson is place value, not "cross out the zeros".
 
 - A digit that would fall off the right edge must be a zero. If it is not (for example a third slide of `3 400`), the strip refuses to move and the HUD explains that only zeros can leave. A refusal is gentle feedback, not a mistake.
 - **Check** compares the number of slides with the divisor. Too few and too many each give a hint that names the count ("÷100 is 2 slides. You made 1: keep sliding.") and count one mistake.
@@ -127,7 +127,7 @@ Tested example (it is the "Custom: Sharing & arrays" preset in the playground). 
 
 ## Known limitations ⚠️
 
-- **French place-value abbreviations** (`CM DM UM C D U`) come from the plan and have not been confirmed against the classroom's habit; they are plain strings in `i18n.ts`.
+- **French place-value abbreviations** (`CM DM UM C D U`) were checked on the web against French primary-school materials (a published worksheet's table header and a CM1 lesson naming `UM` and `DM`); a specific classroom may use other habits, and they are plain strings in `i18n.ts` if so.
 - **Whole-game height:** the long-division stage fits within 400 px, but HUD plus equation line plus stage is taller than a 400 px viewport, so the page scrolls (as for `euclid`).
 - **French wording** was written by the implementing agent and has not been reviewed by a native teacher.
 - Brackets, not the French potence, are the convention in many `en` classrooms; the potence is used for both locales (decision D11).
