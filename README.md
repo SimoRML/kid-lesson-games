@@ -17,11 +17,11 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 
 ## 📚 Documentation Map
 
-- 🎯 **[docs/VISION.md](file:///home/simo/Documents/www/kid-lesson-games/docs/VISION.md)** — Philosophy, pedagogical principles, curriculum categories, planned games, and Gap Analysis.
-- 🏗️ **[docs/ARCHITECTURE.md](file:///home/simo/Documents/www/kid-lesson-games/docs/ARCHITECTURE.md)** — How the core engine, `<kid-game>`, registry, telemetry, audio, i18n, and Vite builds work today vs. target architecture.
-- 🗺️ **[TODO.md](file:///home/simo/Documents/www/kid-lesson-games/TODO.md)** — Project roadmap grouped by vision themes.
-- 🤖 **[AGENTS.md](file:///home/simo/Documents/www/kid-lesson-games/AGENTS.md)** — Cold-start onboarding, contribution contract, known gotchas, and Definition of Done for AI agents and contributors.
-- 📐 **Design Specs**: [game-contract-spec.md](file:///home/simo/Documents/www/kid-lesson-games/docs/design/game-contract-spec.md) · [web-component-spec.md](file:///home/simo/Documents/www/kid-lesson-games/docs/design/web-component-spec.md) · [balance-scale-math-spec.md](file:///home/simo/Documents/www/kid-lesson-games/docs/design/balance-scale-math-spec.md)
+- 🎯 **[docs/VISION.md](docs/VISION.md)** — Philosophy, pedagogical principles, curriculum categories, planned games, and Gap Analysis.
+- 🏗️ **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — How the core engine, `<kid-game>`, registry, telemetry, audio, i18n, and Vite builds work today vs. target architecture.
+- 🗺️ **[TODO.md](TODO.md)** — Project roadmap grouped by vision themes.
+- 🤖 **[AGENTS.md](AGENTS.md)** — Cold-start onboarding, contribution contract, known gotchas, and Definition of Done for AI agents and contributors.
+- 📐 **Design Specs**: [game-contract-spec.md](docs/design/game-contract-spec.md) · [web-component-spec.md](docs/design/web-component-spec.md) · [balance-scale-math-spec.md](docs/design/balance-scale-math-spec.md)
 
 ---
 
@@ -38,7 +38,7 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 
 | Capability / Feature | Status | Reality Check |
 | :--- | :---: | :--- |
-| Universal `<kid-game>` Web Component (Shadow DOM) | ✅ | Implemented in [KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts); client-side ready (SSR requires dynamic client import ⚠️) |
+| Universal `<kid-game>` Web Component (Shadow DOM) | ✅ | Implemented in [KidGameElement.ts](src/core/KidGameElement.ts); client-side ready (SSR requires dynamic client import ⚠️) |
 | Auto-Discovery & Lazy ES Chunking (`import.meta.glob`) | ✅ | `dist/kid-games.es.js` (~12.7 kB) lazily loads per-game ES chunks (`dist/<game-id>-*.js`) |
 | UMD Bundle (`dist/kid-games.umd.js`) | ⚠️ | Produced by `npm run build` (~236 kB), but UMD cannot code-split dynamic imports so all 6 games are bundled together |
 | Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with 277 passing Vitest tests |
@@ -186,7 +186,7 @@ const handleComplete = (e) => console.log('Summary:', e.detail.summary);
 
 ## 🎮 Implemented Games Catalog (6 Cartridges)
 
-All 6 games in `games/*/` support ages **`3-5`**, **`6-8`**, and **`9-11`**, bilingual **`en` / `fr`** localization, procedural Web Audio, and custom `levels` with procedural fallback. (See [docs/VISION.md](file:///home/simo/Documents/www/kid-lesson-games/docs/VISION.md) for 🗺️ planned games such as `number-line` and `letter-sound-safari`.)
+All 6 games in `games/*/` support ages **`3-5`**, **`6-8`**, and **`9-11`**, bilingual **`en` / `fr`** localization, procedural Web Audio, and custom `levels` with procedural fallback. (See [docs/VISION.md](docs/VISION.md) for 🗺️ planned games such as `number-line` and `letter-sound-safari`.)
 
 | Game ID | Title | Category | Ages | Teaches (`skills`) | Locales | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
@@ -233,7 +233,7 @@ gameEl.levels = [
 
 ### 2. `buoyancy-tank` — Buoyancy Tank & Density Lab — ✅
 
-Teaches **qualitative sink vs. float (`3-5`)**, **graduated cylinder liquid displacement $1\text{ cm}^3 = 1\text{ mL}$ (`6-8`)**, and **submarine neutral buoyancy trim $\rho = m/V$ in freshwater ($1.00\text{ g/cm}^3$) and saltwater ($1.20\text{ g/cm}^3$) (`9-11`)** ([games/buoyancy-tank/README.md](file:///home/simo/Documents/www/kid-lesson-games/games/buoyancy-tank/README.md)).
+Teaches **qualitative sink vs. float (`3-5`)**, **graduated cylinder liquid displacement $1\text{ cm}^3 = 1\text{ mL}$ (`6-8`)**, and **submarine neutral buoyancy trim $\rho = m/V$ in freshwater ($1.00\text{ g/cm}^3$) and saltwater ($1.20\text{ g/cm}^3$) (`9-11`)** ([games/buoyancy-tank/README.md](games/buoyancy-tank/README.md)).
 
 - **Controls**: Tap or drag objects/ballast modules from the tray into the water tank or submarine pod; tap any submerged or floating item to return it to the tray.
 - **Tested `levels` Example** (verified against `games/buoyancy-tank/index.ts#parseCustomLevels`):
@@ -260,7 +260,7 @@ gameEl.levels = [
 
 ### 3. `gear-trains` — Gear Trains — ✅
 
-Teaches **spatial cause-and-effect windmill bridging (`3-5`)**, **odd/even rotational direction reversal & $1:2$ speed doubling (`6-8`)**, and **tooth ratios $\omega_2 = -\omega_1 (N_1/N_2)$, RPM kinematics & LCM tooth synchronization (`9-11`)**, including real odd-cycle triangle jam detection ([games/gear-trains/README.md](file:///home/simo/Documents/www/kid-lesson-games/games/gear-trains/README.md)).
+Teaches **spatial cause-and-effect windmill bridging (`3-5`)**, **odd/even rotational direction reversal & $1:2$ speed doubling (`6-8`)**, and **tooth ratios $\omega_2 = -\omega_1 (N_1/N_2)$, RPM kinematics & LCM tooth synchronization (`9-11`)**, including real odd-cycle triangle jam detection ([games/gear-trains/README.md](games/gear-trains/README.md)).
 
 - **Controls**: Tap or drag gears ($6\text{T}, 8\text{T}, 12\text{T}, 16\text{T}, 24\text{T}$) onto open pegs; tap a placed gear to return it to the inventory tray.
 - **Tested `levels` Example** (verified against `games/gear-trains/index.ts#parseCustomLevels`):
@@ -283,7 +283,7 @@ gameEl.levels = [
 
 ### 4. `marble-run-angles` — Marble Run Angles — ✅
 
-Teaches **slope bridging (`3-5`)**, **$15^\circ$ discrete ramp rotation & acute/right/obtuse angle classification around obstacle pegs (`6-8`)**, and **the law of specular reflection ($\theta_i = \theta_r$) comparing low-restitution wood ramps ($e=0.5$) vs. bouncy trampolines ($e=0.9$) (`9-11`)** ([games/marble-run-angles/README.md](file:///home/simo/Documents/www/kid-lesson-games/games/marble-run-angles/README.md)).
+Teaches **slope bridging (`3-5`)**, **$15^\circ$ discrete ramp rotation & acute/right/obtuse angle classification around obstacle pegs (`6-8`)**, and **the law of specular reflection ($\theta_i = \theta_r$) comparing low-restitution wood ramps ($e=0.5$) vs. bouncy trampolines ($e=0.9$) (`9-11`)** ([games/marble-run-angles/README.md](games/marble-run-angles/README.md)).
 
 - **Controls**: Tap or drag ramps/trampolines into glowing pegboard slots; tap placed ramps to rotate by $15^\circ$ increments; tap **Launch** (`▶`) to release the marble.
 - **Tested `levels` Example** (verified against `games/marble-run-angles/index.ts#parseCustomLevels`):
@@ -312,7 +312,7 @@ gameEl.levels = [
 
 ### 5. `pendulum-rhythm` — Pendulum Rhythm Lab — ✅
 
-Teaches **wrecking-ball momentum knockdown (`3-5`)**, **variable isolation & Galileo's pendulum law (string length $L$ controls swing period $T = 2\pi\sqrt{L/g}$, while bob mass does not) synced to a musical BPM metronome (`6-8`)**, and **non-linear square-root polyrhythms ($L_B/L_A = (p/q)^2$ for $2:1, 3:1, 3:2$ harmonic ratios) (`9-11`)** ([games/pendulum-rhythm/README.md](file:///home/simo/Documents/www/kid-lesson-games/games/pendulum-rhythm/README.md)).
+Teaches **wrecking-ball momentum knockdown (`3-5`)**, **variable isolation & Galileo's pendulum law (string length $L$ controls swing period $T = 2\pi\sqrt{L/g}$, while bob mass does not) synced to a musical BPM metronome (`6-8`)**, and **non-linear square-root polyrhythms ($L_B/L_A = (p/q)^2$ for $2:1, 3:1, 3:2$ harmonic ratios) (`9-11`)** ([games/pendulum-rhythm/README.md](games/pendulum-rhythm/README.md)).
 
 - **Controls**: Drag the pendulum bob to set release angle (or use angle preset buttons in `3-5`), select string lengths (`cm`) and bob masses (`g`), or tap **Release Together** in dual-pendulum polyrhythm mode.
 - **Tested `levels` Example** (verified against `games/pendulum-rhythm/index.ts#parseCustomLevels`):
@@ -346,7 +346,7 @@ gameEl.levels = [
 
 ### 6. `pulley-lift` — Pulley Lift & Mechanical Advantage — ✅
 
-Teaches **simple machines, mechanical advantage ($MA \in \{1, 2, 3, 4\}$), force division ($F_{\text{effort}} = F_{\text{load}} / MA$), rope distance multiplication ($d_{\text{effort}} = MA \cdot d_{\text{load}}$), and conservation of work ($W = F \times d$ in Joules)** across fixed (`fixed-1`), movable (`movable-2`), and compound block-and-tackle (`compound-3`, `compound-4`) cranes ([games/pulley-lift/README.md](file:///home/simo/Documents/www/kid-lesson-games/games/pulley-lift/README.md)).
+Teaches **simple machines, mechanical advantage ($MA \in \{1, 2, 3, 4\}$), force division ($F_{\text{effort}} = F_{\text{load}} / MA$), rope distance multiplication ($d_{\text{effort}} = MA \cdot d_{\text{load}}$), and conservation of work ($W = F \times d$ in Joules)** across fixed (`fixed-1`), movable (`movable-2`), and compound block-and-tackle (`compound-3`, `compound-4`) cranes ([games/pulley-lift/README.md](games/pulley-lift/README.md)).
 
 - **Controls**: Tap or drag metric counterweights (`kg`) from the inventory into the suspended effort tray; tap any placed weight in the effort tray to return it.
 - **Tested `levels` Example** (verified against `games/pulley-lift/index.ts#parseCustomLevels`):
@@ -366,7 +366,7 @@ gameEl.levels = [
 
 ---
 
-## ⚙️ Component API Reference ([src/core/KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts))
+## ⚙️ Component API Reference ([src/core/KidGameElement.ts](src/core/KidGameElement.ts))
 
 ### Attributes & Properties
 
@@ -403,13 +403,13 @@ All `game:*` events are dispatched as standard `CustomEvent` instances with `bub
 
 ## 🛠️ Adding New Games (Contributor & AI Workflow)
 
-Scaffold a new game cartridge with a single command ([scripts/create-game.js](file:///home/simo/Documents/www/kid-lesson-games/scripts/create-game.js)):
+Scaffold a new game cartridge with a single command ([scripts/create-game.js](scripts/create-game.js)):
 
 ```bash
 npm run create-game <game-id>
 ```
 
-The CLI generator automatically scaffolds all 6 production files (`game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md`) implementing the full zero-leak lifecycle contract (`AbortController`, `pendingTimeouts`, `ResizeObserver`, `pause()`/`resume()`), dual-curriculum `generateLevelsForAge(age, difficulty)` with `parseCustomLevels()`, and a passing Vitest suite. See [AGENTS.md](file:///home/simo/Documents/www/kid-lesson-games/AGENTS.md) for contribution rules.
+The CLI generator automatically scaffolds all 6 production files (`game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md`) implementing the full zero-leak lifecycle contract (`AbortController`, `pendingTimeouts`, `ResizeObserver`, `pause()`/`resume()`), dual-curriculum `generateLevelsForAge(age, difficulty)` with `parseCustomLevels()`, and a passing Vitest suite. See [AGENTS.md](AGENTS.md) for contribution rules.
 
 ---
 
