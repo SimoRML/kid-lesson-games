@@ -6,6 +6,9 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 
 ## [Unreleased]
 
+### Added
+- Implementation plan for the CI, security (secret detection) and npm release pipeline (`docs/design/ci-release-pipeline.md`) and TODO Theme 7. Planning only: no workflow or package change yet.
+
 ## [0.2.0] - 2026-11-14
 
 New cartridge `number-workshop` (division, 4 modes, cartridge `1.0.0`) plus the agent workflow, plan and a security fix.
