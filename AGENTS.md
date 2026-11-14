@@ -7,7 +7,7 @@
 1. **Purpose**: Pluggable collection of interactive educational mini-games (Ages `3-5`, `6-8`, `9-11`) embedded via a framework-agnostic `<kid-game>` Web Component.
 2. **Tech Stack**: TypeScript (strict), Vite 8, HTML5 Canvas 2D / SVG / CSS, procedural Web Audio API (`SoundEngine`), `canvas-confetti`, Vitest + `jsdom`.
 3. **Core Engine (`src/`)**: `src/index.ts` (auto-discovery via `import.meta.glob`), `src/core/KidGameElement.ts` (`<kid-game>` Shadow DOM host), `registry.ts`, `audio.ts`, `i18n.ts`, `types.ts`.
-4. **Game Cartridges (`games/<game-id>/`)**: Isolated modules (`game.json`, `index.ts`, `i18n.ts`, `index.test.ts`, `README.md`). Currently 7 games (6 ✅ + `number-workshop` 🚧, 1 of 4 modes): `balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `number-workshop`, `pendulum-rhythm`, `pulley-lift`.
+4. **Game Cartridges (`games/<game-id>/`)**: Isolated modules (`game.json`, `index.ts`, `i18n.ts`, `index.test.ts`, `README.md`). Currently 7 games (6 ✅ + `number-workshop` 🚧, 2 of 4 modes): `balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `number-workshop`, `pendulum-rhythm`, `pulley-lift`.
 5. **Zero Core Edits Rule**: Never modify `src/` when creating or updating a game cartridge; Vite discovers `games/*/{game,meta}.json` and `games/*/index.ts` automatically.
 6. **Scaffold a Game**: Run `npm run create-game <game-id>` (generates all 6 files: `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, `README.md`; verified in `scripts/create-game.js`).
 7. **Run Dev Playground**: `npm run dev` (starts Vite server on `http://localhost:3000/kid-lesson-games/`, serving `index.html`).

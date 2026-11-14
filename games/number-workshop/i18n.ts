@@ -57,6 +57,18 @@ export interface Dictionary {
   leftOverWhy(r: string, plates: string, theme: FactsTheme, friends: boolean): string;
   /** Left-over explanation in the array tier, where the child builds rows. */
   arrayLeftOver(r: string, b: string, theme: FactsTheme): string;
+  keypadLabel: string;
+  backspaceLabel: string;
+  remainderPrompt: string;
+  euclidPrompt(b: string): string;
+  gapLeft(n: string): string;
+  euclidTooFar(total: string, a: string): string;
+  /** `gapMarked` is false at hard, where the gap is not drawn. */
+  euclidFalse(a: string, gapMarked: boolean): string;
+  euclidNotEuclidean(b: string): string;
+  euclidNeedRemainder: string;
+  /** Written equality of a solved euclid level: 78 = (8 × 9) + 6. */
+  resultEuclid(a: string, b: string, q: string, r: string): string;
   plateLabel(index: string, count: string, friends: boolean): string;
   takeBackLabel(index: string, friends: boolean): string;
   trayLabel(count: string, theme: FactsTheme, left: boolean): string;
@@ -116,6 +128,17 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
       }, so they cannot be shared equally.`,
     arrayLeftOver: (r, b, theme) =>
       `${r} ${EN_NOUNS[theme][r === '1' ? 0 : 1]} left over: fewer than ${b}, so they cannot make another row of ${b}.`,
+    keypadLabel: 'Number keys',
+    backspaceLabel: 'Delete last digit',
+    remainderPrompt: 'Left over:',
+    euclidPrompt: (b) => `Fit as many groups of ${b} as you can, then type what is left over.`,
+    gapLeft: (n) => `${n} left in the gap`,
+    euclidTooFar: (total, a) => `Too far: ${total} is more than ${a}. Take a group away.`,
+    euclidFalse: (a, gapMarked) =>
+      `The groups and the left-over do not add up to ${a}. ${gapMarked ? 'Count the gap again.' : 'Check your groups and your left-over.'}`,
+    euclidNotEuclidean: (b) => `The equality is true, but you can still fit another group of ${b}.`,
+    euclidNeedRemainder: 'Type what is left over, then check.',
+    resultEuclid: (a, b, q, r) => `${a} = (${b} × ${q}) + ${r}`,
     plateLabel: (i, c, friends) =>
       `${friends ? 'Friend' : 'Plate'} ${i}: ${c}. Press to add one.`,
     takeBackLabel: (i, friends) => `Take one back from ${friends ? 'friend' : 'plate'} ${i}`,
@@ -166,6 +189,17 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
       }, donc impossible de les partager équitablement.`,
     arrayLeftOver: (r, b, theme) =>
       `${r} ${FR_NOUNS[theme][r === '1' || r === '0' ? 0 : 1]} qui restent : moins que ${b}, donc pas assez pour une autre rangée de ${b}.`.replace(' : ', '\u202f: '),
+    keypadLabel: 'Touches numériques',
+    backspaceLabel: 'Effacer le dernier chiffre',
+    remainderPrompt: 'Reste :',
+    euclidPrompt: (b) => `Place autant de groupes de ${b} que possible, puis tape ce qui reste.`,
+    gapLeft: (n) => `${n} à combler`,
+    euclidTooFar: (total, a) => `Trop loin : ${total} dépasse ${a}. Enlève un groupe.`,
+    euclidFalse: (a, gapMarked) =>
+      `Les groupes et le reste ne font pas ${a}. ${gapMarked ? 'Recompte l’écart.' : 'Vérifie tes groupes et ton reste.'}`,
+    euclidNotEuclidean: (b) => `L’égalité est vraie, mais tu peux encore placer un groupe de ${b}.`,
+    euclidNeedRemainder: 'Tape ce qui reste, puis vérifie.',
+    resultEuclid: (a, b, q, r) => `${a} = (${b} × ${q}) + ${r}`,
     plateLabel: (i, c, friends) =>
       `${friends ? 'Ami' : 'Assiette'} ${i} : ${c}. Appuie pour en ajouter un.`,
     takeBackLabel: (i, friends) => `Reprendre un élément ${friends ? 'de l’ami' : 'de l’assiette'} ${i}`,

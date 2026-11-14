@@ -134,10 +134,10 @@ describe('parseCustomLevels: whole-input rejection', () => {
 
   it('accepts no mode at all with an empty mode list, and only built modes by default', () => {
     expect(parseCustomLevels(SHEET_LEVELS, [])).toBeNull();
-    expect(BUILT_MODES).toEqual(['facts']);
+    expect(BUILT_MODES).toEqual(['facts', 'euclid']);
     const byDefault = parseCustomLevels(SHEET_LEVELS);
-    expect(byDefault).toHaveLength(8);
-    expect(byDefault?.every((l) => l.mode === 'facts')).toBe(true);
+    expect(byDefault).toHaveLength(17);
+    expect(byDefault?.every((l) => l.mode === 'facts' || l.mode === 'euclid')).toBe(true);
   });
 });
 
@@ -564,9 +564,11 @@ describe('generateLevelsForAge', () => {
   it('returns an empty set when no enabled mode suits the bracket', () => {
     expect(gen('9-11', 'medium', 1, [])).toEqual([]);
     expect(gen('3-5', 'medium', 1, ['long', 'shift', 'euclid'])).toEqual([]);
-    // default: only the built modes (facts) are used
-    expect(generateLevelsForAge('6-8').every((l) => l.mode === 'facts')).toBe(true);
-    expect(generateLevelsForAge('6-8')).toHaveLength(4);
+    // default: only the built modes (facts, euclid) are used
+    const byDefault = generateLevelsForAge('6-8', 'medium', () => 0.5);
+    expect(byDefault).toHaveLength(4);
+    expect(byDefault.every((l) => l.mode === 'facts' || l.mode === 'euclid')).toBe(true);
+    expect(byDefault[3].mode).toBe('euclid');
   });
 
   it('falls back to 6-8 / medium for unknown age or difficulty', () => {

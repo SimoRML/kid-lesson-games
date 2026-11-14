@@ -61,7 +61,7 @@ The project targets four core educational taxonomy categories across three age b
 
 | Category | Educational Focus | Current Coverage | Status |
 | :--- | :--- | :--- | :--- |
-| **`numbers`** | Counting, addition, decomposition, metric conversions, periodicity, harmonic fractions, division | 3 games (`balance-scale`, `pendulum-rhythm` ✅; `number-workshop` 🚧 1 of 4 modes) | ✅ Implemented / 🚧 |
+| **`numbers`** | Counting, addition, decomposition, metric conversions, periodicity, harmonic fractions, division | 3 games (`balance-scale`, `pendulum-rhythm` ✅; `number-workshop` 🚧 2 of 4 modes) | ✅ Implemented / 🚧 |
 | **`logic`** | Simple machines, mechanical advantage, gear ratios, Archimedes density & hydrostatics | 3 games (`buoyancy-tank`, `gear-trains`, `pulley-lift`) | ✅ Implemented |
 | **`spatial`** | Geometry, slope angles, acute/right/obtuse classification, specular reflection | 1 game (`marble-run-angles`) | ✅ Implemented |
 | **`letters`** | Phonetics, letter recognition, audio-tactile phonics, word building | 0 games in `games/` | 🗺️ Planned |
@@ -76,7 +76,7 @@ The project targets four core educational taxonomy categories across three age b
 | `marble-run-angles` | Marble Run Angles | `spatial` | `3-5`, `6-8`, `9-11` | Ramp bridging, $15^\circ$ angle rotation, acute/right/obtuse angles, specular reflection ($\theta_i = \theta_r$) | ✅ Implemented |
 | `pendulum-rhythm` | Pendulum Rhythm Lab | `numbers` | `3-5`, `6-8`, `9-11` | Momentum knockdown, Galileo's mass-invariance & BPM sync, square-root polyrhythms ($T \propto \sqrt{L}$) | ✅ Implemented |
 | `pulley-lift` | Pulley Lift & Mechanical Advantage | `logic` | `3-5`, `6-8`, `9-11` | Fixed/movable/compound pulleys ($MA = 1..4$), effort fractions, work conservation ($W = F \times d$) | ✅ Implemented |
-| `number-workshop` | Division Workshop | `numbers` | `3-5`, `6-8`, `9-11` | Division as fair sharing and grouping, `a = b × q + r` with `r < b` (mode `facts` ✅; `shift`, `euclid`, `long` 🗺️) | 🚧 1 of 4 modes |
+| `number-workshop` | Division Workshop | `numbers` | `3-5`, `6-8`, `9-11` | Division as fair sharing and grouping, `a = b × q + r` with `r < b` (modes `facts`, `euclid` ✅; `shift`, `long` 🗺️) | 🚧 2 of 4 modes |
 | `number-line` | Number Line Hopper | `numbers` / `spatial` | `3-5`, `6-8`, `9-11` | Frog/fennec jumping along positive/negative number lines to master addition and subtraction | 🗺️ Planned |
 | `fraction-feast` | Fraction Slices & Equal Shares | `numbers` / `spatial` | `6-8`, `9-11` | Part-whole geometric partitions, equivalent fractions ($2/4 = 1/2$), and common-denominator sums | 🗺️ Planned |
 | `money-market` | Souk & Dirham Counter | `numbers` | `3-5`, `6-8`, `9-11` | Moroccan Dirhams (`DH`) & centimes, additive payment composition, and calculating change | 🗺️ Planned |
@@ -108,7 +108,7 @@ The project targets four core educational taxonomy categories across three age b
 | `difficulty` Attribute (`easy`/`medium`/`hard`) | Parsed on `<kid-game>` and passed in `context.difficulty`; all 7 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)` | ✅ | Complete across all cartridges |
 | Cartridge Metadata (`author`, `thumbnail`) | Preserved during registration in `src/index.ts`; all 7 games feature `assets/thumb.svg` vector badges on disk | ✅ | Complete |
 | `balance-scale` Lifecycle Teardown | Zero-leak teardown, pause/resume, README | ✅ | Fixed in PR #27 (AbortController teardown, tracked timeouts, `pause()`/`resume()`, README) |
-| `number-workshop` cartridge (division) | `games/number-workshop/`: shell, `facts` mode (share / deal / array tiers), group builder, drag helper, EN/FR, custom `levels` + procedural fallback, pure maths and parser (WP1) | 🚧 | 1 of 4 modes. Next: `euclid` (WP3), `shift` (WP4), `long` (WP5), end-to-end polish (WP6); see [number-workshop plan](design/number-workshop/06-delivery-plan.md) |
+| `number-workshop` cartridge (division) | `games/number-workshop/`: shell, `facts` mode (share / deal / array tiers), `euclid` mode (number track + keypad), group builder, keypad, drag helper, EN/FR, custom `levels` + procedural fallback, pure maths and parser (WP1) | 🚧 | 2 of 4 modes. Next: `shift` (WP4), `long` (WP5), end-to-end polish (WP6); see [number-workshop plan](design/number-workshop/06-delivery-plan.md) |
 | Scaffolding CLI (`npm run create-game`) | Scaffolds `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md` with complete zero-leak lifecycle contracts | ✅ | Complete |
 | npm Registry Package (`kid-lesson-games`) | Not published to npm (`"private": true`); installable via git or local bundle | 🗺️ | Emit `.d.ts` declarations, guard `HTMLElement` for Node SSR, and publish to npm |
 | Programmatic `mountGame()` Helper & Named Slots | Documented in early design specs (`docs/design/`) | 🗺️ | Optional convenience wrapper around `registry.create(id)` and `<slot name="loading\|error">` in `KidGameElement` |

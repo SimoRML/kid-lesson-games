@@ -1,11 +1,11 @@
 {
   "id": "number-workshop",
   "title": "Division Workshop",
-  "version": "0.1.0",
-  "description": "Share tokens equally between plates and build rows to discover what division means, what the quotient is, and why the remainder is always smaller than the divisor.",
+  "version": "0.2.0",
+  "description": "Share tokens equally between plates, build rows, and fit groups on a number track to discover what division means, what the quotient is, and why the remainder is always smaller than the divisor.",
   "author": "Contributor",
   "category": "numbers",
   "ageGroups": ["3-5", "6-8", "9-11"],
-  "skills": ["division", "equal-sharing"],
+  "skills": ["division", "equal-sharing", "euclidean-division"],
   "thumbnail": "assets/thumb.svg"
 }
