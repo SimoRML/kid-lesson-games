@@ -103,6 +103,19 @@ describe('number-workshop shell', () => {
       expect(parsed?.map((l) => l.dividend)).toEqual([12, 27, 25, 63, 47]);
     });
 
+    it('the 25-level sample sheet preset in index.html parses fully, in order, with all four modes', () => {
+      const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+      const match = /\/\*nw-sheet-preset\*\/([\s\S]*?)\/\*end-nw-sheet-preset\*\//.exec(html);
+      expect(match).not.toBeNull();
+      const raw = JSON.parse(match![1]) as Array<{ mode: string; dividend: number; divisor: number }>;
+      const parsed = parseCustomLevels(raw);
+      expect(parsed).toHaveLength(25);
+      expect(parsed?.map((l) => `${l.mode}:${l.dividend}:${l.divisor}`)).toEqual(
+        raw.map((l) => `${l.mode}:${l.dividend}:${l.divisor}`)
+      );
+      expect(new Set(parsed?.map((l) => l.mode)).size).toBe(4);
+    });
+
     it('the long preset in index.html round-trips through parseCustomLevels', () => {
       const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
       const match = /\/\*nw-long-preset\*\/([\s\S]*?)\/\*end-nw-long-preset\*\//.exec(html);

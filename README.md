@@ -39,9 +39,9 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 | Capability / Feature | Status | Reality Check |
 | :--- | :---: | :--- |
 | Universal `<kid-game>` Web Component (Shadow DOM) | ✅ | Implemented in [KidGameElement.ts](src/core/KidGameElement.ts); client-side ready (SSR requires dynamic client import ⚠️) |
-| Auto-Discovery & Lazy ES Chunking (`import.meta.glob`) | ✅ | `dist/kid-games.es.js` (~12.7 kB) lazily loads per-game ES chunks (`dist/<game-id>-*.js`) |
-| UMD Bundle (`dist/kid-games.umd.js`) | ⚠️ | Produced by `npm run build` (~309 kB), but UMD cannot code-split dynamic imports so all 7 games are bundled together |
-| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with a passing Vitest suite; plus `number-workshop` 🚧 (division, 4 of 4 modes built, polishing, see the catalog) |
+| Auto-Discovery & Lazy ES Chunking (`import.meta.glob`) | ✅ | `dist/kid-games.es.js` (~14.0 kB) lazily loads per-game ES chunks (`dist/<game-id>-*.js`) |
+| UMD Bundle (`dist/kid-games.umd.js`) | ⚠️ | Produced by `npm run build` (~343 kB), but UMD cannot code-split dynamic imports so all 7 games are bundled together |
+| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 7 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `number-workshop`, `pendulum-rhythm`, `pulley-lift`) with a passing Vitest suite |
 | `letters` Curriculum Category | 🗺️ | Taxonomy category `'letters'` exists in `src/core/types.ts`, no letter games built yet |
 | Configurable `levels` + Procedural Fallback | ✅ | All 7 cartridges export `parseCustomLevels()` and fall back to `generateLevelsForAge(ageGroup, difficulty)` |
 | Multilingual UI (`en` & `fr`) | ✅ | Core `I18nManager` + all 7 cartridges provide full English (`en`) and French (`fr`) dictionaries |
@@ -70,12 +70,12 @@ npm run build     # Type-checks & builds ES chunks + UMD bundle in dist/
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000/kid-lesson-games/](http://localhost:3000/kid-lesson-games/) to test all 7 games (6 ✅ + `number-workshop` 🚧) with live controls for game switching, language (`en`/`fr`), age brackets (`3-5`, `6-8`, `9-11`), custom level presets, sound toggling, and real-time telemetry logs.
+Open [http://localhost:3000/kid-lesson-games/](http://localhost:3000/kid-lesson-games/) to test all 7 games with live controls for game switching, language (`en`/`fr`), age brackets (`3-5`, `6-8`, `9-11`), custom level presets, sound toggling, and real-time telemetry logs.
 
 ### 3. Build Outputs (`npm run build` vs. `npm run build:pages`)
 - **`npm run build`** (Library mode — ✅ / ⚠️):
-  - `dist/kid-games.es.js` (~12.7 kB) + on-demand chunks (`dist/balance-scale-*.js`, `dist/buoyancy-tank-*.js`, `dist/gear-trains-*.js`, `dist/marble-run-angles-*.js`, `dist/pendulum-rhythm-*.js`, `dist/pulley-lift-*.js`, `dist/audio-*.js`, `dist/i18n-*.js`, `dist/confetti.module-*.js`).
-  - `dist/kid-games.umd.js` (~309 kB single-file UMD bundle containing core + all 7 games; ⚠️ UMD does not code-split).
+  - `dist/kid-games.es.js` (~14.0 kB) + on-demand chunks (`dist/balance-scale-*.js`, `dist/buoyancy-tank-*.js`, `dist/gear-trains-*.js`, `dist/marble-run-angles-*.js`, `dist/pendulum-rhythm-*.js`, `dist/pulley-lift-*.js`, `dist/audio-*.js`, `dist/i18n-*.js`, `dist/confetti.module-*.js`).
+  - `dist/kid-games.umd.js` (~343 kB single-file UMD bundle containing core + all 7 games; ⚠️ UMD does not code-split).
 - **`npm run build:pages`** (Playground static site — ✅):
   - Builds `dist/index.html` and `dist/assets/*.js` with `base: '/kid-lesson-games/'` for GitHub Pages deployment.
 
@@ -184,9 +184,9 @@ const handleComplete = (e) => console.log('Summary:', e.detail.summary);
 
 ---
 
-## 🎮 Games Catalog (6 ✅ Cartridges + 1 🚧)
+## 🎮 Games Catalog (7 Cartridges)
 
-All 6 ✅ games in `games/*/` support ages **`3-5`**, **`6-8`**, and **`9-11`**, bilingual **`en` / `fr`** localization, procedural Web Audio, and custom `levels` with procedural fallback. (See [docs/VISION.md](docs/VISION.md) for 🗺️ planned games such as `number-line` and `letter-sound-safari`.)
+All 7 games in `games/*/` support ages **`3-5`**, **`6-8`**, and **`9-11`**, bilingual **`en` / `fr`** localization, procedural Web Audio, and custom `levels` with procedural fallback. (See [docs/VISION.md](docs/VISION.md) for 🗺️ planned games such as `number-line` and `letter-sound-safari`.)
 
 | Game ID | Title | Category | Ages | Teaches (`skills`) | Locales | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
@@ -196,7 +196,7 @@ All 6 ✅ games in `games/*/` support ages **`3-5`**, **`6-8`**, and **`9-11`**,
 | [`marble-run-angles`](#4-marble-run-angles--marble-run-angles--) | Marble Run Angles | `spatial` | `3-5`, `6-8`, `9-11` | `geometry`, `angles`, `reflection`, `slopes`, `spatial-reasoning` | `en`, `fr` | ✅ |
 | [`pendulum-rhythm`](#5-pendulum-rhythm--pendulum-rhythm-lab--) | Pendulum Rhythm Lab | `numbers` | `3-5`, `6-8`, `9-11` | `pendulum-physics`, `periodicity`, `fractions`, `rhythm-sync`, `variable-isolation`, `momentum` | `en`, `fr` | ✅ |
 | [`pulley-lift`](#6-pulley-lift--pulley-lift--mechanical-advantage--) | Pulley Lift & Mechanical Advantage | `logic` | `3-5`, `6-8`, `9-11` | `simple-machines`, `fractions`, `work-conservation`, `mechanical-advantage`, `proportional-thinking` | `en`, `fr` | ✅ |
-| [`number-workshop`](games/number-workshop/README.md) | Division Workshop | `numbers` | `3-5`, `6-8`, `9-11` | `division`, `equal-sharing` | `en`, `fr` | 🚧 4 of 4 modes built (`facts`, `shift`, `euclid`, `long`), polishing towards 1.0.0 |
+| [`number-workshop`](games/number-workshop/README.md) | Division Workshop | `numbers` | `3-5`, `6-8`, `9-11` | `division`, `equal-sharing`, `euclidean-division`, `place-value`, `long-division` | `en`, `fr` | ✅ 1.0.0 (4 modes: `facts`, `shift`, `euclid`, `long`; ⚠️ French column abbreviations unconfirmed) |
 
 ---
 
@@ -452,7 +452,7 @@ kid-lesson-games/
 │   │   ├── i18n.ts
 │   │   ├── index.ts
 │   │   └── index.test.ts
-│   ├── number-workshop/          # 🚧 Numbers: Division (4 of 4 modes built: `facts`, `shift`, `euclid`, `long`); modes/, widgets/, pure logic
+│   ├── number-workshop/          # ✅ Numbers: Division (4 modes: `facts`, `shift`, `euclid`, `long`); modes/, widgets/, pure logic
 │   ├── marble-run-angles/        # ✅ Spatial: Ramp slopes, 15° angles & specular reflection
 │   │   ├── assets/thumb.svg
 │   │   ├── README.md

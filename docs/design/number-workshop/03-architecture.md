@@ -1,6 +1,6 @@
 # 03 — Architecture
 
-> Part of the [`number-workshop` plan](README.md). Status: 🗺️ Planned.
+> Part of the [`number-workshop` plan](README.md). Status: ✅ Implemented in `1.0.0`; deviations from this text are recorded in [README §7](README.md).
 > Facts marked ✅ were checked against the code on 2026-11-14 (`src/index.ts`, `src/core/KidGameElement.ts`, `src/core/i18n.ts`, `index.html`, `tsconfig.json`, `vitest.config.ts`).
 
 ## 1. File layout (final state, after all work packages)

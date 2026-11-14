@@ -50,7 +50,7 @@
 - [x] ✅ **`balance-scale` — Balance the Scale / Balance Lab** (*Ages 3–5, 6–8, 9–11*): Equal-arm metric weight equality (`g`/`kg`), additive decomposition ($500\text{g} + 500\text{g} = 1\text{ kg}$), and Archimedes lever torque ($\tau = m \times d$).
 - [x] ✅ **`pendulum-rhythm` — Pendulum Rhythm Lab** (*Ages 3–5, 6–8, 9–11*): Wrecking-ball momentum knockdown, Galileo's mass-invariance & BPM metronome sync, and square-root law ($T \propto \sqrt{L}$) harmonic polyrhythms ($2:1, 3:1, 3:2$).
 - [ ] 🗺️ **`number-line` — Number Line Hopper** (*Ages 3–5, 6–8, 9–11*): Frog/fennec jumping along positive/negative number lines to solve addition, subtraction, and relative integers.
-- [ ] 🚧 **`number-workshop` — Division Workshop / ورشة القسمة** (*Ages 3–5, 6–8, 9–11*): LLM-friendly arithmetic cartridge, division first: sharing/tables, `a = b × q + r`, ÷10/100/1000 place value, written long division. Approved plan: [docs/design/number-workshop/](docs/design/number-workshop/README.md), delivered as work packages WP1–WP6, one small PR each. **Done: WP1 (pure logic), WP2 (shell + `facts`), WP3 (`euclid`), WP4 (`shift`), WP5 (`long`): all 4 modes built. Next: WP6 polish and `1.0.0`.**
+- [x] ✅ **`number-workshop` — Division Workshop / ورشة القسمة** (*Ages 3–5, 6–8, 9–11*): LLM-friendly arithmetic cartridge, division first: sharing/tables, `a = b × q + r`, ÷10/100/1000 place value, written long division. Approved plan: [docs/design/number-workshop/](docs/design/number-workshop/README.md), delivered as work packages WP1–WP6, one small PR each. **Delivered as `1.0.0` (WP1–WP6, 4 modes).** Known limitations and follow-ups are listed in Theme 6.
 - [ ] 🗺️ **`fraction-feast` — Fraction Slices & Equal Shares / أجزاء وكسور** (*Ages 6–8, 9–11*): Circular/rectangular visual part-whole fractions, equivalence ($2/4 = 1/2$), and common-denominator operations.
 - [ ] 🗺️ **`money-market` — Souk & Dirham Counter / متجر النقود والدرهم** (*Ages 3–5, 6–8, 9–11*): Moroccan currency counting (1, 2, 5, 10 DH coins, 20, 50, 100, 200 DH banknotes, and 10, 20, 50 centimes), additive payment composition, and calculating change returned.
   - [ ] 🗺️ *(Low Priority)* Add switchable multi-currency support (`EUR`, `USD`, `MAD`) to `money-market`.
@@ -98,8 +98,16 @@
 ## 🔌 Theme 6: External Lesson-Generator Integration (LLM → `levels` JSON)
 
 - [x] Decision: **Reading A**. An external platform's LLM generates `levels` JSON for existing cartridges; it never generates or runs game code (games are discovered at build time and must stay inside the cartridge contract).
-- [ ] 🚧 Build `number-workshop` so division-style school exercises have a matching cartridge (see Theme 3 and the plan doc). All 4 modes (`facts`, `shift`, `euclid`, `long`) are playable; WP6 polish and `1.0.0` remain.
-- [ ] 🗺️ Verifier for LLM-made levels: planned as cartridge-side recompute plus a shipped `levels.schema.json`, with no `src/` change (plan decision D12).
+- [x] ✅ Build `number-workshop` so division-style school exercises have a matching cartridge: `1.0.0`, 4 modes (`facts`, `shift`, `euclid`, `long`), see the plan doc.
+- [x] ✅ Verifier for LLM-made levels, as planned: the cartridge recomputes every answer from operands (`parseCustomLevels`) and ships `games/number-workshop/levels.schema.json`; no `src/` change (plan decision D12).
 - [x] `number-workshop` plan approved by the owner (2026-11-14), recommended defaults accepted for Q1–Q7 ([plan README §4](docs/design/number-workshop/README.md)).
 - [ ] 🗺️ Document a per-cartridge `levels` JSON schema that a platform can feed to an LLM (today each cartridge has its own shape, e.g. `balance-scale` vs `pulley-lift`). The platform-side contract for `number-workshop` is drafted in [07-platform-integration.md](docs/design/number-workshop/07-platform-integration.md).
 - [ ] 🗺️ Delivery rule for all of the above: small chunks, one concern per branch/PR, small Conventional Commits, following AGENTS.md §0 (plan, branch, verify, docs, independent review).
+
+### `number-workshop` follow-ups (proposals found while finishing 1.0.0; none is built)
+- [ ] 🗺️ Owner to confirm the French place-value abbreviations (`CM DM UM C D U`) used by `shift`; they are plain strings in `games/number-workshop/i18n.ts`.
+- [ ] 🗺️ Whole-game height: the long-division stage fits 400 px but HUD + equation + stage scroll in a 400 px viewport; consider a compact HUD for short embeds.
+- [ ] 🗺️ Real-device play-test (touch drag and taps, keyboard-only run, reduced motion, real audio, a child) and screenshots; only jsdom and a desktop browser were used.
+- [ ] 🗺️ Size `facts` and `euclid` widgets from their container (as `shift` and `long` already are) so narrow embeds never overflow.
+- [ ] 🗺️ Native-speaker review of the French strings.
+- [ ] 🗺️ After 1.0.0 (not part of the plan): two-digit divisors in `long`, decimals in `shift`, a bracket layout for `en`, other operations as new modes, Arabic/RTL (needs core work).

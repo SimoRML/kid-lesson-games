@@ -1,6 +1,6 @@
 # 04 — UX, Feel, and Accessibility
 
-> Part of the [`number-workshop` plan](README.md). Status: 🗺️ Planned.
+> Part of the [`number-workshop` plan](README.md). Status: ✅ Implemented in `1.0.0`; deviations from this text are recorded in [README §7](README.md).
 > The bar: a child should want to play one more level, and an adult watching should be able to see the maths happening.
 
 ## 1. Screen layout
