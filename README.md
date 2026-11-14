@@ -49,7 +49,7 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 | Telemetry Event Bridge (`game:*` CustomEvents) | ✅ | Dispatched on `<kid-game>` with `bubbles: true, composed: true` to cross Shadow DOM boundaries |
 | `difficulty` Attribute (`easy` \| `medium` \| `hard`) | ✅ | Parsed on `<kid-game>` and passed in `context.difficulty`; all 7 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)` |
 | Scaffolding CLI (`npm run create-game <id>`) | ✅ | Scaffolds `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md` with complete zero-leak lifecycle contracts |
-| Published npm Package (`npm i kid-lesson-games`) | 🗺️ | Not published to npm yet (`"private": true`); install via git dependency, local path, or built script bundle |
+| Published npm Package (`npm i @simorml/kid-lesson-games`) | 🗺️ | Not published to npm yet (`"private": true`); install via git dependency, local path, or built script bundle |
 
 ---
 
@@ -114,7 +114,7 @@ npm install ../path/to/kid-lesson-games
 
 ```tsx
 import React, { useEffect, useRef } from 'react';
-// If installed via `npm i github:simorml/kid-lesson-games`, import 'kid-lesson-games'
+// If installed via `npm i github:simorml/kid-lesson-games` (or `@simorml/kid-lesson-games` when published), import '@simorml/kid-lesson-games'
 // or import from your local built bundle path './dist/kid-games.es.js'
 
 export function LessonPage() {
@@ -122,7 +122,7 @@ export function LessonPage() {
 
   useEffect(() => {
     // Dynamic client-side import registers <kid-game> safely in both SPA and SSR (Next.js)
-    import('kid-lesson-games');
+    import('@simorml/kid-lesson-games');
 
     const el = gameRef.current;
     if (!el) return;
@@ -169,9 +169,9 @@ export function LessonPage() {
 <script setup>
 import { onMounted } from 'vue';
 
-// Installed via `npm i github:simorml/kid-lesson-games` or local `./dist/kid-games.es.js`
+// Installed via `npm i github:simorml/kid-lesson-games` (or `@simorml/kid-lesson-games`) or local `./dist/kid-games.es.js`
 onMounted(() => {
-  import('kid-lesson-games');
+  import('@simorml/kid-lesson-games');
 });
 
 const currentAge = '6-8';

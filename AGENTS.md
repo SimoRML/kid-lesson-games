@@ -365,9 +365,9 @@ this.context.emit('game:complete', {
 3. ⚠️ **Library Build vs. Playground Build (`vite.config.ts`)**:
    - Default `npm run build` runs Vite in library mode (`build.lib`), which outputs JS bundles to `dist/` and ignores `index.html`. To build the interactive playground static site (`dist/index.html` + `dist/assets/`), use `npm run build:pages` (`vite build --mode pages`).
 4. ⚠️ **Not Published to npm Yet (`"private": true`)**:
-   - `kid-lesson-games` is not published on the public npm registry yet (🗺️ Planned). Do not instruct users to run `npm install kid-lesson-games`; use git dependency (`npm i github:simorml/kid-lesson-games`), local path, or built `./dist/kid-games.es.js`.
-5. ⚠️ **No `.d.ts` Emission in `dist/` Yet**:
-   - `tsconfig.json` has `"noEmit": true`, so `tsc` only type-checks. `package.json` points `"types"` to `./src/index.ts`.
+   - `@simorml/kid-lesson-games` is not published on the public npm registry yet (🗺️ Planned). Do not instruct users to run `npm install @simorml/kid-lesson-games`; use git dependency (`npm i github:simorml/kid-lesson-games`), local path, or built `./dist/kid-games.es.js`.
+5. ✅ **TypeScript Declarations in `dist/` (`tsconfig.build.json`)**:
+   - `build:types` compiles `.d.ts` declaration bundles into `dist/` using `tsconfig.build.json` (excluding tests), and `package.json` points `"types"` and `exports["."].types` to `./dist/index.d.ts`.
 6. ⚠️ **Node.js SSR Import Throws `ReferenceError: HTMLElement is not defined`**:
    - `src/core/KidGameElement.ts` declares `export class KidGameElement extends HTMLElement` at module top-level. In SSR frameworks (Next.js, Nuxt), import the library dynamically inside `useEffect` / `onMounted` or with `{ ssr: false }`.
 7. ⚠️ **`KidGameElement` Property vs. Attribute Quirks**:
