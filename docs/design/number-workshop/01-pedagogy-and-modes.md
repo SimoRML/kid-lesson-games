@@ -98,7 +98,7 @@ Building it once is the main implementation economy of the cartridge.
 
 ## 4. Age brackets (procedural levels)
 
-Meaningful differentiation, never just bigger numbers (AGENTS.md §4). Custom levels bypass this table: they are played as supplied, within the schema limits. The one thing `age` still controls for a custom level is presentation: at `3-5`, a `facts` level (any tier) uses the symbol-free presentation described below; `shift`, `euclid`, and `long` are symbolic by nature and always show their symbols, at any age.
+Meaningful differentiation, never just bigger numbers (AGENTS.md §4). Custom levels bypass this table: they are played as supplied, within the schema limits. The one thing `age` still controls for a custom level is presentation: at `3-5`, a `facts` level (any tier) uses the symbol-free presentation described below (in the Array tier the builder's read-out becomes a sentence such as "5 rows of 8 make 40"); `shift`, `euclid`, and `long` are symbolic by nature and always show their symbols, at any age.
 
 | Age | Levels | Modes | Rules |
 |---|---|---|---|
@@ -120,7 +120,7 @@ The bracket table above is the outer envelope; each cell below narrows it. Where
 
 - Never the trivial case: quotient ≥ 2 and divisor ≥ 2 in every generated level (one token per plate, or one plate, teaches nothing).
 - No two consecutive levels with the same `(mode, dividend, divisor)`.
-- A level set never uses the same divisor in all of its `facts` levels, **except** in a cell that allows only one divisor (`3-5` `easy`), where the dividends must all differ instead.
+- A level set with two or more `facts` levels never uses the same divisor in all of them, **except** in a cell that allows only one divisor (`3-5` `easy`), where the dividends must all differ instead.
 - **Solvable by construction**: the generator picks `(b, q, r)` with `0 ≤ r < b` first and derives `a = b × q + r`. There are no distractor pieces in this cartridge; the "plausible wrong paths" are the over-shoot, the over-shift, and the non-Euclidean equality, each of which gets its own hint.
 
 ## 5. Feedback and scaffolding principles

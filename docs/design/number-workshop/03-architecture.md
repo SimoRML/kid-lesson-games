@@ -71,6 +71,7 @@ Rules: `division.ts`, `levels.ts`, `session.ts` never touch the DOM. Modes never
 ```ts
 // modes/types.ts
 export type ModeId = 'facts' | 'shift' | 'euclid' | 'long';
+export const ALL_MODES: readonly ModeId[] = ['facts', 'shift', 'euclid', 'long'];
 export const BUILT_MODES: readonly ModeId[] = [/* grows by one per mode PR */];
 
 export interface ModeHost {
@@ -110,7 +111,7 @@ stateDiagram-v2
   Complete --> Playing: "Play again"
   Playing --> Paused: pause()
   Paused --> Playing: resume()
-  Playing --> Playing: updateConfig (levels signature changed → restart set)
+  Playing --> Playing: updateConfig restart (rules in section 6.1)
 ```
 
 Level set selection, at `mount` and whenever the signature changes: `parseCustomLevels(context.customLevels) ?? generateLevelsForAge(ageGroup, difficulty)`.
@@ -130,7 +131,7 @@ Only the existing typed events are used ✅ (`GameEventPayloads` in `src/core/ty
 - `timeElapsed`: whole seconds of active play, excluding paused time.
 - `detail` and `summary` are built from numbers and fixed words only.
 - All of this lives in `session.ts` as pure functions so it is unit-tested without a DOM.
-- A new age, difficulty, or level set is a new run: score, mistakes, streak, and timer restart (same convention as `pulley-lift` ✅).
+- A restart is a new run: score, mistakes, streak, and timer start again (same convention as `pulley-lift` ✅). Exactly when a config change restarts is defined by the table in §6.1.
 
 ## 6. Repo gotchas that shape the code (all ✅ verified)
 
