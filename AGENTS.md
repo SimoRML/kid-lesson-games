@@ -379,8 +379,8 @@ this.context.emit('game:complete', {
    - `src/index.ts` registers `GameMetadata` with `raw.author` and `raw.thumbnail`, and all 7 games feature on-theme `assets/thumb.svg` vector badges.
 10. ✅ **`games/balance-scale` Lifecycle (resolved)**:
     - Fixed in PR #27: `AbortController` window-listener cleanup, tracked timeouts cleared in `destroy()`, `pause()`/`resume()`, no `audio.close()`, and a `README.md` was added.
-11. ⚠️ **Unused `matter-js` Dependency in `package.json`**:
-    - `matter-js` is listed in `package.json`, but zero files in `src/` or `games/` import it; no cartridge uses it (physics cartridges use custom deterministic TypeScript, `number-workshop` needs none).
+11. ✅ **Zero Unused Physics Dependencies**:
+    - The physics engines (`buoyancy-tank`, `balance-scale`, `pendulum-rhythm`, `pulley-lift`, `gear-trains`, `marble-run-angles`) implement custom analytical physics models. The unused `matter-js` and `@types/matter-js` dependencies have been removed.
 
 ---
 

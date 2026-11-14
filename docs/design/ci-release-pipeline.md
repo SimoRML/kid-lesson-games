@@ -107,7 +107,7 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 - [x] ✅ **T-11** Trim `files`, add `sideEffects`/`repository`/`publishConfig`, swap `prepare` → `prepack`.
 - [x] ✅ **T-12** Rename to `@simorml/kid-lesson-games` and update docs/install examples.
 - [ ] **T-13** Add `publint` + `@arethetypeswrong/cli` + tarball smoke test to CI.
-- [ ] **T-14** Remove unused `matter-js` + `@types/matter-js` (AGENTS.md §8.11; separate approved dependency PR).
+- [x] ✅ **T-14** Remove unused `matter-js` + `@types/matter-js` (AGENTS.md §8.11; separate approved dependency PR).
 - [ ] **T-17** SSR guard in `src/core/KidGameElement.ts` (separate, explicitly approved `src/` PR; prerequisite of T-16).
 
 ### P3: release
