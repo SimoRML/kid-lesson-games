@@ -6,6 +6,10 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-14
+
+New cartridge `number-workshop` (division, 4 modes, cartridge `1.0.0`) plus the agent workflow, plan and a security fix.
+
 ### Added
 - `number-workshop` `1.0.0` (WP6): the cartridge is ✅ with all four modes. Adds the 25-level sample-sheet playground preset, an automated cross-mode play-through (`playthrough.test.ts`: complete sessions at every age × difficulty and the sheet at every difficulty, all solvable through the real controls), the full cartridge README (purpose, formulas, level schema, known limitations), and records the deviations from the plan in `docs/design/number-workshop/README.md` §7. Known limitations ⚠️ are tracked in `TODO.md` (unconfirmed French column abbreviations, whole-game height at 400 px, no real-device play-test).
 - `AGENTS.md` §0 Mandatory Agent Workflow (plan, branch, multi-agent safety, security, semver, PR, independent review/merge).
@@ -16,6 +20,9 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 - `number-workshop` playable shell + `facts` mode (WP2, 🚧 1 of 4 modes): Division Workshop is now in the playground. Fair-sharing tiers by dividend size (share, deal, array with Check), live HUD, granular undo, tap and drag, symbol-free presentation for ages 3-5, EN/FR, custom `levels` preset, and the shared group-builder and drag widgets. Library UMD bundle grows to ~309 kB.
 - `number-workshop` pure logic (WP1, not yet a playable game): division maths with long-division traces, defensive custom-level parser, procedural level generator, session scoring, and `levels.schema.json`, all under `games/number-workshop/` with tests.
 - Implementation plan for the `number-workshop` division cartridge (`docs/design/number-workshop/`, 8 files: decisions, pedagogy, level schema, architecture, UX, test plan with golden values, work packages, platform contract) and TODO Theme 6 (external lesson-generator integration).
+
+### Changed
+- The French place-value abbreviations of `number-workshop` (`CM DM UM C D U`) were checked on the web against French primary-school materials; the unconfirmed warnings were removed from the docs.
 
 ### Fixed
 - `AGENTS.md` workflow nits: committed-state `src/` check, same-account review fallback, post-merge branch cleanup, wording consistency.
