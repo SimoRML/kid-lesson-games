@@ -230,6 +230,7 @@ describe('shift mode', () => {
     };
     drag(90); // about two columns (44 px fallback width)
     expect(offset(r)).toBe('3');
+    expect(strip.classList.contains('nw-snap')).toBe(false); // the no-glide class never lingers
     drag(-45);
     expect(offset(r)).toBe('2');
     drag(-500);

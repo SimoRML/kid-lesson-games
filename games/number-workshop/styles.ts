@@ -119,6 +119,7 @@ export const STYLES = `
 .nw-keypad { display: grid; grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 6px; width: min(100%, 300px); }
 .nw-key { padding: 6px; font-size: 1.15rem; }
 .nw-shift { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; --nw-col: clamp(28px, 8.5vw, 48px); }
+@supports (width: 1cqw) { .nw-stage { container-type: inline-size; } .nw-shift { --nw-col: clamp(24px, 8.5cqw, 48px); } }
 .nw-counter { min-height: 1.6em; font-size: 1.2rem; font-weight: 800; color: var(--nw-divisor); text-align: center; }
 .nw-pv { display: flex; flex-direction: column; }
 .nw-pv-head { display: flex; }
@@ -126,7 +127,7 @@ export const STYLES = `
 .nw-pv-off { border-bottom: 2px dashed var(--nw-remainder); }
 .nw-pv-body { position: relative; height: calc(var(--nw-col) * 1.4); width: calc(var(--nw-col) * 10); background: linear-gradient(90deg, var(--nw-surface) calc(var(--nw-col) * 6), rgba(251, 146, 60, 0.1) 0); border-radius: 0 0 10px 10px; touch-action: none; }
 .nw-strip { position: absolute; top: 0; left: calc(var(--nw-col) * var(--nw-offset, 0)); height: 100%; display: flex; cursor: grab; transition: left 0.25s ease; touch-action: none; }
-.nw-strip.nw-dragging { cursor: grabbing; transition: none; }
+.nw-strip.nw-dragging, .nw-strip.nw-snap { cursor: grabbing; transition: none; }
 .nw-digit { width: var(--nw-col); display: flex; align-items: center; justify-content: center; font-size: calc(var(--nw-col) * 0.75); font-weight: 800; color: var(--nw-dividend); }
 .nw-digit-off { color: var(--nw-remainder); opacity: 0.55; }
 .nw-shift-buttons { display: flex; gap: 12px; }

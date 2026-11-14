@@ -200,11 +200,18 @@ export class ShiftMode implements ModeController {
     const cell = this.headerCells[0]?.getBoundingClientRect().width ?? 0;
     const colWidth = cell > 0 ? cell : 44;
     const target = Math.max(0, Math.min(MAX_SLIDES, this.slides + Math.round(dx / colWidth)));
+    // The drag has just released the strip back to its old column. Move it to the new
+    // one without a glide, so it does not flash back before settling.
+    this.strip?.classList.add('nw-snap');
     while (this.slides < target) {
       if (!this.slideRight()) break;
     }
     while (this.slides > target) {
       if (!this.slideBack()) break;
+    }
+    if (this.strip) {
+      void this.strip.offsetWidth; // flush the new position while the transition is off
+      this.strip.classList.remove('nw-snap');
     }
   }
 
