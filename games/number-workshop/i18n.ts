@@ -69,6 +69,22 @@ export interface Dictionary {
   shiftTooFew(b: string, need: string, needCount: number, made: string): string;
   shiftTooMany(b: string, need: string, needCount: number, made: string): string;
   shiftRefuse: string;
+  longWorkLabel(a: string, b: string): string;
+  longBringLabel(digit: string): string;
+  longNeedEntry: string;
+  longDivide(partial: string, b: string): string;
+  longMultiply(digit: string, b: string): string;
+  longSubtract(partial: string, product: string): string;
+  longBring: string;
+  longEqQPrompt: string;
+  longEqRPrompt: string;
+  longTooBig(digit: string, b: string, product: string, partial: string): string;
+  longTooSmall(b: string, partial: string): string;
+  longProduct(digit: string, b: string): string;
+  longRemainderBig(b: string): string;
+  longRemainder(partial: string, product: string): string;
+  longEqQ: string;
+  longEqR: string;
   keypadLabel: string;
   backspaceLabel: string;
   remainderPrompt: string;
@@ -152,6 +168,22 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
     shiftTooMany: (b, need, n, made) =>
       `÷${b} is ${need} ${n === 1 ? 'slide' : 'slides'}. You made ${made}: slide some back.`,
     shiftRefuse: 'Only zeros can slide off the table. This strip stays here.',
+    longWorkLabel: (a, b) => `Long division of ${a} by ${b}`,
+    longBringLabel: (d) => `Bring down the digit ${d}`,
+    longNeedEntry: 'Type a number, then press Check.',
+    longDivide: (p, b) => `How many ${b}s fit in ${p}? Type the digit.`,
+    longMultiply: (d, b) => `Multiply: ${d} × ${b} = ?`,
+    longSubtract: (p, pr) => `Subtract: ${p} − ${pr} = ?`,
+    longBring: 'Bring down the next digit: tap the highlighted one.',
+    longEqQPrompt: 'Now write the equality. What is the quotient?',
+    longEqRPrompt: 'And what is the remainder?',
+    longTooBig: (d, b, pr, p) => `${b} × ${d} = ${pr} is more than ${p}.`,
+    longTooSmall: (b, p) => `There is room for one more ${b} in ${p}.`,
+    longProduct: (d, b) => `Check ${b} × ${d} again.`,
+    longRemainderBig: (b) => `The left-over must be smaller than ${b}. Is there room for one more?`,
+    longRemainder: (p, pr) => `Subtract again: ${p} − ${pr}.`,
+    longEqQ: 'Read the quotient digits written under the bar, from left to right.',
+    longEqR: 'The remainder is the last number at the bottom of the subtractions.',
     keypadLabel: 'Number keys',
     backspaceLabel: 'Delete last digit',
     remainderPrompt: 'Left over:',
@@ -225,6 +257,22 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
     shiftTooMany: (b, need, n, made) =>
       `÷${b} fait ${need} ${n === 1 ? 'glissement' : 'glissements'}. Tu en as fait ${made} : reviens en arrière.`,
     shiftRefuse: 'Seuls les zéros peuvent sortir du tableau. La bande reste ici.',
+    longWorkLabel: (a, b) => `Division posée de ${a} par ${b}`,
+    longBringLabel: (d) => `Abaisser le chiffre ${d}`,
+    longNeedEntry: 'Tape un nombre, puis appuie sur Vérifier.',
+    longDivide: (p, b) => `Combien de fois ${b} dans ${p} ? Tape le chiffre.`,
+    longMultiply: (d, b) => `Multiplie : ${d} × ${b} = ?`,
+    longSubtract: (p, pr) => `Soustrais : ${p} − ${pr} = ?`,
+    longBring: 'Abaisse le chiffre suivant : touche celui qui est en évidence.',
+    longEqQPrompt: 'Écris maintenant l’égalité. Quel est le quotient ?',
+    longEqRPrompt: 'Et quel est le reste ?',
+    longTooBig: (d, b, pr, p) => `${b} × ${d} = ${pr} dépasse ${p}.`,
+    longTooSmall: (b, p) => `Il y a encore la place pour un ${b} de plus dans ${p}.`,
+    longProduct: (d, b) => `Vérifie encore ${b} × ${d}.`,
+    longRemainderBig: (b) => `Le reste doit être plus petit que ${b}. Reste-t-il la place pour un de plus ?`,
+    longRemainder: (p, pr) => `Soustrais encore : ${p} − ${pr}.`,
+    longEqQ: 'Lis les chiffres du quotient écrits sous la barre, de gauche à droite.',
+    longEqR: 'Le reste est le dernier nombre en bas des soustractions.',
     keypadLabel: 'Touches numériques',
     backspaceLabel: 'Effacer le dernier chiffre',
     remainderPrompt: 'Reste :',

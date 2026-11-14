@@ -22,7 +22,7 @@ export const ALL_MODES: readonly ModeId[] = ['facts', 'shift', 'euclid', 'long']
  * The parser and the generator default to this list, so a level whose mode is
  * not built yet is skipped instead of reaching a game that cannot render it.
  */
-export const BUILT_MODES: readonly ModeId[] = ['facts', 'shift', 'euclid'];
+export const BUILT_MODES: readonly ModeId[] = ['facts', 'shift', 'euclid', 'long'];
 
 /** What the shell offers to a mode. A mode never emits events or advances levels itself. */
 export interface ModeHost {

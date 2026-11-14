@@ -41,7 +41,7 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 | Universal `<kid-game>` Web Component (Shadow DOM) | ✅ | Implemented in [KidGameElement.ts](src/core/KidGameElement.ts); client-side ready (SSR requires dynamic client import ⚠️) |
 | Auto-Discovery & Lazy ES Chunking (`import.meta.glob`) | ✅ | `dist/kid-games.es.js` (~12.7 kB) lazily loads per-game ES chunks (`dist/<game-id>-*.js`) |
 | UMD Bundle (`dist/kid-games.umd.js`) | ⚠️ | Produced by `npm run build` (~309 kB), but UMD cannot code-split dynamic imports so all 7 games are bundled together |
-| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with a passing Vitest suite; plus `number-workshop` 🚧 (division, 3 of 4 modes, see the catalog) |
+| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with a passing Vitest suite; plus `number-workshop` 🚧 (division, 4 of 4 modes built, polishing, see the catalog) |
 | `letters` Curriculum Category | 🗺️ | Taxonomy category `'letters'` exists in `src/core/types.ts`, no letter games built yet |
 | Configurable `levels` + Procedural Fallback | ✅ | All 7 cartridges export `parseCustomLevels()` and fall back to `generateLevelsForAge(ageGroup, difficulty)` |
 | Multilingual UI (`en` & `fr`) | ✅ | Core `I18nManager` + all 7 cartridges provide full English (`en`) and French (`fr`) dictionaries |
@@ -196,7 +196,7 @@ All 6 ✅ games in `games/*/` support ages **`3-5`**, **`6-8`**, and **`9-11`**,
 | [`marble-run-angles`](#4-marble-run-angles--marble-run-angles--) | Marble Run Angles | `spatial` | `3-5`, `6-8`, `9-11` | `geometry`, `angles`, `reflection`, `slopes`, `spatial-reasoning` | `en`, `fr` | ✅ |
 | [`pendulum-rhythm`](#5-pendulum-rhythm--pendulum-rhythm-lab--) | Pendulum Rhythm Lab | `numbers` | `3-5`, `6-8`, `9-11` | `pendulum-physics`, `periodicity`, `fractions`, `rhythm-sync`, `variable-isolation`, `momentum` | `en`, `fr` | ✅ |
 | [`pulley-lift`](#6-pulley-lift--pulley-lift--mechanical-advantage--) | Pulley Lift & Mechanical Advantage | `logic` | `3-5`, `6-8`, `9-11` | `simple-machines`, `fractions`, `work-conservation`, `mechanical-advantage`, `proportional-thinking` | `en`, `fr` | ✅ |
-| [`number-workshop`](games/number-workshop/README.md) | Division Workshop | `numbers` | `3-5`, `6-8`, `9-11` | `division`, `equal-sharing` | `en`, `fr` | 🚧 3 of 4 modes (`facts`, `shift`, `euclid`; `long` is 🗺️) |
+| [`number-workshop`](games/number-workshop/README.md) | Division Workshop | `numbers` | `3-5`, `6-8`, `9-11` | `division`, `equal-sharing` | `en`, `fr` | 🚧 4 of 4 modes built (`facts`, `shift`, `euclid`, `long`), polishing towards 1.0.0 |
 
 ---
 
@@ -452,7 +452,7 @@ kid-lesson-games/
 │   │   ├── i18n.ts
 │   │   ├── index.ts
 │   │   └── index.test.ts
-│   ├── number-workshop/          # 🚧 Numbers: Division (3 of 4 modes: `facts`, `shift`, `euclid`); modes/, widgets/, pure logic
+│   ├── number-workshop/          # 🚧 Numbers: Division (4 of 4 modes built: `facts`, `shift`, `euclid`, `long`); modes/, widgets/, pure logic
 │   ├── marble-run-angles/        # ✅ Spatial: Ramp slopes, 15° angles & specular reflection
 │   │   ├── assets/thumb.svg
 │   │   ├── README.md

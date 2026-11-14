@@ -94,6 +94,25 @@ describe('keypad', () => {
     expect(pad.getValue()).toBe('');
   });
 
+  it('accepts a limit function that can change between entries', () => {
+    let max = 1;
+    const p2 = createKeypad(parent, {
+      signal: abort.signal,
+      isEnabled: () => true,
+      maxDigits: () => max,
+      onChange: () => {},
+      labels: { group: 'g', backspace: 'b' }
+    });
+    const k = (d: string) =>
+      Array.from(p2.element.querySelectorAll('button')).find((b) => b.textContent === d) as HTMLButtonElement;
+    k('4').click();
+    k('2').click();
+    expect(p2.getValue()).toBe('4');
+    max = 2;
+    k('2').click();
+    expect(p2.getValue()).toBe('42');
+  });
+
   it('setValue sanitises and does not fire onChange; setLabels relabels', () => {
     pad.setValue('1a2b3c4');
     expect(pad.getValue()).toBe('123');
