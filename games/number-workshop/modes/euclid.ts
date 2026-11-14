@@ -48,6 +48,8 @@ export class EuclidMode implements ModeController {
   private keypad: Keypad | null = null;
   private paused = false;
   private done = false;
+  /** Builds the current hint in the current language, so a locale change can redraw it. */
+  private hintText: (() => string) | null = null;
 
   mount(stage: HTMLElement, level: Level, host: ModeHost): void {
     if (level.mode !== 'euclid') return;
@@ -57,6 +59,7 @@ export class EuclidMode implements ModeController {
     this.b = level.divisor;
     this.q = divide(this.a, this.b).q;
     this.done = false;
+    this.hintText = null;
     this.build();
   }
 
@@ -216,6 +219,7 @@ export class EuclidMode implements ModeController {
     this.builder.setGroups(g);
     this.builder.setReadout(t.arrayReadout(this.fmt(this.b), this.fmt(g), this.fmt(total), false));
 
+    if (this.hintEl) this.hintEl.textContent = this.hintText ? this.hintText() : '';
     if (this.remLabel) this.remLabel.textContent = t.remainderPrompt;
     if (this.remDisplay) this.remDisplay.textContent = r === null ? '?' : this.fmt(r);
     if (this.checkBtn) {
@@ -261,7 +265,6 @@ export class EuclidMode implements ModeController {
 
   private check(): void {
     if (!this.isEnabled() || !this.builder) return;
-    const t = this.host.t();
     const g = this.builder.getGroups();
     const verdict = judgeEuclid(this.a, this.b, g, this.remainderValue());
 
@@ -273,11 +276,12 @@ export class EuclidMode implements ModeController {
       return;
     }
 
-    const hints: Record<Exclude<EuclidVerdict, 'solved'>, string> = {
-      tooFar: t.euclidTooFar(this.fmt(this.b * g), this.fmt(this.a)),
-      falseEquality: t.euclidFalse(this.fmt(this.a)),
-      notEuclidean: t.euclidNotEuclidean(this.fmt(this.b)),
-      needRemainder: t.euclidNeedRemainder
+    const hints: Record<Exclude<EuclidVerdict, 'solved'>, () => string> = {
+      tooFar: () => this.host.t().euclidTooFar(this.fmt(this.b * g), this.fmt(this.a)),
+      falseEquality: () =>
+        this.host.t().euclidFalse(this.fmt(this.a), this.host.difficulty !== 'hard'),
+      notEuclidean: () => this.host.t().euclidNotEuclidean(this.fmt(this.b)),
+      needRemainder: () => this.host.t().euclidNeedRemainder
     };
     this.showHint(hints[verdict]);
     // Forgetting to type the remainder is a reminder, not a mistake.
@@ -288,12 +292,15 @@ export class EuclidMode implements ModeController {
     }
   }
 
-  private showHint(text: string): void {
+  private showHint(build: () => string): void {
+    this.hintText = build;
+    const text = build();
     if (this.hintEl) this.hintEl.textContent = text;
     this.host.setInstruction(text);
   }
 
   private clearHint(): void {
+    this.hintText = null;
     if (this.hintEl) this.hintEl.textContent = '';
   }
 

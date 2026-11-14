@@ -179,6 +179,30 @@ describe('euclid mode', () => {
     expect(r.mistakes()).toBe(1);
   });
 
+  it('at hard the false-equality hint does not point at an unmarked gap', () => {
+    r = rig(euclid(78, 8), { difficulty: 'hard' });
+    add(r, 9);
+    type(r, '5');
+    check(r);
+    expect(hint(r)).toBe('The groups and the left-over do not add up to 78. Check your groups and your left-over.');
+    expect(hint(r)).not.toMatch(/gap/);
+  });
+
+  it('a visible hint is redrawn in the new language on a locale change and cleared by reset', () => {
+    r = rig(euclid(78, 8));
+    add(r, 10);
+    type(r, '0');
+    check(r);
+    expect(hint(r)).toContain('Too far');
+    r.setLang('fr');
+    r.mode.onLocaleChange();
+    expect(hint(r)).toBe('Trop loin\u202f: 80 dépasse 78. Enlève un groupe.');
+    r.mode.reset();
+    expect(hint(r)).toBe('');
+    r.mode.onLocaleChange();
+    expect(hint(r)).toBe('');
+  });
+
   it('wrong path 3, true equality with r >= b: names the room for another group', () => {
     r = rig(euclid(78, 8));
     add(r, 8);

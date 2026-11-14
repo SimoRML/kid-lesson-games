@@ -63,7 +63,8 @@ export interface Dictionary {
   euclidPrompt(b: string): string;
   gapLeft(n: string): string;
   euclidTooFar(total: string, a: string): string;
-  euclidFalse(a: string): string;
+  /** `gapMarked` is false at hard, where the gap is not drawn. */
+  euclidFalse(a: string, gapMarked: boolean): string;
   euclidNotEuclidean(b: string): string;
   euclidNeedRemainder: string;
   /** Written equality of a solved euclid level: 78 = (8 × 9) + 6. */
@@ -133,7 +134,8 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
     euclidPrompt: (b) => `Fit as many groups of ${b} as you can, then type what is left over.`,
     gapLeft: (n) => `${n} left in the gap`,
     euclidTooFar: (total, a) => `Too far: ${total} is more than ${a}. Take a group away.`,
-    euclidFalse: (a) => `The groups and the left-over do not add up to ${a}. Count the gap again.`,
+    euclidFalse: (a, gapMarked) =>
+      `The groups and the left-over do not add up to ${a}. ${gapMarked ? 'Count the gap again.' : 'Check your groups and your left-over.'}`,
     euclidNotEuclidean: (b) => `The equality is true, but you can still fit another group of ${b}.`,
     euclidNeedRemainder: 'Type what is left over, then check.',
     resultEuclid: (a, b, q, r) => `${a} = (${b} × ${q}) + ${r}`,
@@ -193,7 +195,8 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
     euclidPrompt: (b) => `Place autant de groupes de ${b} que possible, puis tape ce qui reste.`,
     gapLeft: (n) => `${n} à combler`,
     euclidTooFar: (total, a) => `Trop loin : ${total} dépasse ${a}. Enlève un groupe.`,
-    euclidFalse: (a) => `Les groupes et le reste ne font pas ${a}. Recompte l’écart.`,
+    euclidFalse: (a, gapMarked) =>
+      `Les groupes et le reste ne font pas ${a}. ${gapMarked ? 'Recompte l’écart.' : 'Vérifie tes groupes et ton reste.'}`,
     euclidNotEuclidean: (b) => `L’égalité est vraie, mais tu peux encore placer un groupe de ${b}.`,
     euclidNeedRemainder: 'Tape ce qui reste, puis vérifie.',
     resultEuclid: (a, b, q, r) => `${a} = (${b} × ${q}) + ${r}`,
