@@ -116,7 +116,7 @@ export const STYLES = `
 .nw-axis-end { position: absolute; transform: translateX(-100%); }
 .nw-rem-row { display: flex; align-items: center; gap: 10px; font-weight: 800; }
 .nw-rem-display { min-width: 3ch; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0 12px; border: 2px dashed var(--nw-remainder); border-radius: 10px; font-size: 1.5rem; background: var(--nw-surface); }
-.nw-keypad { display: grid; grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 6px; width: min(100%, 300px); }
+.nw-keypad { display: grid; grid-template-columns: repeat(auto-fit, minmax(44px, 1fr)); gap: 4px; width: min(100%, 320px); }
 .nw-key { padding: 6px; font-size: 1.15rem; }
 .nw-shift { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; --nw-col: clamp(28px, 8.5vw, 48px); }
 @supports (width: 1cqw) { .nw-stage { container-type: inline-size; } .nw-shift { --nw-col: clamp(24px, 8.5cqw, 48px); } }
@@ -131,12 +131,13 @@ export const STYLES = `
 .nw-digit { width: var(--nw-col); display: flex; align-items: center; justify-content: center; font-size: calc(var(--nw-col) * 0.75); font-weight: 800; color: var(--nw-dividend); }
 .nw-digit-off { color: var(--nw-remainder); opacity: 0.55; }
 .nw-shift-buttons { display: flex; gap: 12px; }
-.nw-long { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; --nw-lcol: clamp(26px, 8vw, 40px); }
+.nw-long { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; --nw-lcol: clamp(26px, 8vw, 40px); --nw-lrow: calc(var(--nw-lcol) * 0.95); }
+.nw-long.nw-compact { --nw-lrow: calc(var(--nw-lcol) * 0.78); gap: 4px; }
 @supports (width: 1cqw) { .nw-long { --nw-lcol: clamp(22px, 7cqw, 40px); } }
 .nw-potence { display: flex; align-items: flex-start; gap: 0; font-variant-numeric: tabular-nums; }
 .nw-lleft { display: flex; flex-direction: column; }
 .nw-lrow { display: flex; }
-.nw-lcell { width: var(--nw-lcol); height: calc(var(--nw-lcol) * 0.95); display: inline-flex; align-items: center; justify-content: center; font-size: calc(var(--nw-lcol) * 0.7); font-weight: 800; color: var(--nw-dividend); padding: 0; border: 0; background: transparent; font-family: inherit; box-sizing: border-box; }
+.nw-lcell { width: var(--nw-lcol); height: var(--nw-lrow); display: inline-flex; align-items: center; justify-content: center; font-size: calc(var(--nw-lcol) * 0.7); font-weight: 800; color: var(--nw-dividend); padding: 0; border: 0; background: transparent; font-family: inherit; box-sizing: border-box; }
 .nw-lsign { color: var(--nw-muted); width: calc(var(--nw-lcol) * 0.7); }
 .nw-lrest { color: var(--nw-muted); }
 .nw-lpart { color: var(--nw-dividend); background: rgba(56, 189, 248, 0.16); border-radius: 6px; }
@@ -149,8 +150,8 @@ export const STYLES = `
 .nw-lauto { opacity: 0.85; animation: nw-write 0.35s ease both; }
 .nw-lactive { outline: 2px dashed var(--nw-gold); border-radius: 6px; }
 .nw-lright { display: flex; flex-direction: column; margin-left: 4px; border-left: 3px solid var(--nw-muted); min-width: calc(var(--nw-lcol) * 2.4); }
-.nw-ldivisor { padding: 0 10px; height: calc(var(--nw-lcol) * 0.95); display: flex; align-items: center; font-size: calc(var(--nw-lcol) * 0.7); font-weight: 800; border-bottom: 3px solid var(--nw-muted); }
-.nw-lquotient { padding: 4px 10px; min-height: calc(var(--nw-lcol) * 0.95); font-size: calc(var(--nw-lcol) * 0.7); font-weight: 800; letter-spacing: 0.15em; }
+.nw-ldivisor { padding: 0 10px; height: var(--nw-lrow); display: flex; align-items: center; font-size: calc(var(--nw-lcol) * 0.7); font-weight: 800; border-bottom: 3px solid var(--nw-muted); }
+.nw-lquotient { padding: 4px 10px; min-height: var(--nw-lrow); font-size: calc(var(--nw-lcol) * 0.7); font-weight: 800; letter-spacing: 0.15em; }
 .nw-lactive-digit { outline: 2px dashed var(--nw-gold); border-radius: 6px; padding: 0 4px; }
 .nw-long-eq { font-size: 1.3rem; font-weight: 800; text-align: center; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
 .nw-lfield { min-width: 1.6ch; text-align: center; padding: 0 6px; border-radius: 6px; background: var(--nw-surface); }

@@ -299,7 +299,7 @@ describe('long mode', () => {
     expect(hint(r)).toBe('Type a number, then press Check.');
     expect(r.mistakes()).toBe(0);
     entry(r, '160');
-    expect(hint(r)).toBe('The quotient is the digits you wrote above the line, in order.');
+    expect(hint(r)).toBe('Read the quotient digits written under the bar, from left to right.');
     expect(r.mistakes()).toBe(1);
     back(r);
     back(r);
@@ -308,7 +308,7 @@ describe('long mode', () => {
     expect(last(r)).toBe('And what is the remainder?');
     expect(r.stage.querySelector('.nw-long-eq')?.textContent).toBe('806 = (5 × 161) + ?');
     entry(r, '2');
-    expect(hint(r)).toBe('The remainder is the last number left under the lines.');
+    expect(hint(r)).toBe('The remainder is the last number at the bottom of the subtractions.');
     expect(r.mistakes()).toBe(2);
     expect(r.solved()).toBe(0);
     back(r);
@@ -339,6 +339,27 @@ describe('long mode', () => {
     back(r);
     entry(r, '1');
     expect(last(r)).toBe('Soustrais\u202f: 8 − 5 = ?');
+  });
+
+  it('hands focus to the keypad when the bring-down button disappears', () => {
+    r = rig(long(806, 5), 'easy');
+    entry(r, '1');
+    const btn = r.stage.querySelector('.nw-lbring') as HTMLButtonElement;
+    btn.focus();
+    expect(document.activeElement).toBe(btn);
+    btn.click();
+    const active = document.activeElement as HTMLElement;
+    expect(active.classList.contains('nw-key')).toBe(true);
+    // Digit keys keep working from there.
+    active.dispatchEvent(new KeyboardEvent('keydown', { key: '6', bubbles: true }));
+    expect(r.stage.querySelector('.nw-lquotient')?.textContent).toContain('6');
+  });
+
+  it('compacts the layout from three steps up', () => {
+    r = rig(long(806, 5), 'easy');
+    expect(r.stage.querySelector('.nw-long')?.classList.contains('nw-compact')).toBe(true);
+    fresh(98, 7, 'easy');
+    expect(r.stage.querySelector('.nw-long')?.classList.contains('nw-compact')).toBe(false);
   });
 
   it('reset restarts the level; paused blocks entry; the reduced-motion pulse replaces the shake', () => {

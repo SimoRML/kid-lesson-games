@@ -148,7 +148,7 @@ export class LongMode implements ModeController {
   private build(): void {
     this.root?.remove();
     const root = document.createElement('div');
-    root.className = 'nw-long';
+    root.className = this.trace.length >= 3 ? 'nw-long nw-compact' : 'nw-long';
     this.root = root;
     this.stage.appendChild(root);
 
@@ -392,6 +392,9 @@ export class LongMode implements ModeController {
     const item = this.current;
     const typed = this.keypad.getValue();
     const work = this.workEl;
+    // Rebuilding the work area destroys the focused bring-down button; remember to refocus.
+    const root = this.stage.getRootNode() as Document | ShadowRoot;
+    const hadFocus = work.contains(root.activeElement) || root.activeElement === this.okBtn;
     work.replaceChildren();
     work.setAttribute('aria-label', t.longWorkLabel(this.fmt(this.a), this.fmt(this.b)));
 
@@ -486,6 +489,13 @@ export class LongMode implements ModeController {
     if (this.hintEl) this.hintEl.textContent = this.hintText ? this.hintText() : '';
     this.keypad.setLabels({ group: t.keypadLabel, backspace: t.backspaceLabel });
     this.host.setInstruction(this.instruction(item));
+
+    // The focused element was a bring-down button or the Check button, both of which can
+    // disappear: hand focus to the keypad so digit keys keep working from the keyboard.
+    const stillFocused = root.activeElement && this.root?.contains(root.activeElement);
+    if (hadFocus && !stillFocused) {
+      (this.keypad.element.querySelector('button') as HTMLElement | null)?.focus?.();
+    }
   }
 
   /** Last step whose rows should be visible. */

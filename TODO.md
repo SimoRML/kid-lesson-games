@@ -98,7 +98,7 @@
 ## 🔌 Theme 6: External Lesson-Generator Integration (LLM → `levels` JSON)
 
 - [x] Decision: **Reading A**. An external platform's LLM generates `levels` JSON for existing cartridges; it never generates or runs game code (games are discovered at build time and must stay inside the cartridge contract).
-- [ ] 🚧 Build `number-workshop` so division-style school exercises have a matching cartridge (see Theme 3 and the plan doc). all 4 modes (`facts`, `shift`, `euclid`, `long`) are playable; WP6 polish and `1.0.0` remain.
+- [ ] 🚧 Build `number-workshop` so division-style school exercises have a matching cartridge (see Theme 3 and the plan doc). All 4 modes (`facts`, `shift`, `euclid`, `long`) are playable; WP6 polish and `1.0.0` remain.
 - [ ] 🗺️ Verifier for LLM-made levels: planned as cartridge-side recompute plus a shipped `levels.schema.json`, with no `src/` change (plan decision D12).
 - [x] `number-workshop` plan approved by the owner (2026-11-14), recommended defaults accepted for Q1–Q7 ([plan README §4](docs/design/number-workshop/README.md)).
 - [ ] 🗺️ Document a per-cartridge `levels` JSON schema that a platform can feed to an LLM (today each cartridge has its own shape, e.g. `balance-scale` vs `pulley-lift`). The platform-side contract for `number-workshop` is drafted in [07-platform-integration.md](docs/design/number-workshop/07-platform-integration.md).
