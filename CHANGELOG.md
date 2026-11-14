@@ -7,6 +7,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ## [Unreleased]
 
 ### Added
+- Removed unused `matter-js` and `@types/matter-js` dependencies and updated AGENTS.md §8.11 (T-14).
 - Renamed package to `@simorml/kid-lesson-games` in `package.json` and `package-lock.json`, and updated install and integration examples in `README.md` and `AGENTS.md` (T-12).
 - Trimmed package tarball `files` to `dist`, `README.md`, `LICENSE`, and `CHANGELOG.md`, added `sideEffects`, `repository`, `bugs`, `homepage`, and `publishConfig`, updated author to `Simo (@SimoRML)`, and migrated lifecycle build hook from `prepare` to `prepack` (T-11).
 - Added `tsconfig.build.json` for TypeScript declaration (`.d.ts`) emission into `dist/` excluding test files, added `build:types` script, and updated `package.json` `types` and `exports["."].types` to point to `./dist/index.d.ts` (T-10).
