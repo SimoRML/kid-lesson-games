@@ -58,6 +58,12 @@ jobs:
       - name: Build library (ES + UMD)
         run: npm run build
 
+      - name: Lint package exports and types
+        run: npm run lint:package
+
+      - name: Tarball smoke test
+        run: npm run smoke-test
+
       - name: Build playground (Pages)
         run: npm run build:pages
 

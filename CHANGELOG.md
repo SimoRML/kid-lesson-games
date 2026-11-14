@@ -7,6 +7,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ## [Unreleased]
 
 ### Added
+- Added `publint`, `@arethetypeswrong/cli`, and automated tarball smoke test script `scripts/smoke-test.js` to CI, and configured UMD bundle output as `.cjs` for CommonJS compatibility (T-13).
 - Added Node SSR guard in `src/core/KidGameElement.ts` and `src/index.ts` so importing `@simorml/kid-lesson-games` in Node.js / SSR runtimes does not throw `HTMLElement is not defined` (T-17).
 - Removed unused `matter-js` and `@types/matter-js` dependencies and updated AGENTS.md §8.11 (T-14).
 - Renamed package to `@simorml/kid-lesson-games` in `package.json` and `package-lock.json`, and updated install and integration examples in `README.md` and `AGENTS.md` (T-12).
