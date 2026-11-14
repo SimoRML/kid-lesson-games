@@ -96,8 +96,8 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 
 ### P1: CI + security (PRs; start here)
 - [x] ✅ **T-04** `ci.yml` with `verify` aggregate job, SHA-pinned actions, `.nvmrc`, `engines.node` ([§5.1](#51-ciyml)).
-- [ ] **T-05** Ruleset on `main` requiring `ci / verify` (after T-04 is merged and has run once) ([§4](#4-phase-p0-repo-settings-no-code-owner-approves-each)).
-- [ ] **T-06** `security.yml`: gitleaks + `.gitleaks.toml`, CodeQL, Dependency Review, audit gate ([§5.2](#52-securityyml-secret--code-scanning)).
+- [x] ✅ **T-05** Ruleset on `main` requiring `ci / verify` (after T-04 is merged and has run once) ([§4](#4-phase-p0-repo-settings-no-code-owner-approves-each)).
+- [x] ✅ **T-06** `security.yml`: gitleaks + `.gitleaks.toml`, CodeQL, Dependency Review, audit gate ([§5.2](#52-securityyml-secret--code-scanning)).
 - [ ] **T-07** Hygiene files: `dependabot.yml`, PR template, `CODEOWNERS`, `SECURITY.md`, `.gitignore` additions ([§5.3](#53-hygiene-files)).
 - [ ] **T-08** Verify with `actionlint` + `zizmor` and the planted-secret test; record results in the PR.
 

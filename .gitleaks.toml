@@ -1,0 +1,11 @@
+title = "kid-lesson-games gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for benign patterns in lockfiles and documentation"
+paths = [
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)docs/design/.*\.md$'''
+]
