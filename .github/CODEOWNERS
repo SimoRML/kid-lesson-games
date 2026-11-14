@@ -1,0 +1,5 @@
+# Global code ownership for critical infrastructure, configuration, and engine files
+.github/**      @SimoRML
+package.json    @SimoRML
+src/**          @SimoRML
+vite.config.ts  @SimoRML

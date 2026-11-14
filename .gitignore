@@ -152,3 +152,8 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Security, certificates and private keys
+*.pem
+*.key
+.npmrc

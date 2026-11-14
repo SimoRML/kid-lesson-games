@@ -7,6 +7,12 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ## [Unreleased]
 
 ### Added
+- Repository hygiene and security policy files (T-07):
+  - `.github/dependabot.yml` configured for weekly grouped dependency updates across `npm` and `github-actions`.
+  - `.github/PULL_REQUEST_TEMPLATE.md` standardizing Gate 7 submissions and verification logging.
+  - `.github/CODEOWNERS` assigning review ownership for `.github/**`, `package.json`, `src/**`, and `vite.config.ts`.
+  - `SECURITY.md` establishing private vulnerability reporting policy and secret rotation protocols.
+  - `.gitignore` credential protections for `*.pem`, `*.key`, and `.npmrc`.
 - GitHub Actions Security workflow (`.github/workflows/security.yml`) with pinned checksum-verified Gitleaks scanner, GitHub Dependency Review, and `npm audit --omit=dev --audit-level=high` production audit gate (T-06).
 - Gitleaks configuration (`.gitleaks.toml`) extending default detection rules with allowlists for lockfiles and design documents.
 - GitHub repository ruleset `protect-main` enforcing PRs, linear history, branch protection, and required `ci / verify` status check (T-05).
