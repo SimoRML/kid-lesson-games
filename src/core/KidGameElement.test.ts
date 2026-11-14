@@ -322,4 +322,15 @@ describe('KidGameElement', () => {
 
     document.body.removeChild(element);
   });
+
+  it('gracefully handles construction when attachShadow is unavailable (SSR simulation)', () => {
+    const originalAttachShadow = KidGameElement.prototype.attachShadow;
+    try {
+      // @ts-expect-error simulating DOM-less SSR environment
+      delete KidGameElement.prototype.attachShadow;
+      expect(() => new KidGameElement()).not.toThrow();
+    } finally {
+      KidGameElement.prototype.attachShadow = originalAttachShadow;
+    }
+  });
 });

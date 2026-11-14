@@ -50,7 +50,11 @@ for (const [path, metaMod] of Object.entries(metaModules)) {
 }
 
 // Register the custom element AFTER registry is populated
-if (typeof window !== 'undefined' && !customElements.get('kid-game')) {
+if (
+  typeof window !== 'undefined' &&
+  typeof customElements !== 'undefined' &&
+  !customElements.get('kid-game')
+) {
   customElements.define('kid-game', KidGameElement);
 }
 

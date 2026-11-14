@@ -68,24 +68,33 @@ const STYLES = `
 }
 `;
 
-export class KidGameElement extends HTMLElement {
+const BaseElement: typeof HTMLElement =
+  typeof HTMLElement !== 'undefined'
+    ? HTMLElement
+    : (class {} as unknown as typeof HTMLElement);
+
+export class KidGameElement extends BaseElement {
   static get observedAttributes() {
     return ['game', 'age', 'difficulty', 'sound', 'autostart', 'locale', 'levels'];
   }
 
-  private root: ShadowRoot;
-  private container: HTMLDivElement;
-  private statusScreen: HTMLDivElement;
+  private root!: ShadowRoot;
+  private container!: HTMLDivElement;
+  private statusScreen!: HTMLDivElement;
   private currentGame: KidGame | null = null;
   private isMounted = false;
   private _customLevels: unknown = null;
   private currentLoadToken = 0;
 
-  public readonly audio: SoundEngine;
-  public readonly i18n: I18nManager;
+  public readonly audio!: SoundEngine;
+  public readonly i18n!: I18nManager;
 
   constructor() {
     super();
+    if (typeof HTMLElement === 'undefined' || typeof this.attachShadow !== 'function') {
+      return;
+    }
+
     this.root = this.attachShadow({ mode: 'open' });
     this.root.innerHTML = `
       <style>${STYLES}</style>
