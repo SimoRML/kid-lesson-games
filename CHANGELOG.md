@@ -9,7 +9,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ### Added
 - `AGENTS.md` §0 Mandatory Agent Workflow (plan, branch, multi-agent safety, security, semver, PR, independent review/merge).
 - This changelog.
-- Draft plan for the `number-workshop` division cartridge (`docs/design/number-workshop-plan.md`) and TODO Theme 6 (external lesson-generator integration).
+- Implementation plan for the `number-workshop` division cartridge (`docs/design/number-workshop/`, 8 files: decisions, pedagogy, level schema, architecture, UX, test plan with golden values, work packages, platform contract) and TODO Theme 6 (external lesson-generator integration).
 
 ### Fixed
 - `AGENTS.md` workflow nits: committed-state `src/` check, same-account review fallback, post-merge branch cleanup, wording consistency.
