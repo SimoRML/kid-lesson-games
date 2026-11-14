@@ -20,7 +20,7 @@
 - [x] ✅ Implement shared procedural Web Audio engine (`SoundEngine` in [src/core/audio.ts](src/core/audio.ts)) with zero external audio assets.
 - [x] ✅ Implement shared bilingual (`en`/`fr`) localization manager (`I18nManager` & `createI18nResolver` in [src/core/i18n.ts](src/core/i18n.ts)).
 - [x] ✅ Build interactive browser testbed & event inspector ([index.html](index.html)) with live cartridge selector, custom level presets, and telemetry log.
-- [x] ✅ Wire `context.difficulty` (`easy` | `medium` | `hard`) into cartridge puzzle generators and `updateConfig` across all 6 cartridges.
+- [x] ✅ Wire `context.difficulty` (`easy` | `medium` | `hard`) into cartridge puzzle generators and `updateConfig` across all 7 cartridges.
 - [x] ✅ Preserve `author` and `thumbnail` fields when registering `GameMetadata` in [src/index.ts](src/index.ts).
 - [ ] 🗺️ Add named Shadow DOM customization slots (`<slot name="loading">` and `<slot name="error">`) to `KidGameElement`.
 - [ ] 🗺️ Add optional programmatic `mountGame(gameId, container, options)` convenience helper alongside `<kid-game>`.
@@ -33,10 +33,10 @@
 - [x] ✅ Establish Git repository structure with `.brainstorm/` ignored for private ideation.
 - [x] ✅ Automatic cartridge discovery via Vite `import.meta.glob` (`games/*/{game,meta}.json` eagerly + `games/*/index.ts` lazily) with zero edits to `src/`.
 - [x] ✅ Contributor CLI scaffolding tool (`npm run create-game <game-id>` in [scripts/create-game.js](scripts/create-game.js)).
-- [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, 13 test files / 277 tests passing).
+- [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, initially 13 test files / 277 tests; the full suite has grown since).
 - [x] ✅ Upgrade `scripts/create-game.js` to scaffold `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, `pause()`/`resume()`, and `AbortController` zero-leak teardown boilerplate.
 - [x] ✅ Bring `games/balance-scale` lifecycle teardown up to the strict zero-leak standard of the newer 5 cartridges (remove `window` mouse/touch listeners via `AbortController`, clear win `setTimeout`s in `destroy()`, implement `pause()`/`resume()`, and add `games/balance-scale/README.md`).
-- [x] ✅ Add missing `assets/thumb.svg` thumbnails for `balance-scale`, `buoyancy-tank`, `marble-run-angles`, and `pulley-lift` (all 6 games now have vector SVG thumbnails).
+- [x] ✅ Add missing `assets/thumb.svg` thumbnails for `balance-scale`, `buoyancy-tank`, `marble-run-angles`, and `pulley-lift` (all 7 games now have vector SVG thumbnails).
 - [x] ✅ Document the mandatory agent workflow (plan, branch, multi-agent safety, security, semver, PR, independent review/merge) in `AGENTS.md` §0 and add `CHANGELOG.md`.
 - [ ] 🗺️ Add a PR CI workflow (`.github/workflows/ci.yml`: `npm ci`, `tsc`, `npm test`, `npm run build`, `npm run build:pages`, `npm audit --omit=dev`) so PRs are tested before merge (today only `main` pushes deploy Pages).
 - [ ] 🗺️ Enable GitHub branch protection on `main` (require PR, require CI, block force-push/deletion) and add `.github/pull_request_template.md` mirroring AGENTS.md Gate 7.
@@ -50,7 +50,7 @@
 - [x] ✅ **`balance-scale` — Balance the Scale / Balance Lab** (*Ages 3–5, 6–8, 9–11*): Equal-arm metric weight equality (`g`/`kg`), additive decomposition ($500\text{g} + 500\text{g} = 1\text{ kg}$), and Archimedes lever torque ($\tau = m \times d$).
 - [x] ✅ **`pendulum-rhythm` — Pendulum Rhythm Lab** (*Ages 3–5, 6–8, 9–11*): Wrecking-ball momentum knockdown, Galileo's mass-invariance & BPM metronome sync, and square-root law ($T \propto \sqrt{L}$) harmonic polyrhythms ($2:1, 3:1, 3:2$).
 - [ ] 🗺️ **`number-line` — Number Line Hopper** (*Ages 3–5, 6–8, 9–11*): Frog/fennec jumping along positive/negative number lines to solve addition, subtraction, and relative integers.
-- [ ] 🗺️ **`number-workshop` — Division Workshop / ورشة القسمة** (*Ages 3–5, 6–8, 9–11*): LLM-friendly arithmetic cartridge, division first: sharing/tables, `a = b × q + r`, ÷10/100/1000 place value, written long division. Approved plan: [docs/design/number-workshop/](docs/design/number-workshop/README.md), delivered as work packages WP1–WP6, one small PR each.
+- [ ] 🚧 **`number-workshop` — Division Workshop / ورشة القسمة** (*Ages 3–5, 6–8, 9–11*): LLM-friendly arithmetic cartridge, division first: sharing/tables, `a = b × q + r`, ÷10/100/1000 place value, written long division. Approved plan: [docs/design/number-workshop/](docs/design/number-workshop/README.md), delivered as work packages WP1–WP6, one small PR each. **Done: WP1 (pure logic), WP2 (shell + `facts`, 1 of 4 modes). Next: WP3 `euclid`, WP4 `shift`, WP5 `long`, WP6 polish.**
 - [ ] 🗺️ **`fraction-feast` — Fraction Slices & Equal Shares / أجزاء وكسور** (*Ages 6–8, 9–11*): Circular/rectangular visual part-whole fractions, equivalence ($2/4 = 1/2$), and common-denominator operations.
 - [ ] 🗺️ **`money-market` — Souk & Dirham Counter / متجر النقود والدرهم** (*Ages 3–5, 6–8, 9–11*): Moroccan currency counting (1, 2, 5, 10 DH coins, 20, 50, 100, 200 DH banknotes, and 10, 20, 50 centimes), additive payment composition, and calculating change returned.
   - [ ] 🗺️ *(Low Priority)* Add switchable multi-currency support (`EUR`, `USD`, `MAD`) to `money-market`.
@@ -98,7 +98,7 @@
 ## 🔌 Theme 6: External Lesson-Generator Integration (LLM → `levels` JSON)
 
 - [x] Decision: **Reading A**. An external platform's LLM generates `levels` JSON for existing cartridges; it never generates or runs game code (games are discovered at build time and must stay inside the cartridge contract).
-- [ ] 🗺️ Build `number-workshop` so division-style school exercises have a matching cartridge (see Theme 3 and the plan doc).
+- [ ] 🚧 Build `number-workshop` so division-style school exercises have a matching cartridge (see Theme 3 and the plan doc). 1 of 4 modes (`facts`) is playable; `euclid`, `shift`, `long` are 🗺️.
 - [ ] 🗺️ Verifier for LLM-made levels: planned as cartridge-side recompute plus a shipped `levels.schema.json`, with no `src/` change (plan decision D12).
 - [x] `number-workshop` plan approved by the owner (2026-11-14), recommended defaults accepted for Q1–Q7 ([plan README §4](docs/design/number-workshop/README.md)).
 - [ ] 🗺️ Document a per-cartridge `levels` JSON schema that a platform can feed to an LLM (today each cartridge has its own shape, e.g. `balance-scale` vs `pulley-lift`). The platform-side contract for `number-workshop` is drafted in [07-platform-integration.md](docs/design/number-workshop/07-platform-integration.md).

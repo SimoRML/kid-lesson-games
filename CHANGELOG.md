@@ -9,6 +9,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ### Added
 - `AGENTS.md` §0 Mandatory Agent Workflow (plan, branch, multi-agent safety, security, semver, PR, independent review/merge).
 - This changelog.
+- `number-workshop` playable shell + `facts` mode (WP2, 🚧 1 of 4 modes): Division Workshop is now in the playground. Fair-sharing tiers by dividend size (share, deal, array with Check), live HUD, granular undo, tap and drag, symbol-free presentation for ages 3-5, EN/FR, custom `levels` preset, and the shared group-builder and drag widgets. Library UMD bundle grows to ~309 kB.
 - `number-workshop` pure logic (WP1, not yet a playable game): division maths with long-division traces, defensive custom-level parser, procedural level generator, session scoring, and `levels.schema.json`, all under `games/number-workshop/` with tests.
 - Implementation plan for the `number-workshop` division cartridge (`docs/design/number-workshop/`, 8 files: decisions, pedagogy, level schema, architecture, UX, test plan with golden values, work packages, platform contract) and TODO Theme 6 (external lesson-generator integration).
 

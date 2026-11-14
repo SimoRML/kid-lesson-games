@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="nwBg" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </radialGradient>
+  </defs>
+  <rect width="120" height="120" rx="20" fill="url(#nwBg)"/>
+  <circle cx="30" cy="82" r="17" fill="#1e293b" stroke="#c4b5fd" stroke-width="3"/>
+  <circle cx="60" cy="82" r="17" fill="#1e293b" stroke="#c4b5fd" stroke-width="3"/>
+  <circle cx="90" cy="82" r="17" fill="#1e293b" stroke="#c4b5fd" stroke-width="3"/>
+  <circle cx="24" cy="82" r="5.5" fill="#38bdf8"/><circle cx="36" cy="82" r="5.5" fill="#38bdf8"/>
+  <circle cx="54" cy="82" r="5.5" fill="#38bdf8"/><circle cx="66" cy="82" r="5.5" fill="#38bdf8"/>
+  <circle cx="84" cy="82" r="5.5" fill="#38bdf8"/><circle cx="96" cy="82" r="5.5" fill="#38bdf8"/>
+  <circle cx="60" cy="22" r="4" fill="#f8fafc"/>
+  <rect x="42" y="31" width="36" height="6" rx="3" fill="#f8fafc"/>
+  <circle cx="60" cy="46" r="4" fill="#f8fafc"/>
+</svg>
