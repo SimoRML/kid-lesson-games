@@ -7,6 +7,8 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ## [Unreleased]
 
 ### Added
+- GitHub Actions CI workflow (`.github/workflows/ci.yml`) testing across Node 22 and 24 with aggregate `verify` job, SHA-pinned actions, coverage artifact upload, and core modification warning check (T-04).
+- Added `.nvmrc` pinned to Node 24 and `engines.node >=22.0.0` in `package.json`.
 - Implementation plan for the CI, security (secret detection) and npm release pipeline (`docs/design/ci-release-pipeline.md`) and TODO Theme 7. Planning only: no workflow or package change yet.
 
 ## [0.2.0] - 2026-11-14
