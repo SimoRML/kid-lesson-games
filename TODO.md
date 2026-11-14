@@ -105,7 +105,7 @@
 - [ ] 🗺️ Delivery rule for all of the above: small chunks, one concern per branch/PR, small Conventional Commits, following AGENTS.md §0 (plan, branch, verify, docs, independent review).
 
 ### `number-workshop` follow-ups (proposals found while finishing 1.0.0; none is built)
-- [ ] 🗺️ Owner to confirm the French place-value abbreviations (`CM DM UM C D U`) used by `shift`; they are plain strings in `games/number-workshop/i18n.ts`.
+- [x] ✅ French place-value abbreviations (`CM DM UM C D U`) used by `shift` checked on the web against French primary-school materials (a worksheet table header `cM dM uM C D U`; a CM1 lesson naming `UM` and `DM`). They are plain strings in `games/number-workshop/i18n.ts`, so a classroom with other habits changes two lines.
 - [ ] 🗺️ Whole-game height: the long-division stage fits 400 px but HUD + equation + stage scroll in a 400 px viewport; consider a compact HUD for short embeds.
 - [ ] 🗺️ Real-device play-test (touch drag and taps, keyboard-only run, reduced motion, real audio, a child) and screenshots; only jsdom and a desktop browser were used.
 - [ ] 🗺️ Size `facts` and `euclid` widgets from their container (as `shift` and `long` already are) so narrow embeds never overflow.

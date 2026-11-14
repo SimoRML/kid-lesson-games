@@ -196,7 +196,7 @@ All 7 games in `games/*/` support ages **`3-5`**, **`6-8`**, and **`9-11`**, bil
 | [`marble-run-angles`](#4-marble-run-angles--marble-run-angles--) | Marble Run Angles | `spatial` | `3-5`, `6-8`, `9-11` | `geometry`, `angles`, `reflection`, `slopes`, `spatial-reasoning` | `en`, `fr` | ✅ |
 | [`pendulum-rhythm`](#5-pendulum-rhythm--pendulum-rhythm-lab--) | Pendulum Rhythm Lab | `numbers` | `3-5`, `6-8`, `9-11` | `pendulum-physics`, `periodicity`, `fractions`, `rhythm-sync`, `variable-isolation`, `momentum` | `en`, `fr` | ✅ |
 | [`pulley-lift`](#6-pulley-lift--pulley-lift--mechanical-advantage--) | Pulley Lift & Mechanical Advantage | `logic` | `3-5`, `6-8`, `9-11` | `simple-machines`, `fractions`, `work-conservation`, `mechanical-advantage`, `proportional-thinking` | `en`, `fr` | ✅ |
-| [`number-workshop`](games/number-workshop/README.md) | Division Workshop | `numbers` | `3-5`, `6-8`, `9-11` | `division`, `equal-sharing`, `euclidean-division`, `place-value`, `long-division` | `en`, `fr` | ✅ 1.0.0 (4 modes: `facts`, `shift`, `euclid`, `long`; ⚠️ French column abbreviations unconfirmed) |
+| [`number-workshop`](games/number-workshop/README.md) | Division Workshop | `numbers` | `3-5`, `6-8`, `9-11` | `division`, `equal-sharing`, `euclidean-division`, `place-value`, `long-division` | `en`, `fr` | ✅ 1.0.0 (4 modes: `facts`, `shift`, `euclid`, `long`) |
 
 ---
 
