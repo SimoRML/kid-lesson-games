@@ -7,6 +7,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ## [Unreleased]
 
 ### Added
+- Added GitHub Actions release workflow (`.github/workflows/release.yml`) supporting tag-triggered (`v*`) and `workflow_dispatch` dry-run execution, release tag consistency verification, approval-gated npm publish with OIDC provenance, and GitHub Release creation (T-15).
 - Hardened GitHub Pages deployment workflow (`.github/workflows/deploy-pages.yml`) with pinned action commit SHAs, least-privilege permissions scoped to the deploy job, `timeout-minutes`, Node 24 from `.nvmrc`, and `--ignore-scripts` dependency installation (T-18).
 - Added `publint`, `@arethetypeswrong/cli`, and automated tarball smoke test script `scripts/smoke-test.js` to CI, and configured UMD bundle output as `.cjs` for CommonJS compatibility (T-13).
 - Added Node SSR guard in `src/core/KidGameElement.ts` and `src/index.ts` so importing `@simorml/kid-lesson-games` in Node.js / SSR runtimes does not throw `HTMLElement is not defined` (T-17).

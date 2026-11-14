@@ -1,0 +1,189 @@
+name: Release & Publish
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (verify, build, test, pack without publishing to npm or creating live release)'
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-pack:
+    name: verify-and-pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      tarball: ${{ steps.pack.outputs.TARBALL }}
+      is_dry_run: ${{ steps.check_dry_run.outputs.DRY_RUN }}
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Determine run mode
+        id: check_dry_run
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "DRY_RUN=${{ github.event.inputs.dry_run }}" >> $GITHUB_OUTPUT
+          else
+            echo "DRY_RUN=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Read .nvmrc
+        id: nvm
+        run: echo "NODE_VERSION=$(cat .nvmrc | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js ${{ steps.nvm.outputs.NODE_VERSION }}
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate release metadata & version consistency
+        id: version
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$PKG_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG_REF="${{ github.ref_name }}"
+            EXPECTED_TAG="v${PKG_VERSION}"
+            if [ "$TAG_REF" != "$EXPECTED_TAG" ]; then
+              echo "::error::Tag mismatch: tag is '$TAG_REF' but package.json version is '$PKG_VERSION' (expected '$EXPECTED_TAG')"
+              exit 1
+            fi
+
+            # Verify tag commit is on main branch
+            git fetch origin main
+            if ! git merge-base --is-ancestor HEAD origin/main; then
+              echo "::error::Release tag commit must be reachable from main branch!"
+              exit 1
+            fi
+          fi
+
+          # Verify CHANGELOG has heading for this version
+          if ! grep -q "## \[${PKG_VERSION}\]" CHANGELOG.md; then
+            if [ "${{ steps.check_dry_run.outputs.DRY_RUN }}" = "true" ]; then
+              echo "::warning::CHANGELOG.md does not yet have section '## [${PKG_VERSION}]' (acceptable for dry run)"
+            else
+              echo "::error::CHANGELOG.md missing release section '## [${PKG_VERSION}]'!"
+              exit 1
+            fi
+          fi
+
+      - name: Type check (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build library (ES + UMD + declarations)
+        run: npm run build
+
+      - name: Lint package exports and types
+        run: npm run lint:package
+
+      - name: Run automated tarball smoke test
+        run: npm run smoke-test
+
+      - name: Pack release tarball and compute SHA-512
+        id: pack
+        run: |
+          TARBALL=$(npm pack | tail -n 1)
+          echo "TARBALL=$TARBALL" >> $GITHUB_OUTPUT
+          sha512sum "$TARBALL" > "${TARBALL}.sha512"
+          mkdir -p release-artifacts
+          cp "$TARBALL" "${TARBALL}.sha512" release-artifacts/
+          ls -la release-artifacts/
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: release-package
+          path: release-artifacts/
+          retention-days: 7
+
+  publish:
+    name: publish-release
+    needs: [verify-and-pack]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: npm-publish
+      url: https://www.npmjs.com/package/@simorml/kid-lesson-games
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Read .nvmrc
+        id: nvm
+        run: echo "NODE_VERSION=$(cat .nvmrc | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js ${{ steps.nvm.outputs.NODE_VERSION }}
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        with:
+          name: release-package
+          path: release-artifacts
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd release-artifacts
+          TARBALL="${{ needs.verify-and-pack.outputs.tarball }}"
+          IS_DRY_RUN="${{ needs.verify-and-pack.outputs.is_dry_run }}"
+
+          if [ "$IS_DRY_RUN" = "true" ]; then
+            echo "DRY RUN MODE: Skipping npm publish."
+            echo "Would publish: $TARBALL with provenance."
+          else
+            echo "Publishing $TARBALL to npm registry with provenance..."
+            npm publish "$TARBALL" --access public --provenance
+          fi
+
+      - name: Create GitHub Release
+        if: needs.verify-and-pack.outputs.is_dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ needs.verify-and-pack.outputs.version }}"
+          TAG="v${VERSION}"
+          cd release-artifacts
+          TARBALL="${{ needs.verify-and-pack.outputs.tarball }}"
+
+          # Extract changelog section for release notes if available
+          python3 -c "
+          import re, sys
+          content = open('../CHANGELOG.md').read()
+          match = re.search(r'## \[${VERSION}\][^\n]*\n(.*?)(?=\n## \[|\Z)', content, re.DOTALL)
+          if match:
+              open('release-notes.md', 'w').write(match.group(1).strip())
+          else:
+              open('release-notes.md', 'w').write('Release ${VERSION}')
+          " || echo "Release ${VERSION}" > release-notes.md
+
+          gh release create "$TAG" "$TARBALL" "${TARBALL}.sha512" \
+            --title "$TAG" \
+            --notes-file release-notes.md
