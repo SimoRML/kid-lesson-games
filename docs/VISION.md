@@ -45,7 +45,7 @@
 - ✅ **Shared Procedural Web Audio (`SoundEngine`)**: Zero-asset synthesized clicks, pops, drops, chimes, victory fanfares, error buzzes, and custom tones in [audio.ts](../src/core/audio.ts).
 - ✅ **Shared Bilingual i18n (`I18nManager` & `createI18nResolver`)**: English (`en`) and French (`fr`) translations with parameter interpolation in [i18n.ts](../src/core/i18n.ts).
 - ✅ **Per-Cartridge Code-Split ES Chunks**: In ES module builds (`dist/kid-games.es.js`), each game cartridge is split into its own on-demand chunk (`dist/<game-id>-*.js`).
-- ⚠️ **UMD Bundle Code-Splitting Limitation**: UMD (`dist/kid-games.umd.js`) cannot code-split dynamic imports in Vite/Rolldown library mode and instead bundles all cartridges into a single 309 kB file.
+- ⚠️ **UMD Bundle Code-Splitting Limitation**: UMD (`dist/kid-games.umd.js`) cannot code-split dynamic imports in Vite/Rolldown library mode and instead bundles all cartridges into a single 343 kB file.
 - ✅ **`difficulty` Modifier Integration**: `<kid-game difficulty="easy|medium|hard">` is parsed by the core element and injected into `GameContext.difficulty`; all 7 cartridges scale puzzle distractor counts, physical parameters, and tolerances via `generateLevelsForAge(ageGroup, difficulty)` and react live in `updateConfig()`.
 - 🗺️ **Published npm Package (`npm i kid-lesson-games`)**: Currently unpublished (`"private": true` in `package.json`); today consumers install via git dependency, local path, or built bundle script tag.
 - 🗺️ **TypeScript Declaration Output (`dist/index.d.ts`)**: `tsconfig.json` currently uses `"noEmit": true`; generating standalone `.d.ts` files in `dist/` for published npm consumers is planned.

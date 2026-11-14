@@ -39,8 +39,8 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 | Capability / Feature | Status | Reality Check |
 | :--- | :---: | :--- |
 | Universal `<kid-game>` Web Component (Shadow DOM) | ✅ | Implemented in [KidGameElement.ts](src/core/KidGameElement.ts); client-side ready (SSR requires dynamic client import ⚠️) |
-| Auto-Discovery & Lazy ES Chunking (`import.meta.glob`) | ✅ | `dist/kid-games.es.js` (~12.7 kB) lazily loads per-game ES chunks (`dist/<game-id>-*.js`) |
-| UMD Bundle (`dist/kid-games.umd.js`) | ⚠️ | Produced by `npm run build` (~309 kB), but UMD cannot code-split dynamic imports so all 7 games are bundled together |
+| Auto-Discovery & Lazy ES Chunking (`import.meta.glob`) | ✅ | `dist/kid-games.es.js` (~14.0 kB) lazily loads per-game ES chunks (`dist/<game-id>-*.js`) |
+| UMD Bundle (`dist/kid-games.umd.js`) | ⚠️ | Produced by `npm run build` (~343 kB), but UMD cannot code-split dynamic imports so all 7 games are bundled together |
 | Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 7 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `number-workshop`, `pendulum-rhythm`, `pulley-lift`) with a passing Vitest suite |
 | `letters` Curriculum Category | 🗺️ | Taxonomy category `'letters'` exists in `src/core/types.ts`, no letter games built yet |
 | Configurable `levels` + Procedural Fallback | ✅ | All 7 cartridges export `parseCustomLevels()` and fall back to `generateLevelsForAge(ageGroup, difficulty)` |
@@ -74,8 +74,8 @@ Open [http://localhost:3000/kid-lesson-games/](http://localhost:3000/kid-lesson-
 
 ### 3. Build Outputs (`npm run build` vs. `npm run build:pages`)
 - **`npm run build`** (Library mode — ✅ / ⚠️):
-  - `dist/kid-games.es.js` (~12.7 kB) + on-demand chunks (`dist/balance-scale-*.js`, `dist/buoyancy-tank-*.js`, `dist/gear-trains-*.js`, `dist/marble-run-angles-*.js`, `dist/pendulum-rhythm-*.js`, `dist/pulley-lift-*.js`, `dist/audio-*.js`, `dist/i18n-*.js`, `dist/confetti.module-*.js`).
-  - `dist/kid-games.umd.js` (~309 kB single-file UMD bundle containing core + all 7 games; ⚠️ UMD does not code-split).
+  - `dist/kid-games.es.js` (~14.0 kB) + on-demand chunks (`dist/balance-scale-*.js`, `dist/buoyancy-tank-*.js`, `dist/gear-trains-*.js`, `dist/marble-run-angles-*.js`, `dist/pendulum-rhythm-*.js`, `dist/pulley-lift-*.js`, `dist/audio-*.js`, `dist/i18n-*.js`, `dist/confetti.module-*.js`).
+  - `dist/kid-games.umd.js` (~343 kB single-file UMD bundle containing core + all 7 games; ⚠️ UMD does not code-split).
 - **`npm run build:pages`** (Playground static site — ✅):
   - Builds `dist/index.html` and `dist/assets/*.js` with `base: '/kid-lesson-games/'` for GitHub Pages deployment.
 

@@ -79,7 +79,7 @@ With a remainder, the tray relabels itself **left over** and the HUD says why: *
 | `6-8` | 4 | `facts` with divisor 2–5, dividend ≤ 30, remainders at `medium`/`hard`; at `medium` and `hard` the last level is `euclid`. `÷` appears beside the picture. |
 | `9-11` | 5 | `facts` in the array tier (tables 2–9, dividend above 30), a `shift` level (by 10/100, and 1000 at `medium`/`hard`), `euclid` levels (remainder always > 0) and a `long` level (3-digit dividend, 4-digit at `hard`), remainders at `medium`/`hard`. |
 
-`easy` is exact-only and has smaller numbers; see the slot plan in [01-pedagogy-and-modes.md](../../docs/design/number-workshop/01-pedagogy-and-modes.md) §4. Levels never repeat in a set.
+`easy` has smaller numbers and no remainders in `facts` (ages 3-8 are exact-only at `easy`); the `euclid` level at 9-11 always has a remainder, because that is what the mode teaches; see the slot plan in [01-pedagogy-and-modes.md](../../docs/design/number-workshop/01-pedagogy-and-modes.md) §4. Levels never repeat in a set.
 
 ## Semantic colours
 
@@ -99,7 +99,7 @@ All pass WCAG AA (4.5 : 1) for text.
 
 Operands only: the cartridge computes every answer itself, so a wrong answer in the data can never reach a child. Out-of-range or unbuilt-mode levels are skipped; if nothing usable remains, procedural levels are used. Schema: [levels.schema.json](levels.schema.json), rules: [02-level-schema.md](../../docs/design/number-workshop/02-level-schema.md).
 
-Tested example (also the "Custom: Sharing & arrays" preset in the playground; three more presets, "Long division" (`long`, the four golden traces), "Slide the digits" (`shift`, e.g. `{ "mode": "shift", "dividend": 60000, "divisor": 100 }`) and "Fit the groups", hold `euclid` levels from the sample sheet such as `{ "mode": "euclid", "dividend": 78, "divisor": 8 }`):
+Tested example (it is the "Custom: Sharing & arrays" preset in the playground). The playground has five custom presets, each round-trip tested through `parseCustomLevels`: **Sample sheet, 25 levels (all modes)** (the worksheet the cartridge was built from, in order), **Sharing & arrays** (`facts`, below), **Slide the digits** (`shift`, e.g. `{ "mode": "shift", "dividend": 60000, "divisor": 100 }`), **Fit the groups** (`euclid`, e.g. `{ "mode": "euclid", "dividend": 78, "divisor": 8 }`) and **Long division** (`long`, the four golden traces):
 
 ```json
 [

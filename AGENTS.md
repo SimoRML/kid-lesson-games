@@ -361,7 +361,7 @@ this.context.emit('game:complete', {
 1. ⚠️ **Metadata Filename (`game.json` vs `meta.json`)**:
    - Old README text mentioned `meta.json`. In fact, `scripts/create-game.js` generates `game.json`, and all 7 cartridges use `game.json`. `src/index.ts` globs both `game.json` and `meta.json`, so **always use `game.json`** as the canonical filename.
 2. ⚠️ **UMD Bundle Cannot Code-Split (`dist/kid-games.umd.js`)**:
-   - ES module builds (`dist/kid-games.es.js`, ~12.7 kB) split each cartridge into its own on-demand chunk (`dist/<game-id>-*.js`). However, UMD format does not support code-splitting dynamic imports, so `dist/kid-games.umd.js` (~309 kB) bundles all 7 games into a single file.
+   - ES module builds (`dist/kid-games.es.js`, ~14.0 kB) split each cartridge into its own on-demand chunk (`dist/<game-id>-*.js`). However, UMD format does not support code-splitting dynamic imports, so `dist/kid-games.umd.js` (~343 kB) bundles all 7 games into a single file.
 3. ⚠️ **Library Build vs. Playground Build (`vite.config.ts`)**:
    - Default `npm run build` runs Vite in library mode (`build.lib`), which outputs JS bundles to `dist/` and ignores `index.html`. To build the interactive playground static site (`dist/index.html` + `dist/assets/`), use `npm run build:pages` (`vite build --mode pages`).
 4. ⚠️ **Not Published to npm Yet (`"private": true`)**:

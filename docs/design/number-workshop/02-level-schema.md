@@ -66,7 +66,7 @@ A stable string of the parsed set (for example `facts:27:3|shift:60000:100`). Th
 - Same first two parameters as every other cartridge ✅; the third is an injectable random source so tests are deterministic.
 - Implements the bracket and difficulty tables and the invariants of [01-pedagogy-and-modes.md](01-pedagogy-and-modes.md) §4.
 - Builds each level from `(b, q, r)`, then asserts the result against `LIMITS` in a test, so generated levels would also pass `parseCustomLevels`.
-- Only uses modes in `modes`; returns `[]` if that list is empty. While the cartridge is 🚧, a bracket whose modes are not all built gets extra levels of the built modes, so the level count stays as planned.
+- Only uses modes in `modes`; returns `[]` if that list is empty. If a mode in a bracket were not enabled, its slots would be filled by the enabled modes so the level count stays as planned; at `1.0.0` all four modes are built, so every slot uses its own mode.
 - Unknown `ageGroup` or `difficulty` values fall back to `'6-8'` and `'medium'`, matching the host's defaults ✅.
 
 ## 5. Pure maths module (`division.ts`)

@@ -73,7 +73,7 @@ Existing behaviour to know ✅ (see [docs/ARCHITECTURE.md](../../ARCHITECTURE.md
 - The library is not on npm; load the built ES bundle or use a git dependency (AGENTS.md §8.4). In SSR frameworks import it client-side only (§8.6).
 - The `game` attribute should always be a constant chosen by the platform's own code, never text taken from the LLM or from a user.
 
-Planned behaviour of this cartridge 🗺️ ([03-architecture.md](03-architecture.md) §5): `game:progress` and `game:score` once per solved level, `game:complete` once at the end.
+Behaviour of this cartridge ✅ (built and tested; [03-architecture.md](03-architecture.md) §5): `game:progress` and `game:score` once per solved level, `game:complete` once at the end.
 
 ## 5. What the platform does not get (yet)
 

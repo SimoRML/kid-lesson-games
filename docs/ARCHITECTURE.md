@@ -172,7 +172,7 @@ All events are dispatched as standard DOM `CustomEvent` instances on the `<kid-g
 ### H. Build Output Reality ([vite.config.ts](../vite.config.ts)) — ✅ / ⚠️
 
 1. **Library Build (`npm run build` $\rightarrow$ `tsc && vite build`)**:
-   - **ES Module format (`dist/kid-games.es.js`, ~12.7 kB)**: ✅ Code-splits each cartridge into its own on-demand ES chunk:
+   - **ES Module format (`dist/kid-games.es.js`, ~14.0 kB)**: ✅ Code-splits each cartridge into its own on-demand ES chunk:
      - `dist/balance-scale-*.js` (~32 kB)
      - `dist/pulley-lift-*.js` (~42 kB)
      - `dist/gear-trains-*.js` (~42 kB)
@@ -180,7 +180,7 @@ All events are dispatched as standard DOM `CustomEvent` instances on the `<kid-g
      - `dist/pendulum-rhythm-*.js` (~48 kB)
      - `dist/marble-run-angles-*.js` (~50 kB)
      - Shared chunks: `dist/i18n-*.js` (~1.5 kB), `dist/audio-*.js` (~3.3 kB), `dist/confetti.module-*.js` (~13.7 kB)
-   - **UMD format (`dist/kid-games.umd.js`, ~309 kB)**: ⚠️ Because the UMD module format does not support code-splitting dynamic `import()` statements, Vite bundles the core engine, all 7 games, and `canvas-confetti` into a single 309 kB file.
+   - **UMD format (`dist/kid-games.umd.js`, ~343 kB)**: ⚠️ Because the UMD module format does not support code-splitting dynamic `import()` statements, Vite bundles the core engine, all 7 games, and `canvas-confetti` into a single 343 kB file.
 2. **Playground Static Site Build (`npm run build:pages` $\rightarrow$ `tsc && vite build --mode pages`)**:
    - ✅ Builds `index.html` and code-split `dist/assets/*.js` chunks configured with `base: '/kid-lesson-games/'` for deployment to GitHub Pages via `.github/workflows/deploy-pages.yml`.
 

@@ -6,6 +6,8 @@
  * a child), but it proves every level the generator and the preset can
  * produce is actually solvable through the real controls.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SoundEngine } from '../../src/core/audio.js';
 import { I18nManager } from '../../src/core/i18n.js';
@@ -18,19 +20,13 @@ import { factsTier } from './modes/facts.js';
 
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
-const SHEET: Level[] = [
-  ...([[60000, 100], [5000, 10], [10, 10], [200, 100], [3400, 100], [789000, 1000]] as const).map(
-    ([dividend, divisor]) => ({ mode: 'shift', dividend, divisor }) as Level
-  ),
-  ...([[27, 3], [42, 7], [64, 8], [48, 6], [16, 4], [36, 6], [63, 7], [25, 5]] as const).map(
-    ([dividend, divisor]) => ({ mode: 'facts', dividend, divisor }) as Level
-  ),
-  ...([[78, 8], [57, 7], [59, 9], [39, 4], [22, 3], [47, 8], [98, 8], [75, 5], [59, 4]] as const).map(
-    ([dividend, divisor]) => ({ mode: 'euclid', dividend, divisor }) as Level
-  ),
-  { mode: 'long', dividend: 806, divisor: 5 },
-  { mode: 'long', dividend: 568, divisor: 8 }
-];
+/** The 25-level sheet, read from the playground preset so the two can never drift apart. */
+const SHEET: Level[] = (() => {
+  const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+  const match = /\/\*nw-sheet-preset\*\/([\s\S]*?)\/\*end-nw-sheet-preset\*\//.exec(html);
+  if (!match) throw new Error('sheet preset markers not found in index.html');
+  return JSON.parse(match[1]) as Level[];
+})();
 
 function seeded(seed: number): Rng {
   let s = seed >>> 0 || 1;
