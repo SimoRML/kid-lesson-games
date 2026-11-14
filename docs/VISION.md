@@ -103,7 +103,7 @@ The project targets four core educational taxonomy categories across three age b
 | Lazy Per-Game Code Splitting | ES build (`dist/kid-games.es.js`) splits all 7 games into separate chunks | ✅ | UMD build (`dist/kid-games.umd.js`) bundles all games together due to UMD format constraints (⚠️) |
 | Bilingual Localization (`en` / `fr`) | Core `I18nManager` + all 7 cartridges support `en` and `fr` | ✅ | Additional EU locales (`es`, `de`, `it`, `nl`) are 🗺️ Planned |
 | Procedural Web Audio (`SoundEngine`) | Shared `SoundEngine` injected via `context.audio` across all games | ✅ | Complete |
-| `numbers`, `logic`, `spatial` Categories | 6 full physics/math games implemented and tested (500 Vitest tests repo-wide) | ✅ | Expand with Moroccan curriculum games: `money-market`, `number-line`, `fraction-feast` (🗺️) |
+| `numbers`, `logic`, `spatial` Categories | 6 full physics/math games implemented and tested (full Vitest suite) | ✅ | Expand with Moroccan curriculum games: `money-market`, `number-line`, `fraction-feast` (🗺️) |
 | `letters` Curriculum Category | Taxonomy type `'letters'` exists in `GameCategory`, 0 games built | 🗺️ | Scaffold and implement `letter-sound-safari`, `letter-trace`, or `word-builder` |
 | `difficulty` Attribute (`easy`/`medium`/`hard`) | Parsed on `<kid-game>` and passed in `context.difficulty`; all 7 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)` | ✅ | Complete across all cartridges |
 | Cartridge Metadata (`author`, `thumbnail`) | Preserved during registration in `src/index.ts`; all 7 games feature `assets/thumb.svg` vector badges on disk | ✅ | Complete |

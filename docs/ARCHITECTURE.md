@@ -87,7 +87,7 @@ When [src/index.ts](../src/index.ts) is imported:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `game` | `el.gameId` (⚠️ not `el.game`) | *(use `setAttribute('game', id)`)* | `string` | `""` | ✅ Changing `game` increments `currentLoadToken`, tears down the active game, and mounts the new cartridge. |
 | `age` | `el.age` | *(use `setAttribute('age', val)`)* | `'3-5' \| '6-8' \| '9-11'` | `'6-8'` | ✅ Invalid values fall back to `'6-8'`. Updates running game via `updateConfig()`. |
-| `difficulty` | `el.difficulty` | *(use `setAttribute('difficulty', val)`)* | `'easy' \| 'medium' \| 'hard'` | `'medium'` | ✅ Parsed and forwarded in `context.difficulty`. All 6 cartridges scale distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)`. |
+| `difficulty` | `el.difficulty` | *(use `setAttribute('difficulty', val)`)* | `'easy' \| 'medium' \| 'hard'` | `'medium'` | ✅ Parsed and forwarded in `context.difficulty`. All 7 cartridges scale distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)`. |
 | `sound` | `el.sound` | *(use `setAttribute('sound', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ Updates `el.audio.enabled` and calls `updateConfig()`. |
 | `autostart` | `el.autostart` | *(use `setAttribute('autostart', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ When `true`, automatically calls `game.start()` and emits `game:start` after `mount()`. |
 | `locale` | `el.locale` | *(use `setAttribute('locale', val)`)* | `string` | `'en'` | ✅ Updates `el.i18n.locale` and calls `updateConfig()`. Core & all 7 games bundle `'en'` and `'fr'`. |

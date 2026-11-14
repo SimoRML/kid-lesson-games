@@ -41,9 +41,9 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 | Universal `<kid-game>` Web Component (Shadow DOM) | ✅ | Implemented in [KidGameElement.ts](src/core/KidGameElement.ts); client-side ready (SSR requires dynamic client import ⚠️) |
 | Auto-Discovery & Lazy ES Chunking (`import.meta.glob`) | ✅ | `dist/kid-games.es.js` (~12.7 kB) lazily loads per-game ES chunks (`dist/<game-id>-*.js`) |
 | UMD Bundle (`dist/kid-games.umd.js`) | ⚠️ | Produced by `npm run build` (~309 kB), but UMD cannot code-split dynamic imports so all 7 games are bundled together |
-| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with 500 passing Vitest tests across the repo; plus `number-workshop` 🚧 (division, 1 of 4 modes, see the catalog) |
+| Grounded Math & Physics Cartridges (`numbers`, `logic`, `spatial`) | ✅ | 6 playable cartridges (`balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `pendulum-rhythm`, `pulley-lift`) with a passing Vitest suite; plus `number-workshop` 🚧 (division, 1 of 4 modes, see the catalog) |
 | `letters` Curriculum Category | 🗺️ | Taxonomy category `'letters'` exists in `src/core/types.ts`, no letter games built yet |
-| Configurable `levels` + Procedural Fallback | ✅ | All 6 cartridges export `parseCustomLevels()` and fall back to `generateLevelsForAge(ageGroup, difficulty)` |
+| Configurable `levels` + Procedural Fallback | ✅ | All 7 cartridges export `parseCustomLevels()` and fall back to `generateLevelsForAge(ageGroup, difficulty)` |
 | Multilingual UI (`en` & `fr`) | ✅ | Core `I18nManager` + all 7 cartridges provide full English (`en`) and French (`fr`) dictionaries |
 | Zero-Asset Procedural Web Audio (`SoundEngine`) | ✅ | Synthesizes clicks, pops, drops, chimes, victory fanfares, error buzzes, and custom tones |
 | Telemetry Event Bridge (`game:*` CustomEvents) | ✅ | Dispatched on `<kid-game>` with `bubbles: true, composed: true` to cross Shadow DOM boundaries |
@@ -62,7 +62,7 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 git clone https://github.com/simorml/kid-lesson-games.git
 cd kid-lesson-games
 npm install
-npm test          # Runs 500 Vitest unit & DOM lifecycle tests
+npm test          # Runs the Vitest unit & DOM lifecycle tests
 npm run build     # Type-checks & builds ES chunks + UMD bundle in dist/
 ```
 

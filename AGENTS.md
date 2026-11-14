@@ -374,7 +374,7 @@ this.context.emit('game:complete', {
    - The getter for the `game` attribute is `el.gameId` (there is no `el.game` property).
    - Only `el.levels` has a JS property setter (`el.levels = [...]`). Once `el.levels` is set to a non-null value via JS property, `this._customLevels` takes precedence over `el.setAttribute('levels', ...)` until `el.levels = null` is assigned.
 8. ✅ **`context.difficulty` Wiring (resolved)**:
-   - `<kid-game difficulty="easy|medium|hard">` is parsed and passed in `context.difficulty`. All 6 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(ageGroup, difficulty)` and reload on `updateConfig`.
+   - `<kid-game difficulty="easy|medium|hard">` is parsed and passed in `context.difficulty`. All 7 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(ageGroup, difficulty)` and reload on `updateConfig`.
 9. ✅ **`src/index.ts` Preserves `author` and `thumbnail` & Thumbnails Present (resolved)**:
    - `src/index.ts` registers `GameMetadata` with `raw.author` and `raw.thumbnail`, and all 7 games feature on-theme `assets/thumb.svg` vector badges.
 10. ✅ **`games/balance-scale` Lifecycle (resolved)**:

@@ -33,7 +33,7 @@
 - [x] ✅ Establish Git repository structure with `.brainstorm/` ignored for private ideation.
 - [x] ✅ Automatic cartridge discovery via Vite `import.meta.glob` (`games/*/{game,meta}.json` eagerly + `games/*/index.ts` lazily) with zero edits to `src/`.
 - [x] ✅ Contributor CLI scaffolding tool (`npm run create-game <game-id>` in [scripts/create-game.js](scripts/create-game.js)).
-- [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, 13 test files / 277 tests passing).
+- [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, initially 13 test files / 277 tests; the full suite has grown since).
 - [x] ✅ Upgrade `scripts/create-game.js` to scaffold `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, `pause()`/`resume()`, and `AbortController` zero-leak teardown boilerplate.
 - [x] ✅ Bring `games/balance-scale` lifecycle teardown up to the strict zero-leak standard of the newer 5 cartridges (remove `window` mouse/touch listeners via `AbortController`, clear win `setTimeout`s in `destroy()`, implement `pause()`/`resume()`, and add `games/balance-scale/README.md`).
 - [x] ✅ Add missing `assets/thumb.svg` thumbnails for `balance-scale`, `buoyancy-tank`, `marble-run-angles`, and `pulley-lift` (all 7 games now have vector SVG thumbnails).
