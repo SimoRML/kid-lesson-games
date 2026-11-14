@@ -101,6 +101,16 @@ describe('number-workshop shell', () => {
       expect(parsed?.map((l) => l.dividend)).toEqual([12, 27, 25, 63, 47]);
     });
 
+    it('the shift preset in index.html round-trips through parseCustomLevels', () => {
+      const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+      const match = /\/\*nw-shift-preset\*\/([\s\S]*?)\/\*end-nw-shift-preset\*\//.exec(html);
+      expect(match).not.toBeNull();
+      const raw: unknown = JSON.parse(match![1]);
+      const parsed = parseCustomLevels(raw);
+      expect(parsed).toHaveLength((raw as unknown[]).length);
+      expect(parsed?.every((l) => l.mode === 'shift')).toBe(true);
+    });
+
     it('the euclid preset in index.html round-trips through parseCustomLevels', () => {
       const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
       const match = /\/\*nw-euclid-preset\*\/([\s\S]*?)\/\*end-nw-euclid-preset\*\//.exec(html);
@@ -109,6 +119,19 @@ describe('number-workshop shell', () => {
       const parsed = parseCustomLevels(raw);
       expect(parsed).toHaveLength((raw as unknown[]).length);
       expect(parsed?.every((l) => l.mode === 'euclid')).toBe(true);
+    });
+  });
+
+  describe('shift levels in the shell', () => {
+    it('shows the division anchor and writes the quotient into it after the right slides', () => {
+      s = setup({ customLevels: [{ mode: 'shift', dividend: 60000, divisor: 100 }] });
+      expect(q(s, '.nw-sr')?.textContent).toBe('60,000 ÷ 100 = ?');
+      const btns = s.container.querySelectorAll<HTMLButtonElement>('.nw-shift-buttons .nw-btn');
+      btns[1].click();
+      btns[1].click();
+      q(s, '.nw-check')?.click();
+      expect(q(s, '.nw-sr')?.textContent).toBe('60,000 ÷ 100 = 600');
+      expect(events(s, 'game:progress')).toEqual([{ step: 1, total: 1, detail: 'shift 60000÷100' }]);
     });
   });
 

@@ -36,8 +36,8 @@ export interface DragOptions {
   /** Fired for a click, a tap, or a keyboard activation. */
   onTap?: () => void;
   onDragStart?: () => void;
-  /** Fired once the drag ends, with the pointer position. */
-  onDrop?: (point: Point) => void;
+  /** Fired once the drag ends, with the pointer position and the movement since the press. */
+  onDrop?: (point: Point, delta: Point) => void;
   threshold?: number;
 }
 
@@ -127,7 +127,9 @@ export function attachTapOrDrag(el: HTMLElement, opts: DragOptions): void {
         el.classList.remove('nw-dragging');
         el.style.transform = '';
         lastDragEnd = Date.now();
-        if (enabled()) opts.onDrop?.({ x: m.clientX, y: m.clientY });
+        if (enabled()) {
+          opts.onDrop?.({ x: m.clientX, y: m.clientY }, { x: m.clientX - start.x, y: m.clientY - start.y });
+        }
       };
 
       const cancel = (): void => {
