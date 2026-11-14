@@ -112,7 +112,7 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 
 ### P3: release
 - [ ] **T-15** `release.yml` with verify + approval-gated OIDC publish + GitHub Release, dry-run only ([§7.1](#71-releaseyml)).
-- [ ] **T-18** Harden `deploy-pages.yml` ([§7.2](#72-deploy-pagesyml)).
+- [x] ✅ **T-18** Harden `deploy-pages.yml` ([§7.2](#72-deploy-pagesyml)).
 - [ ] **T-16** Remove `"private": true`, update AGENTS.md §0/§9, first `rc` publish, configure Trusted Publisher on npmjs.com, promote to `latest`.
 
 ## 9. Risks and rollback
