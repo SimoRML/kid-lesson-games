@@ -116,6 +116,22 @@ The bracket table above is the outer envelope; each cell below narrows it. Where
 | `6-8` | exact only, divisor 2–3, all four levels `facts` | remainders in about half the levels, divisor 2–5, `euclid` finale | remainder in most levels, divisor 2–5, `euclid` finale |
 | `9-11` | exact `facts`; `shift` by 10/100; `long` with first digit ≥ divisor and no zero in the quotient | sheet-like mix, remainders, `shift` by 1000 | `long` with a first digit below the divisor or a zero in the quotient, 4-digit dividends; `euclid` gap unmarked |
 
+### Slot plan (as implemented in WP1)
+
+The tables above left a few details open; WP1 fixed them as follows. Each slot is `mode` plus a remainder rule: *exact*, *rem* (remainder > 0), or *any*.
+
+| Age | `easy` | `medium` | `hard` |
+|---|---|---|---|
+| `3-5` | facts ×3, exact | facts ×3, exact | facts ×3, exact |
+| `6-8` | facts ×4, exact | facts exact, facts rem, facts exact, euclid rem | facts exact, facts rem, facts rem, euclid rem |
+| `9-11` | facts exact ×2, shift, euclid rem, long exact | facts exact, shift, euclid rem ×2, long any | facts rem, shift, euclid rem, long any ×2 |
+
+- The fifth `9-11` level doubles `facts` at `easy`, `euclid` at `medium`, and `long` at `hard`.
+- `9-11` `facts` keeps the quotient within the tables too (2–9), with a dividend above 30 so the Array tier is used.
+- `euclid` always has a remainder: an exact case is just a `facts` level in disguise.
+- A slot whose mode is not built is filled by the first built mode allowed for the bracket (`3-5`: facts; `6-8`: facts, euclid; `9-11`: all), keeping its remainder rule, except that ages 3–5 stay exact.
+- Levels never repeat within a set.
+
 ### Anti-mirroring and variety rules (generator invariants, all tested)
 
 - Never the trivial case: quotient ≥ 2 and divisor ≥ 2 in every generated level (one token per plate, or one plate, teaches nothing).

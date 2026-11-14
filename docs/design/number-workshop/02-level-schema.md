@@ -45,7 +45,7 @@ Every item of the sample sheet fits these limits ✅ (checked by computation on 
 
 ## 3. `parseCustomLevels(raw: unknown, modes = BUILT_MODES): Level[] | null`
 
-Pure, deterministic, no DOM, never throws. The optional `modes` list says which modes are accepted; it defaults to the modes that are built, and tests pass all four.
+Pure, deterministic, no DOM, never throws (the whole parse runs inside a `try/catch` that returns `null`, so even a throwing getter or proxy cannot break the game). The optional `modes` list says which modes are accepted; it defaults to the modes that are built, and tests pass all four.
 
 1. If `raw` is a string: reject if longer than 20 000 characters, else `JSON.parse` inside `try/catch`; failure → `null`.
 2. Unwrap the envelope if `raw` is a non-array object with a `levels` array (and check `version`). A single level object is accepted as a one-item array.

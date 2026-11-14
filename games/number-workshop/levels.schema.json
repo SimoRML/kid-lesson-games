@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "number-workshop levels",
+  "description": "Custom levels for the number-workshop cartridge: operands only, never answers (the cartridge computes every answer itself). Three rules cannot be expressed here and must be checked separately: (1) dividend >= divisor in every mode; (2) in 'shift', dividend is a multiple of divisor; (3) the quotient floor(dividend / divisor) is at most 12 in 'facts' and at most 20 in 'euclid'. A level that breaks a rule is skipped by the cartridge, never adjusted. Unknown keys are ignored.",
+  "oneOf": [
+    { "$ref": "#/$defs/levelList" },
+    { "$ref": "#/$defs/level" },
+    {
+      "type": "object",
+      "required": ["levels"],
+      "properties": {
+        "version": { "const": 1 },
+        "levels": { "$ref": "#/$defs/levelList" }
+      }
+    }
+  ],
+  "$defs": {
+    "levelList": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 30,
+      "items": { "$ref": "#/$defs/level" }
+    },
+    "level": {
+      "oneOf": [
+        { "$ref": "#/$defs/facts" },
+        { "$ref": "#/$defs/shift" },
+        { "$ref": "#/$defs/euclid" },
+        { "$ref": "#/$defs/long" }
+      ]
+    },
+    "facts": {
+      "type": "object",
+      "description": "Fair sharing / times-table division, e.g. 27 ÷ 3.",
+      "required": ["mode", "dividend", "divisor"],
+      "properties": {
+        "mode": { "const": "facts" },
+        "dividend": { "type": "integer", "minimum": 2, "maximum": 100 },
+        "divisor": { "type": "integer", "minimum": 2, "maximum": 10 },
+        "theme": { "enum": ["dates", "apples", "marbles", "stars"] }
+      }
+    },
+    "shift": {
+      "type": "object",
+      "description": "Exact division by 10, 100 or 1000, e.g. 60000 ÷ 100.",
+      "required": ["mode", "dividend", "divisor"],
+      "properties": {
+        "mode": { "const": "shift" },
+        "dividend": { "type": "integer", "minimum": 10, "maximum": 999999 },
+        "divisor": { "enum": [10, 100, 1000] }
+      }
+    },
+    "euclid": {
+      "type": "object",
+      "description": "Euclidean division written as an equality, e.g. 78 = (8 × q) + r.",
+      "required": ["mode", "dividend", "divisor"],
+      "properties": {
+        "mode": { "const": "euclid" },
+        "dividend": { "type": "integer", "minimum": 2, "maximum": 150 },
+        "divisor": { "type": "integer", "minimum": 2, "maximum": 12 }
+      }
+    },
+    "long": {
+      "type": "object",
+      "description": "Written long division by a one-digit divisor, e.g. 806 ÷ 5.",
+      "required": ["mode", "dividend", "divisor"],
+      "properties": {
+        "mode": { "const": "long" },
+        "dividend": { "type": "integer", "minimum": 10, "maximum": 9999 },
+        "divisor": { "type": "integer", "minimum": 2, "maximum": 9 }
+      }
+    }
+  }
+}

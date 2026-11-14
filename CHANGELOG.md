@@ -9,6 +9,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ### Added
 - `AGENTS.md` §0 Mandatory Agent Workflow (plan, branch, multi-agent safety, security, semver, PR, independent review/merge).
 - This changelog.
+- `number-workshop` pure logic (WP1, not yet a playable game): division maths with long-division traces, defensive custom-level parser, procedural level generator, session scoring, and `levels.schema.json`, all under `games/number-workshop/` with tests.
 - Implementation plan for the `number-workshop` division cartridge (`docs/design/number-workshop/`, 8 files: decisions, pedagogy, level schema, architecture, UX, test plan with golden values, work packages, platform contract) and TODO Theme 6 (external lesson-generator integration).
 
 ### Fixed
