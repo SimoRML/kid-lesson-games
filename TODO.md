@@ -92,7 +92,7 @@ Full plan, decisions and per-task detail: [docs/design/ci-release-pipeline.md](d
 
 - [x] ✅ **P0** Repo settings: secret scanning + push protection, read-only token, `npm-publish` Environment, npm 2FA ([T-01..03](docs/design/ci-release-pipeline.md#p0-settings-owner-action-no-pr)).
 - [x] ✅ **P1** PR CI with `verify` aggregate check + `main` ruleset ([T-04, T-05](docs/design/ci-release-pipeline.md#p1-ci--security-prs-start-here)).
-- [ ] 🚧 **P1** gitleaks, CodeQL, Dependency Review, audit gate, Dependabot, `SECURITY.md`, `CODEOWNERS`, PR template ([T-06..08](docs/design/ci-release-pipeline.md#p1-ci--security-prs-start-here)).
+- [x] ✅ **P1** gitleaks, CodeQL, Dependency Review, audit gate, Dependabot, `SECURITY.md`, `CODEOWNERS`, PR template ([T-06..08](docs/design/ci-release-pipeline.md#p1-ci--security-prs-start-here)).
 - [ ] 🗺️ **P2** Publishable package: `LICENSE`, `.d.ts`, trimmed `files`, `prepack`, rename to `@simorml/kid-lesson-games`, publint/attw, remove `matter-js`, SSR guard ([T-09..14, T-17](docs/design/ci-release-pipeline.md#p2-publishable-package)).
 - [ ] 🗺️ **P3** Tag-triggered OIDC release with provenance, Pages deploy hardening, un-private + first `rc` ([T-15, T-16, T-18](docs/design/ci-release-pipeline.md#p3-release)).
 
