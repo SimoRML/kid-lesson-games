@@ -72,7 +72,7 @@ describe('attachTapOrDrag', () => {
     expect(btn.classList.contains('nw-dragging')).toBe(true);
     window.dispatchEvent(mouse('pointerup', 30, 40));
     expect(onDragStart).toHaveBeenCalledTimes(1);
-    expect(onDrop).toHaveBeenCalledWith({ x: 30, y: 40 });
+    expect(onDrop).toHaveBeenCalledWith({ x: 30, y: 40 }, { x: 30, y: 40 });
     expect(btn.style.transform).toBe('');
     btn.click();
     expect(onTap).not.toHaveBeenCalled();

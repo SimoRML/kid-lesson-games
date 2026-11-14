@@ -134,10 +134,10 @@ describe('parseCustomLevels: whole-input rejection', () => {
 
   it('accepts no mode at all with an empty mode list, and only built modes by default', () => {
     expect(parseCustomLevels(SHEET_LEVELS, [])).toBeNull();
-    expect(BUILT_MODES).toEqual(['facts', 'euclid']);
+    expect(BUILT_MODES).toEqual(['facts', 'shift', 'euclid']);
     const byDefault = parseCustomLevels(SHEET_LEVELS);
-    expect(byDefault).toHaveLength(17);
-    expect(byDefault?.every((l) => l.mode === 'facts' || l.mode === 'euclid')).toBe(true);
+    expect(byDefault).toHaveLength(23);
+    expect(byDefault?.every((l) => l.mode !== 'long')).toBe(true);
   });
 });
 

@@ -1,4 +1,4 @@
-# 🧮 Division Workshop (`number-workshop`) — 🚧 2 of 4 modes
+# 🧮 Division Workshop (`number-workshop`) — 🚧 3 of 4 modes
 
 Teaches **division as fair sharing and grouping**, and the one statement behind it:
 
@@ -13,11 +13,19 @@ Plan and decisions: [docs/design/number-workshop/](../../docs/design/number-work
 | Mode | What the child does | Status |
 |---|---|---|
 | `facts` | Shares tokens equally onto plates, or builds rows of `b` | ✅ playable |
-| `shift` | Slides digits to divide by 10, 100, 1000 | 🗺️ planned (WP4) |
+| `shift` | Slides digits in a place-value table to divide by 10, 100, 1000 | ✅ playable |
 | `euclid` | Completes `78 = (8 × ☐) + ☐`: fits groups on a number track, types the remainder | ✅ playable |
 | `long` | Written long division, digit by digit | 🗺️ planned (WP5) |
 
-While only `facts` and `euclid` are built, the procedural generator and the custom-level parser only produce and accept those two modes; a slot of a mode that is not built yet is filled by `facts` (or `euclid`), and a custom level of an unbuilt mode is skipped, never rendered. Ages `9-11` therefore play `facts` (array tier) and `euclid` levels until `shift` and `long` land.
+While only `facts`, `shift` and `euclid` are built, the procedural generator and the custom-level parser only produce and accept those three modes; a slot of a mode that is not built yet is filled by `facts` (or `euclid`), and a custom level of an unbuilt mode is skipped, never rendered. Ages `9-11` therefore play `facts` (array tier), `shift` and `euclid` levels until `long` lands (its slot is filled by `facts`).
+
+## `shift`: slide the digits
+
+A place-value table with one column per position (`HTh TTh Th H T O` in English, `CM DM UM C D U` in French ⚠️ the French abbreviations still need confirming against the classroom's habit) holds the dividend's digits. The child slides the whole digit strip one column to the right, by the **÷10 →** button or by dragging the strip (whole columns, stopping at the first refusal), and **← ×10** slides back. A counter reads `÷10 × 2 = ÷100`. Every slide is one division by ten, so the lesson is place value, not "cross out the zeros".
+
+- A digit that would fall off the right edge must be a zero. If it is not (for example a third slide of `3 400`), the strip refuses to move and the HUD explains that only zeros can leave. A refusal is gentle feedback, not a mistake.
+- **Check** compares the number of slides with the divisor. Too few and too many each give a hint that names the count ("÷100 is 2 slides. You made 1: keep sliding.") and count one mistake.
+- Slides are capped at 4; the digits that fell off stay visible, dimmed, in a hatched area beside the table. Six-digit dividends (`789 000`) fill all six columns and fit at 375 px.
 
 ## `euclid`: fit the groups
 
@@ -49,7 +57,7 @@ With a remainder, the tray relabels itself **left over** and the HUD says why: *
 |---|---|---|
 | `3-5` | 3 | `facts` share tier, always exact, divisor 2–4 by difficulty. **No `÷` and no equation anywhere**: sentences only ("Give each of the 3 friends…", "Each friend has 4 dates."). |
 | `6-8` | 4 | `facts` with divisor 2–5, dividend ≤ 30, remainders at `medium`/`hard`; at `medium` and `hard` the last level is `euclid`. `÷` appears beside the picture. |
-| `9-11` | 5 | `facts` in the array tier (tables 2–9, dividend above 30) plus `euclid` levels (remainder always > 0), remainders at `medium`/`hard`. |
+| `9-11` | 5 | `facts` in the array tier (tables 2–9, dividend above 30), a `shift` level (by 10/100, and 1000 at `medium`/`hard`) and `euclid` levels (remainder always > 0), remainders at `medium`/`hard`. |
 
 `easy` is exact-only and has smaller numbers; see the slot plan in [01-pedagogy-and-modes.md](../../docs/design/number-workshop/01-pedagogy-and-modes.md) §4. Levels never repeat in a set.
 
@@ -71,7 +79,7 @@ All pass WCAG AA (4.5 : 1) for text.
 
 Operands only: the cartridge computes every answer itself, so a wrong answer in the data can never reach a child. Out-of-range or unbuilt-mode levels are skipped; if nothing usable remains, procedural levels are used. Schema: [levels.schema.json](levels.schema.json), rules: [02-level-schema.md](../../docs/design/number-workshop/02-level-schema.md).
 
-Tested example (also the "Custom: Sharing & arrays" preset in the playground; a second preset, "Fit the groups", holds `euclid` levels from the sample sheet such as `{ "mode": "euclid", "dividend": 78, "divisor": 8 }`):
+Tested example (also the "Custom: Sharing & arrays" preset in the playground; two more presets, "Slide the digits" (`shift`, e.g. `{ "mode": "shift", "dividend": 60000, "divisor": 100 }`) and "Fit the groups", hold `euclid` levels from the sample sheet such as `{ "mode": "euclid", "dividend": 78, "divisor": 8 }`):
 
 ```json
 [
@@ -95,7 +103,7 @@ Tested example (also the "Custom: Sharing & arrays" preset in the playground; a 
 
 ## Files
 
-`index.ts` (shell, lifecycle) · `modes/facts.ts` · `modes/euclid.ts` · `modes/index.ts` (registry) · `modes/types.ts` · `widgets/drag.ts` · `widgets/group-builder.ts` · `widgets/keypad.ts` · `i18n.ts` · `styles.ts` · pure logic `division.ts`, `levels.ts`, `session.ts` · a test file beside each module.
+`index.ts` (shell, lifecycle) · `modes/facts.ts` · `modes/shift.ts` · `modes/euclid.ts` · `modes/index.ts` (registry) · `modes/types.ts` · `widgets/drag.ts` · `widgets/group-builder.ts` · `widgets/keypad.ts` · `i18n.ts` · `styles.ts` · pure logic `division.ts`, `levels.ts`, `session.ts` · a test file beside each module.
 
 ## Not verified by tests
 

@@ -57,6 +57,18 @@ export interface Dictionary {
   leftOverWhy(r: string, plates: string, theme: FactsTheme, friends: boolean): string;
   /** Left-over explanation in the array tier, where the child builds rows. */
   arrayLeftOver(r: string, b: string, theme: FactsTheme): string;
+  /** Place-value column labels, thousands to units, six of them. */
+  columns: readonly string[];
+  slideBtn: string;
+  slideBackBtn: string;
+  stripLabel: string;
+  tableLabel(value: string): string;
+  shiftPrompt(a: string, b: string): string;
+  /** Counter such as `÷10 × 2 = ÷100`; `n` slides and the divisor they equal. */
+  shiftCounter(n: number, nText: string, divisor: string): string;
+  shiftTooFew(b: string, need: string, needCount: number, made: string): string;
+  shiftTooMany(b: string, need: string, needCount: number, made: string): string;
+  shiftRefuse: string;
   keypadLabel: string;
   backspaceLabel: string;
   remainderPrompt: string;
@@ -128,6 +140,18 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
       }, so they cannot be shared equally.`,
     arrayLeftOver: (r, b, theme) =>
       `${r} ${EN_NOUNS[theme][r === '1' ? 0 : 1]} left over: fewer than ${b}, so they cannot make another row of ${b}.`,
+    columns: ['HTh', 'TTh', 'Th', 'H', 'T', 'O'],
+    slideBtn: '÷10 →',
+    slideBackBtn: '← ×10',
+    stripLabel: 'Digit strip: drag it right to divide by ten',
+    tableLabel: (v) => `Place-value table showing ${v}`,
+    shiftPrompt: (a, b) => `Slide the digits of ${a} to the right to divide by ${b}.`,
+    shiftCounter: (n, nText, d) => (n === 0 ? 'no slides yet' : n === 1 ? '÷10' : `÷10 × ${nText} = ÷${d}`),
+    shiftTooFew: (b, need, n, made) =>
+      `÷${b} is ${need} ${n === 1 ? 'slide' : 'slides'}. You made ${made}: keep sliding.`,
+    shiftTooMany: (b, need, n, made) =>
+      `÷${b} is ${need} ${n === 1 ? 'slide' : 'slides'}. You made ${made}: slide some back.`,
+    shiftRefuse: 'Only zeros can slide off the table. This strip stays here.',
     keypadLabel: 'Number keys',
     backspaceLabel: 'Delete last digit',
     remainderPrompt: 'Left over:',
@@ -189,6 +213,18 @@ export const DICTIONARY: Record<Lang, Dictionary> = {
       }, donc impossible de les partager équitablement.`,
     arrayLeftOver: (r, b, theme) =>
       `${r} ${FR_NOUNS[theme][r === '1' || r === '0' ? 0 : 1]} qui restent : moins que ${b}, donc pas assez pour une autre rangée de ${b}.`.replace(' : ', '\u202f: '),
+    columns: ['CM', 'DM', 'UM', 'C', 'D', 'U'],
+    slideBtn: '÷10 →',
+    slideBackBtn: '← ×10',
+    stripLabel: 'Bande de chiffres : fais-la glisser vers la droite pour diviser par dix',
+    tableLabel: (v) => `Tableau de numération affichant ${v}`,
+    shiftPrompt: (a, b) => `Fais glisser les chiffres de ${a} vers la droite pour diviser par ${b}.`,
+    shiftCounter: (n, nText, d) => (n === 0 ? 'aucun glissement' : n === 1 ? '÷10' : `÷10 × ${nText} = ÷${d}`),
+    shiftTooFew: (b, need, n, made) =>
+      `÷${b} fait ${need} ${n === 1 ? 'glissement' : 'glissements'}. Tu en as fait ${made} : continue.`,
+    shiftTooMany: (b, need, n, made) =>
+      `÷${b} fait ${need} ${n === 1 ? 'glissement' : 'glissements'}. Tu en as fait ${made} : reviens en arrière.`,
+    shiftRefuse: 'Seuls les zéros peuvent sortir du tableau. La bande reste ici.',
     keypadLabel: 'Touches numériques',
     backspaceLabel: 'Effacer le dernier chiffre',
     remainderPrompt: 'Reste :',

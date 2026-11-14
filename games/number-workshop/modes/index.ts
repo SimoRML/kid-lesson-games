@@ -6,9 +6,11 @@
 
 import { createEuclidMode } from './euclid.js';
 import { createFactsMode } from './facts.js';
+import { createShiftMode } from './shift.js';
 import type { ModeController, ModeId } from './types.js';
 
 export const MODE_REGISTRY: Partial<Record<ModeId, () => ModeController>> = {
   facts: createFactsMode,
+  shift: createShiftMode,
   euclid: createEuclidMode
 };
