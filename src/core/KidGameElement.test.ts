@@ -132,6 +132,70 @@ describe('KidGameElement', () => {
     document.body.removeChild(element);
   });
 
+  it('renders an error message containing markup as plain text', async () => {
+    const payload = '<img src=x onerror="window.__kidGameInjected = true">';
+    const element = document.createElement('kid-game') as KidGameElement;
+    element.setAttribute('game', payload);
+
+    let errorMessage = '';
+    element.addEventListener('game:error', (event) => {
+      errorMessage = (event as CustomEvent<{ message: string }>).detail.message;
+    });
+
+    document.body.appendChild(element);
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const statusScreen = element.shadowRoot?.querySelector('#status') as HTMLElement;
+    expect(statusScreen.style.display).toBe('flex');
+    expect(element.shadowRoot?.querySelector('img')).toBeNull();
+    expect(statusScreen.querySelector('.error-title')?.textContent).toBe(element.i18n.t('error'));
+    expect(statusScreen.textContent).toContain(payload);
+    expect(errorMessage).toContain(payload);
+
+    document.body.removeChild(element);
+  });
+
+  it('renders the loading screen as a spinner plus text', async () => {
+    const uniqueId = `kid-game-loading-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    let finishMount: () => void = () => undefined;
+    const fakeGame: KidGame = {
+      mount: () => new Promise<void>((resolve) => { finishMount = resolve; }),
+      start: () => undefined,
+      destroy: () => undefined
+    };
+    registry.register(
+      {
+        id: uniqueId,
+        title: 'Loading Test Game',
+        version: '1.0.0',
+        description: 'Validates loading screen',
+        category: 'logic',
+        ageGroups: ['6-8'],
+        skills: ['patience']
+      },
+      async () => fakeGame
+    );
+
+    const element = document.createElement('kid-game') as KidGameElement;
+    element.setAttribute('game', uniqueId);
+    document.body.appendChild(element);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const statusScreen = element.shadowRoot?.querySelector('#status') as HTMLElement;
+    expect(statusScreen.style.display).toBe('flex');
+    expect(statusScreen.children).toHaveLength(2);
+    expect(statusScreen.children[0].className).toBe('spinner');
+    expect(statusScreen.children[1].textContent).toBe(element.i18n.t('loading'));
+
+    finishMount();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(statusScreen.style.display).toBe('none');
+
+    document.body.removeChild(element);
+  });
+
   it('injects audio and i18n into GameContext and propagates sound and locale dynamically', async () => {
     const uniqueId = `audio-i18n-test-${Date.now()}`;
     const metadata: GameMetadata = {
