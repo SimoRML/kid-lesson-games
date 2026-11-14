@@ -4,21 +4,19 @@
   "private": true,
   "description": "Pluggable mini web games collection for youngsters",
   "type": "module",
-  "main": "./dist/kid-games.umd.js",
+  "main": "./dist/kid-games.umd.cjs",
   "module": "./dist/kid-games.es.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/kid-games.es.js",
-      "require": "./dist/kid-games.umd.js",
       "default": "./dist/kid-games.es.js"
-    },
-    "./dist/*": "./dist/*"
+    }
   },
   "sideEffects": [
     "./dist/kid-games.es.js",
-    "./dist/kid-games.umd.js"
+    "./dist/kid-games.umd.cjs"
   ],
   "repository": {
     "type": "git",
@@ -43,6 +41,8 @@
     "build:types": "tsc -p tsconfig.build.json",
     "build": "tsc && vite build && npm run build:types",
     "build:pages": "tsc && vite build --mode pages",
+    "lint:package": "publint && attw --pack . --ignore-rules cjs-resolves-to-esm",
+    "smoke-test": "node scripts/smoke-test.js",
     "prepack": "npm run build",
     "preview": "vite preview",
     "create-game": "node scripts/create-game.js",
@@ -64,10 +64,12 @@
     "node": ">=22.0.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^3.2.7",
     "jsdom": "^26.1.0",
+    "publint": "^0.3.25",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vitest": "^3.2.4"

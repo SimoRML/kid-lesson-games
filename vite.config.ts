@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
           lib: {
             entry: resolve(import.meta.dirname, 'src/index.ts'),
             name: 'KidGames',
-            fileName: (format) => `kid-games.${format}.js`,
+            fileName: (format) =>
+              format === 'umd' ? 'kid-games.umd.cjs' : `kid-games.${format}.js`,
             formats: ['es', 'umd']
           },
           rollupOptions: {
