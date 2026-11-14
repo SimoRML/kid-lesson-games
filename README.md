@@ -49,15 +49,26 @@ A pluggable collection of interactive mini-games designed for **kids' learning p
 | Telemetry Event Bridge (`game:*` CustomEvents) | ✅ | Dispatched on `<kid-game>` with `bubbles: true, composed: true` to cross Shadow DOM boundaries |
 | `difficulty` Attribute (`easy` \| `medium` \| `hard`) | ✅ | Parsed on `<kid-game>` and passed in `context.difficulty`; all 7 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)` |
 | Scaffolding CLI (`npm run create-game <id>`) | ✅ | Scaffolds `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, and `README.md` with complete zero-leak lifecycle contracts |
-| Published npm Package (`npm i @simorml/kid-lesson-games`) | 🗺️ | Not published to npm yet (`"private": true`); install via git dependency, local path, or built script bundle |
+| Published npm Package (`npm i @simorml/kid-lesson-games`) | ✅ | Published to npm with `.d.ts` declarations, CommonJS/ESM exports, SSR guard, and provenance |
 
 ---
 
 ## 📦 Installation & Quickstart
 
-> ⚠️ **Not on npm yet (🗺️ Planned)**: `kid-lesson-games` is not published to the public npm registry yet. Use one of the three verified methods below today.
+### 1. Install via npm (✅)
+```bash
+npm install @simorml/kid-lesson-games
+```
 
-### 1. Clone, Install & Build Locally (✅)
+```html
+<script type="module">
+  import '@simorml/kid-lesson-games';
+</script>
+
+<kid-game game="balance-scale" age="6-8" locale="en"></kid-game>
+```
+
+### 2. Clone, Install & Build Locally (✅)
 ```bash
 git clone https://github.com/simorml/kid-lesson-games.git
 cd kid-lesson-games
@@ -66,21 +77,21 @@ npm test          # Runs the Vitest unit & DOM lifecycle tests
 npm run build     # Type-checks & builds ES chunks + UMD bundle in dist/
 ```
 
-### 2. Run the Local Interactive Playground (✅)
+### 3. Run the Local Interactive Playground (✅)
 ```bash
 npm run dev
 ```
 Open [http://localhost:3000/kid-lesson-games/](http://localhost:3000/kid-lesson-games/) to test all 7 games with live controls for game switching, language (`en`/`fr`), age brackets (`3-5`, `6-8`, `9-11`), custom level presets, sound toggling, and real-time telemetry logs.
 
-### 3. Build Outputs (`npm run build` vs. `npm run build:pages`)
+### 4. Build Outputs (`npm run build` vs. `npm run build:pages`)
 - **`npm run build`** (Library mode — ✅ / ⚠️):
   - `dist/kid-games.es.js` (~14.0 kB) + on-demand chunks (`dist/balance-scale-*.js`, `dist/buoyancy-tank-*.js`, `dist/gear-trains-*.js`, `dist/marble-run-angles-*.js`, `dist/pendulum-rhythm-*.js`, `dist/pulley-lift-*.js`, `dist/audio-*.js`, `dist/i18n-*.js`, `dist/confetti.module-*.js`).
-  - `dist/kid-games.umd.js` (~343 kB single-file UMD bundle containing core + all 7 games; ⚠️ UMD does not code-split).
+  - `dist/kid-games.umd.cjs` (~343 kB single-file CommonJS/UMD bundle containing core + all 7 games; ⚠️ UMD does not code-split).
 - **`npm run build:pages`** (Playground static site — ✅):
   - Builds `dist/index.html` and `dist/assets/*.js` with `base: '/kid-lesson-games/'` for GitHub Pages deployment.
 
-### 4. Install in Another Project via Git Dependency or Local Path (✅)
-Because `package.json` includes a `"prepare": "npm run build"` script and exports `./dist/kid-games.es.js`, you can install directly from GitHub or a local checkout:
+### 5. Install in Another Project via Git Dependency or Local Path (✅)
+Because `package.json` includes a `"prepack": "npm run build"` script and exports `./dist/kid-games.es.js`, you can install directly from GitHub or a local checkout:
 ```bash
 # Via GitHub repository:
 npm install github:simorml/kid-lesson-games
@@ -98,8 +109,8 @@ npm install ../path/to/kid-lesson-games
 <!-- Option A: ES module (code-split per game chunk) -->
 <script type="module" src="./dist/kid-games.es.js"></script>
 
-<!-- Option B: Single-file UMD bundle -->
-<!-- <script src="./dist/kid-games.umd.js"></script> -->
+<!-- Option B: Single-file CommonJS/UMD bundle -->
+<!-- <script src="./dist/kid-games.umd.cjs"></script> -->
 
 <kid-game
   game="balance-scale"
@@ -109,8 +120,8 @@ npm install ../path/to/kid-lesson-games
 </kid-game>
 ```
 
-### In React / Next.js (✅ Client / ⚠️ SSR Note)
-> ⚠️ **SSR Note**: `KidGameElement` extends `HTMLElement` at module evaluation time. In Next.js or SSR environments, import the package dynamically inside `useEffect` so it only evaluates in the browser.
+### In React / Next.js (✅)
+> ✅ **SSR Safe**: `KidGameElement` safely guards `HTMLElement` so importing `@simorml/kid-lesson-games` in Node.js / SSR runtimes succeeds without errors. Mount `<kid-game>` on the client (e.g. inside `useEffect` or standard React component with dynamic loading).
 
 ```tsx
 import React, { useEffect, useRef } from 'react';
