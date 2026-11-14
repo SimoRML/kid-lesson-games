@@ -90,12 +90,12 @@ SHA-pin actions, add `timeout-minutes`, deploy only after CI is green on `main`,
 Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packaging; **P3** = release. One PR per task unless noted; version numbers are bumped only by the Merger (Gate 9).
 
 ### P0: settings (owner action, no PR)
-- [ ] **T-01** Enable secret scanning + push protection + Dependabot security updates ([§4](#4-phase-p0-repo-settings-no-code-owner-approves-each)).
-- [ ] **T-02** Read-only default `GITHUB_TOKEN`; create `npm-publish` Environment (reviewer + `v*` tag rule).
-- [ ] **T-03** npm 2FA enforced on the publishing account.
+- [x] ✅ **T-01** Enable secret scanning + push protection + Dependabot security updates ([§4](#4-phase-p0-repo-settings-no-code-owner-approves-each)).
+- [x] ✅ **T-02** Read-only default `GITHUB_TOKEN`; create `npm-publish` Environment (reviewer + `v*` tag rule).
+- [x] ✅ **T-03** npm 2FA enforced on the publishing account.
 
 ### P1: CI + security (PRs; start here)
-- [ ] **T-04** `ci.yml` with `verify` aggregate job, SHA-pinned actions, `.nvmrc`, `engines.node` ([§5.1](#51-ciyml)).
+- [x] ✅ **T-04** `ci.yml` with `verify` aggregate job, SHA-pinned actions, `.nvmrc`, `engines.node` ([§5.1](#51-ciyml)).
 - [ ] **T-05** Ruleset on `main` requiring `ci / verify` (after T-04 is merged and has run once) ([§4](#4-phase-p0-repo-settings-no-code-owner-approves-each)).
 - [ ] **T-06** `security.yml`: gitleaks + `.gitleaks.toml`, CodeQL, Dependency Review, audit gate ([§5.2](#52-securityyml-secret--code-scanning)).
 - [ ] **T-07** Hygiene files: `dependabot.yml`, PR template, `CODEOWNERS`, `SECURITY.md`, `.gitignore` additions ([§5.3](#53-hygiene-files)).

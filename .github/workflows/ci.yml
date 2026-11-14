@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-and-build:
+    name: test-and-build (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Type check (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run test coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage artifact
+        if: matrix.node == 24
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: coverage-node-${{ matrix.node }}
+          path: coverage
+          retention-days: 7
+
+      - name: Build library (ES + UMD)
+        run: npm run build
+
+      - name: Build playground (Pages)
+        run: npm run build:pages
+
+      - name: Check core modification warning
+        if: github.event_name == 'pull_request'
+        run: |
+          TARGET_REF="origin/${{ github.base_ref }}"
+          if git rev-parse --verify "$TARGET_REF" >/dev/null 2>&1; then
+            CORE_DIFF=$(git diff --name-only "$TARGET_REF" -- src/ || true)
+            if [ -n "$CORE_DIFF" ]; then
+              echo "::warning title=Core Engine Modified::The following files in src/ were modified in this PR:"
+              echo "$CORE_DIFF"
+              echo "Per AGENTS.md §1, cartridge PRs must not touch src/. Ensure this core change is a dedicated, pre-approved PR."
+            else
+              echo "Verified: src/ untouched against $TARGET_REF"
+            fi
+          else
+            echo "Base ref $TARGET_REF not reachable, skipping core diff check."
+          fi
+
+  verify:
+    name: verify
+    needs: [test-and-build]
+    runs-on: ubuntu-latest
+    if: always()
+    timeout-minutes: 5
+    steps:
+      - name: Aggregate matrix check result
+        run: |
+          RESULT="${{ needs.test-and-build.result }}"
+          if [ "$RESULT" = "success" ]; then
+            echo "All CI matrix checks passed successfully."
+            exit 0
+          else
+            echo "CI matrix checks failed with status: $RESULT"
+            exit 1
+          fi
