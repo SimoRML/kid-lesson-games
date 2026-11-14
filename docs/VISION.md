@@ -42,16 +42,16 @@
 - ✅ **Universal `<kid-game>` Custom Element**: Shadow DOM isolation, reactive attributes (`game`, `age`, `difficulty`, `sound`, `autostart`, `locale`, `levels`), lifecycle methods (`start()`, `pause()`, `resume()`, `restart()`), and race-condition-safe async mounting (`currentLoadToken`).
 - ✅ **Telemetry Event Bridge**: Standard `CustomEvent` dispatching (`game:ready`, `game:start`, `game:progress`, `game:score`, `game:complete`, `game:error`) with `bubbles: true, composed: true` to cross Shadow DOM boundaries.
 - ✅ **Dual Curriculum Mode (`customLevels` + Procedural Fallback)**: Educators and LMS platforms can pass custom lesson configurations via the `levels` attribute/property, while every cartridge exports `parseCustomLevels(raw)` and falls back to `generateLevelsForAge(ageGroup)` when omitted or invalid.
-- ✅ **Shared Procedural Web Audio (`SoundEngine`)**: Zero-asset synthesized clicks, pops, drops, chimes, victory fanfares, error buzzes, and custom tones in [audio.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/audio.ts).
-- ✅ **Shared Bilingual i18n (`I18nManager` & `createI18nResolver`)**: English (`en`) and French (`fr`) translations with parameter interpolation in [i18n.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/i18n.ts).
+- ✅ **Shared Procedural Web Audio (`SoundEngine`)**: Zero-asset synthesized clicks, pops, drops, chimes, victory fanfares, error buzzes, and custom tones in [audio.ts](../src/core/audio.ts).
+- ✅ **Shared Bilingual i18n (`I18nManager` & `createI18nResolver`)**: English (`en`) and French (`fr`) translations with parameter interpolation in [i18n.ts](../src/core/i18n.ts).
 - ✅ **Per-Cartridge Code-Split ES Chunks**: In ES module builds (`dist/kid-games.es.js`), each game cartridge is split into its own on-demand chunk (`dist/<game-id>-*.js`).
 - ⚠️ **UMD Bundle Code-Splitting Limitation**: UMD (`dist/kid-games.umd.js`) cannot code-split dynamic imports in Vite/Rolldown library mode and instead bundles all cartridges into a single 236 kB file.
 - ✅ **`difficulty` Modifier Integration**: `<kid-game difficulty="easy|medium|hard">` is parsed by the core element and injected into `GameContext.difficulty`; all 6 cartridges scale puzzle distractor counts, physical parameters, and tolerances via `generateLevelsForAge(ageGroup, difficulty)` and react live in `updateConfig()`.
 - 🗺️ **Published npm Package (`npm i kid-lesson-games`)**: Currently unpublished (`"private": true` in `package.json`); today consumers install via git dependency, local path, or built bundle script tag.
 - 🗺️ **TypeScript Declaration Output (`dist/index.d.ts`)**: `tsconfig.json` currently uses `"noEmit": true`; generating standalone `.d.ts` files in `dist/` for published npm consumers is planned.
 - 🗺️ **SSR-Safe Import Guard (`HTMLElement` in Node.js)**: Guarding `class KidGameElement extends HTMLElement` so `import 'kid-lesson-games'` can execute on the server in Next.js/Nuxt without `ReferenceError: HTMLElement is not defined`.
-- 🗺️ **Programmatic `mountGame(gameId, container, options)` Helper**: Proposed in [game-contract-spec.md](file:///home/simo/Documents/www/kid-lesson-games/docs/design/game-contract-spec.md) as `@kid-games/core` Method B; today programmatic mounting is done via `<kid-game>` or `registry.create(gameId)`.
-- 🗺️ **Named Shadow DOM Slots (`<slot name="loading">`, `<slot name="error">`)**: Proposed in [web-component-spec.md](file:///home/simo/Documents/www/kid-lesson-games/docs/design/web-component-spec.md); today `<kid-game>` uses an internal `.status-screen` overlay.
+- 🗺️ **Programmatic `mountGame(gameId, container, options)` Helper**: Proposed in [game-contract-spec.md](design/game-contract-spec.md) as `@kid-games/core` Method B; today programmatic mounting is done via `<kid-game>` or `registry.create(gameId)`.
+- 🗺️ **Named Shadow DOM Slots (`<slot name="loading">`, `<slot name="error">`)**: Proposed in [web-component-spec.md](design/web-component-spec.md); today `<kid-game>` uses an internal `.status-screen` overlay.
 
 ---
 
@@ -97,7 +97,7 @@ The project targets four core educational taxonomy categories across three age b
 
 | Target Capability | Current State | Label | What's Missing / Next Steps |
 | :--- | :--- | :---: | :--- |
-| `<kid-game>` Web Component & Shadow DOM | Implemented in [KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts) with Shadow DOM, status overlay, and event bridge | ✅ | Complete for browser environments |
+| `<kid-game>` Web Component & Shadow DOM | Implemented in [KidGameElement.ts](../src/core/KidGameElement.ts) with Shadow DOM, status overlay, and event bridge | ✅ | Complete for browser environments |
 | Telemetry DOM Events (`game:*`) | All 6 events dispatched with `bubbles: true, composed: true` | ✅ | Complete |
 | Lazy Per-Game Code Splitting | ES build (`dist/kid-games.es.js`) splits all 6 games into separate chunks | ✅ | UMD build (`dist/kid-games.umd.js`) bundles all games together due to UMD format constraints (⚠️) |
 | Bilingual Localization (`en` / `fr`) | Core `I18nManager` + all 6 cartridges support `en` and `fr` | ✅ | Additional EU locales (`es`, `de`, `it`, `nl`) are 🗺️ Planned |

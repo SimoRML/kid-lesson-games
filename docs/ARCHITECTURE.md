@@ -46,23 +46,23 @@ flowchart TD
 
 ---
 
-### A. Entry Point & Auto-Discovery ([src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.ts)) — ✅
+### A. Entry Point & Auto-Discovery ([src/index.ts](../src/index.ts)) — ✅
 
-When [src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.ts) is imported:
+When [src/index.ts](../src/index.ts) is imported:
 1. **Eager Metadata Discovery** (lines 6–9):
    - Uses `import.meta.glob(['../games/*/game.json', '../games/*/meta.json'], { eager: true })`.
-   - ⚠️ **Known discrepancy**: Earlier README sections referred to `meta.json` while `balance-scale` used `game.json`. In reality, [scripts/create-game.js](file:///home/simo/Documents/www/kid-lesson-games/scripts/create-game.js) generates `game.json` and all 6 cartridges in `games/*/` use `game.json`. `src/index.ts` accepts both `game.json` (canonical) and `meta.json` (fallback alias).
+   - ⚠️ **Known discrepancy**: Earlier README sections referred to `meta.json` while `balance-scale` used `game.json`. In reality, [scripts/create-game.js](../scripts/create-game.js) generates `game.json` and all 6 cartridges in `games/*/` use `game.json`. `src/index.ts` accepts both `game.json` (canonical) and `meta.json` (fallback alias).
    - ✅ **Resolved**: `src/index.ts` (lines 19–29) preserves `author` and `thumbnail` when constructing `GameMetadata`, and all 6 games feature `assets/thumb.svg` vector badges on disk.
 2. **Lazy Cartridge Code-Splitting** (lines 12–48):
    - Uses `import.meta.glob('../games/*/index.ts')` (lazy by default).
    - Registers an async factory with `registry.register(meta, async () => ...)` that resolves `mod.createGame || mod.default || mod.createBalanceScaleGame`.
 3. **Custom Element Registration** (lines 51–53):
    - Calls `customElements.define('kid-game', KidGameElement)` after the registry is populated, guarded by `if (typeof window !== 'undefined' && !customElements.get('kid-game'))`.
-   - ⚠️ **SSR Note**: Although `customElements.define` is guarded by `typeof window !== 'undefined'`, [KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts) evaluates `export class KidGameElement extends HTMLElement` at module load time, which throws `ReferenceError: HTMLElement is not defined` if imported on the server in Node.js without a DOM shim. In SSR frameworks (Next.js, Nuxt), import the bundle dynamically inside a client-only lifecycle hook (`useEffect` / `onMounted`).
+   - ⚠️ **SSR Note**: Although `customElements.define` is guarded by `typeof window !== 'undefined'`, [KidGameElement.ts](../src/core/KidGameElement.ts) evaluates `export class KidGameElement extends HTMLElement` at module load time, which throws `ReferenceError: HTMLElement is not defined` if imported on the server in Node.js without a DOM shim. In SSR frameworks (Next.js, Nuxt), import the bundle dynamically inside a client-only lifecycle hook (`useEffect` / `onMounted`).
 
 ---
 
-### B. Game Registry ([src/core/registry.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/registry.ts)) — ✅
+### B. Game Registry ([src/core/registry.ts](../src/core/registry.ts)) — ✅
 
 `GameRegistry` (exported as singleton `registry` and class `GameRegistry`) stores a `Map<string, { metadata: GameMetadata; load: GameFactory }>` with methods:
 - `registry.register(metadata, load)` — ✅
@@ -74,7 +74,7 @@ When [src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.t
 
 ---
 
-### C. Web Component Host ([src/core/KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts)) — ✅
+### C. Web Component Host ([src/core/KidGameElement.ts](../src/core/KidGameElement.ts)) — ✅
 
 `KidGameElement` attaches an open Shadow DOM (`this.attachShadow({ mode: 'open' })`) containing:
 - `<div class="viewport">`
@@ -104,7 +104,7 @@ When [src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.t
 
 ---
 
-### D. `KidGame` & `GameContext` Contracts ([src/core/types.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/types.ts)) — ✅
+### D. `KidGame` & `GameContext` Contracts ([src/core/types.ts](../src/core/types.ts)) — ✅
 
 ```ts
 export type AgeGroup = '3-5' | '6-8' | '9-11';
@@ -139,7 +139,7 @@ export interface KidGame {
 
 ### E. Telemetry Event Bridge — ✅
 
-All events are dispatched as standard DOM `CustomEvent` instances on the `<kid-game>` element with **`bubbles: true, composed: true`** ([KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts#L276-L327)), so they cross Shadow DOM boundaries and can be listened to either directly on `<kid-game>` or on any ancestor element:
+All events are dispatched as standard DOM `CustomEvent` instances on the `<kid-game>` element with **`bubbles: true, composed: true`** ([KidGameElement.ts](../src/core/KidGameElement.ts#L276-L327)), so they cross Shadow DOM boundaries and can be listened to either directly on `<kid-game>` or on any ancestor element:
 
 | Event Name | Dispatched By | `event.detail` Payload Type | Status |
 | :--- | :--- | :--- | :---: |
@@ -152,7 +152,7 @@ All events are dispatched as standard DOM `CustomEvent` instances on the `<kid-g
 
 ---
 
-### F. Procedural Audio Engine ([src/core/audio.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/audio.ts)) — ✅
+### F. Procedural Audio Engine ([src/core/audio.ts](../src/core/audio.ts)) — ✅
 
 `SoundEngine` synthesizes zero-asset procedural Web Audio SFX:
 - Lazily initializes `AudioContext` (or `webkitAudioContext`) only when `enabled === true` and a sound is triggered, and automatically resumes suspended contexts.
@@ -161,7 +161,7 @@ All events are dispatched as standard DOM `CustomEvent` instances on the `<kid-g
 
 ---
 
-### G. Internationalization ([src/core/i18n.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/i18n.ts)) — ✅
+### G. Internationalization ([src/core/i18n.ts](../src/core/i18n.ts)) — ✅
 
 - `CORE_DICTIONARY` provides `en` and `fr` strings for shared UI tokens: `soundOn`, `soundOff`, `level`, `score`, `reset`, `wellDone`, `loading`, `error`.
 - `I18nManager` normalizes locale tags (e.g. `'fr-FR'` $\rightarrow$ `'fr'`, `'en_US'` $\rightarrow$ `'en'`) and supports `{param}` placeholder interpolation via `interpolate(text, params)`.
@@ -169,7 +169,7 @@ All events are dispatched as standard DOM `CustomEvent` instances on the `<kid-g
 
 ---
 
-### H. Build Output Reality ([vite.config.ts](file:///home/simo/Documents/www/kid-lesson-games/vite.config.ts)) — ✅ / ⚠️
+### H. Build Output Reality ([vite.config.ts](../vite.config.ts)) — ✅ / ⚠️
 
 1. **Library Build (`npm run build` $\rightarrow$ `tsc && vite build`)**:
    - **ES Module format (`dist/kid-games.es.js`, ~12.7 kB)**: ✅ Code-splits each cartridge into its own on-demand ES chunk:

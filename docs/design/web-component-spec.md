@@ -1,7 +1,7 @@
 # Web Component Specification: `<kid-game>`
 
 > **Implementation Status (2026-11-13)**: ✅ **Implemented** (with 🚧/🗺️ minor differences noted below)  
-> - **Implemented (✅)**: `<kid-game>` custom element with open Shadow DOM, observed attributes (`game`, `age`, `difficulty`, `sound`, `autostart`, `locale`, plus `levels`), live attribute reactivity via `updateConfig()`, methods (`start()`, `pause()`, `resume()`, `restart()`), and `CustomEvent` dispatching (`game:ready`, `game:start`, `game:progress`, `game:score`, `game:complete`, `game:error`) with `bubbles: true, composed: true` in [KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts).  
+> - **Implemented (✅)**: `<kid-game>` custom element with open Shadow DOM, observed attributes (`game`, `age`, `difficulty`, `sound`, `autostart`, `locale`, plus `levels`), live attribute reactivity via `updateConfig()`, methods (`start()`, `pause()`, `resume()`, `restart()`), and `CustomEvent` dispatching (`game:ready`, `game:start`, `game:progress`, `game:score`, `game:complete`, `game:error`) with `bubbles: true, composed: true` in [KidGameElement.ts](../../src/core/KidGameElement.ts).  
 > - **Partial / Planned (🚧 / 🗺️)**: Named Shadow DOM fallback slots (`<slot name="loading">` and `<slot name="error">`) and a shared host `<div class="game-ui">` overlay are 🗺️ **Planned** (currently `<kid-game>` uses an internal `.status-screen` overlay and each cartridge renders its own HUD inside `.game-slot`). Also, `difficulty` is parsed and passed in `context.difficulty` (🚧 **Partial**), while current cartridges scale puzzles by `ageGroup`.
 
 > **Status**: Approved Direction (Method A)  

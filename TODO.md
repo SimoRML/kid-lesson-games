@@ -1,6 +1,6 @@
 # 🗺️ Project Roadmap & TODO (`kid-lesson-games`)
 
-> Grouped by vision themes ([docs/VISION.md](file:///home/simo/Documents/www/kid-lesson-games/docs/VISION.md)) and verified against the codebase ([docs/ARCHITECTURE.md](file:///home/simo/Documents/www/kid-lesson-games/docs/ARCHITECTURE.md)).
+> Grouped by vision themes ([docs/VISION.md](docs/VISION.md)) and verified against the codebase ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
 
 ## 🏷️ Status Legend
 
@@ -13,18 +13,18 @@
 
 ## 🧩 Theme 1: Universal `<kid-game>` Web Component & Core Runtime
 
-- [x] ✅ Define pluggable `KidGame` lifecycle and metadata contract ([game-contract-spec.md](file:///home/simo/Documents/www/kid-lesson-games/docs/design/game-contract-spec.md), [src/core/types.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/types.ts)).
-- [x] ✅ Implement `<kid-game>` custom element with open Shadow DOM and reactive attributes ([web-component-spec.md](file:///home/simo/Documents/www/kid-lesson-games/docs/design/web-component-spec.md), [src/core/KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts)).
+- [x] ✅ Define pluggable `KidGame` lifecycle and metadata contract ([game-contract-spec.md](docs/design/game-contract-spec.md), [src/core/types.ts](src/core/types.ts)).
+- [x] ✅ Implement `<kid-game>` custom element with open Shadow DOM and reactive attributes ([web-component-spec.md](docs/design/web-component-spec.md), [src/core/KidGameElement.ts](src/core/KidGameElement.ts)).
 - [x] ✅ Implement Telemetry Event Bridge (`game:ready`, `game:start`, `game:progress`, `game:score`, `game:complete`, `game:error`) dispatched with `bubbles: true, composed: true`.
 - [x] ✅ Implement race-condition protection via monotonic `currentLoadToken` in `<kid-game>` on rapid game switching.
-- [x] ✅ Implement shared procedural Web Audio engine (`SoundEngine` in [src/core/audio.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/audio.ts)) with zero external audio assets.
-- [x] ✅ Implement shared bilingual (`en`/`fr`) localization manager (`I18nManager` & `createI18nResolver` in [src/core/i18n.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/i18n.ts)).
-- [x] ✅ Build interactive browser testbed & event inspector ([index.html](file:///home/simo/Documents/www/kid-lesson-games/index.html)) with live cartridge selector, custom level presets, and telemetry log.
+- [x] ✅ Implement shared procedural Web Audio engine (`SoundEngine` in [src/core/audio.ts](src/core/audio.ts)) with zero external audio assets.
+- [x] ✅ Implement shared bilingual (`en`/`fr`) localization manager (`I18nManager` & `createI18nResolver` in [src/core/i18n.ts](src/core/i18n.ts)).
+- [x] ✅ Build interactive browser testbed & event inspector ([index.html](index.html)) with live cartridge selector, custom level presets, and telemetry log.
 - [x] ✅ Wire `context.difficulty` (`easy` | `medium` | `hard`) into cartridge puzzle generators and `updateConfig` across all 6 cartridges.
-- [x] ✅ Preserve `author` and `thumbnail` fields when registering `GameMetadata` in [src/index.ts](file:///home/simo/Documents/www/kid-lesson-games/src/index.ts).
+- [x] ✅ Preserve `author` and `thumbnail` fields when registering `GameMetadata` in [src/index.ts](src/index.ts).
 - [ ] 🗺️ Add named Shadow DOM customization slots (`<slot name="loading">` and `<slot name="error">`) to `KidGameElement`.
 - [ ] 🗺️ Add optional programmatic `mountGame(gameId, container, options)` convenience helper alongside `<kid-game>`.
-- [ ] 🗺️ Guard `class KidGameElement extends HTMLElement` in [src/core/KidGameElement.ts](file:///home/simo/Documents/www/kid-lesson-games/src/core/KidGameElement.ts) so server-side imports in Node.js (Next.js / Nuxt SSR) do not throw `ReferenceError: HTMLElement is not defined`.
+- [ ] 🗺️ Guard `class KidGameElement extends HTMLElement` in [src/core/KidGameElement.ts](src/core/KidGameElement.ts) so server-side imports in Node.js (Next.js / Nuxt SSR) do not throw `ReferenceError: HTMLElement is not defined`.
 
 ---
 
@@ -32,7 +32,7 @@
 
 - [x] ✅ Establish Git repository structure with `.brainstorm/` ignored for private ideation.
 - [x] ✅ Automatic cartridge discovery via Vite `import.meta.glob` (`games/*/{game,meta}.json` eagerly + `games/*/index.ts` lazily) with zero edits to `src/`.
-- [x] ✅ Contributor CLI scaffolding tool (`npm run create-game <game-id>` in [scripts/create-game.js](file:///home/simo/Documents/www/kid-lesson-games/scripts/create-game.js)).
+- [x] ✅ Contributor CLI scaffolding tool (`npm run create-game <game-id>` in [scripts/create-game.js](scripts/create-game.js)).
 - [x] ✅ Set up Vitest + `jsdom` test suite (`npm test`, 13 test files / 277 tests passing).
 - [x] ✅ Upgrade `scripts/create-game.js` to scaffold `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, `pause()`/`resume()`, and `AbortController` zero-leak teardown boilerplate.
 - [x] ✅ Bring `games/balance-scale` lifecycle teardown up to the strict zero-leak standard of the newer 5 cartridges (remove `window` mouse/touch listeners via `AbortController`, clear win `setTimeout`s in `destroy()`, implement `pause()`/`resume()`, and add `games/balance-scale/README.md`).
@@ -79,7 +79,7 @@
 
 - [x] ✅ Configure Vite library build (`npm run build`) producing code-split ES modules (`dist/kid-games.es.js` + per-game chunks) and UMD bundle (`dist/kid-games.umd.js`, ⚠️ single-file bundle without code-splitting).
 - [x] ✅ Configure `package.json` entrypoints (`main`, `module`, `types`, `exports`, `files`, `prepare`) for local and git-based installation (`npm i github:simorml/kid-lesson-games`).
-- [x] ✅ Add GitHub Pages deployment workflow ([.github/workflows/deploy-pages.yml](file:///home/simo/Documents/www/kid-lesson-games/.github/workflows/deploy-pages.yml)) and `npm run build:pages` with `base: '/kid-lesson-games/'`.
+- [x] ✅ Add GitHub Pages deployment workflow ([.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)) and `npm run build:pages` with `base: '/kid-lesson-games/'`.
 - [ ] 🗺️ Emit standalone TypeScript declaration files (`dist/index.d.ts`) during build (`tsconfig.json` currently sets `"noEmit": true`).
 - [ ] 🗺️ Publish `kid-lesson-games` to the public npm registry (remove `"private": true` once `.d.ts` generation and SSR guard are complete).
 - [ ] 🗺️ Add additional European locales (`es`, `de`, `it`, `nl`) to core `I18nManager` and cartridge dictionaries.
