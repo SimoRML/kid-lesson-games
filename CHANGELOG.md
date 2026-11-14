@@ -7,6 +7,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ## [Unreleased]
 
 ### Added
+- Trimmed package tarball `files` to `dist`, `README.md`, `LICENSE`, and `CHANGELOG.md`, added `sideEffects`, `repository`, `bugs`, `homepage`, and `publishConfig`, updated author to `Simo (@SimoRML)`, and migrated lifecycle build hook from `prepare` to `prepack` (T-11).
 - Added `tsconfig.build.json` for TypeScript declaration (`.d.ts`) emission into `dist/` excluding test files, added `build:types` script, and updated `package.json` `types` and `exports["."].types` to point to `./dist/index.d.ts` (T-10).
 - Added repository `LICENSE` file under the MIT license, copyright Simo (@SimoRML) (T-09).
 - Completed Phase P1 of CI & Security Pipeline: verified Gitleaks scanner detection and push protection behavior, completed live CI/security workflows validation, and marked all P1 tasks (T-04..T-08) complete.

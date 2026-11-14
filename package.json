@@ -16,17 +16,34 @@
     },
     "./dist/*": "./dist/*"
   },
+  "sideEffects": [
+    "./dist/kid-games.es.js",
+    "./dist/kid-games.umd.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SimoRML/kid-lesson-games.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SimoRML/kid-lesson-games/issues"
+  },
+  "homepage": "https://github.com/SimoRML/kid-lesson-games#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "files": [
     "dist",
-    "src",
-    "games"
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "dev": "vite",
     "build:types": "tsc -p tsconfig.build.json",
     "build": "tsc && vite build && npm run build:types",
     "build:pages": "tsc && vite build --mode pages",
-    "prepare": "npm run build",
+    "prepack": "npm run build",
     "preview": "vite preview",
     "create-game": "node scripts/create-game.js",
     "test": "vitest run",
@@ -41,7 +58,7 @@
     "math",
     "physics"
   ],
-  "author": "simorml",
+  "author": "Simo (@SimoRML)",
   "license": "MIT",
   "engines": {
     "node": ">=22.0.0"
