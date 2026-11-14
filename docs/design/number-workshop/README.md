@@ -109,6 +109,6 @@ Recorded at `1.0.0` so nobody reads the plan as if it were the code. Everything 
 | Keypad | 0–9 and backspace | `maxDigits` may be a function (per-entry limits in `long`) |
 | Drag helper | tap or drag | `onDrop` also reports the movement since the press (used by `shift`) |
 | Hints after a locale change | not specified | a visible hint is rebuilt from a function, so it follows the language |
-| French place-value abbreviations | to be confirmed by the owner | `CM DM UM C D U` shipped; later checked on the web against French primary-school materials (a worksheet table header reading `cM dM uM C D U`, and a CM1 lesson naming `UM` and `DM`). The owner's own classroom habit was not checked | |
+| French place-value abbreviations | to be confirmed by the owner | `CM DM UM C D U` shipped; later checked on the web against French primary-school materials (a worksheet table header reading `cM dM uM C D U`, and a CM1 lesson naming `UM` and `DM`). The owner's own classroom habit was not checked |
 | Version | `1.0.0` when all four modes are ✅ | `1.0.0`; the library version in `package.json` was not touched |
 | Play-test | human play-test script (04 §9) at every age × difficulty | automated: `playthrough.test.ts` plays complete sessions through the real controls at every age × difficulty and the 25-level sheet at every difficulty; a human/real-device pass was not done ⚠️ |
