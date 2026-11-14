@@ -98,27 +98,29 @@ Building it once is the main implementation economy of the cartridge.
 
 ## 4. Age brackets (procedural levels)
 
-Meaningful differentiation, never just bigger numbers (AGENTS.md §4). Custom levels bypass this table: they are played as supplied, within the schema limits.
+Meaningful differentiation, never just bigger numbers (AGENTS.md §4). Custom levels bypass this table: they are played as supplied, within the schema limits. The one thing `age` still controls for a custom level is presentation: at `3-5`, a `facts` level (any tier) uses the symbol-free presentation described below; `shift`, `euclid`, and `long` are symbolic by nature and always show their symbols, at any age.
 
 | Age | Levels | Modes | Rules |
 |---|---|---|---|
-| `3-5` | 3 | `facts` (Share tier only) | Dividend ≤ 12, divisor 2 or 3, **always exact**, quotient ≥ 2. No `÷` symbol and no equation anywhere: the prompt is a sentence ("Give each friend the same number of dates"). |
+| `3-5` | 3 | `facts` (Share tier only) | Dividend ≤ 12, divisor 2–4 (which ones depends on difficulty), **always exact**, quotient ≥ 2. **Symbol-free presentation**: no `÷` and no equation; the prompt is a sentence ("Give each friend the same number of dates") and so is the result ("Each friend has 4 dates"). |
 | `6-8` | 4 | `facts` (Share / Deal), then `euclid` as the last level at `medium` and `hard` | Divisor 2–5, dividend ≤ 30. Remainders appear. The symbol `÷` is introduced beside the picture. |
-| `9-11` | 5 | all four, in teaching order | `facts` in Array tier with tables 2–9; `shift` by 10/100/1000; `euclid` with divisor 3–9 and dividend ≤ 99; `long` with a 3-digit dividend and 1-digit divisor. This is the 4AEP sheet's range. |
+| `9-11` | 5 | all four, in teaching order | `facts` in Array tier with tables 2–9; `shift` by 10/100/1000; `euclid` with divisor 3–9 and dividend ≤ 99; `long` with a 3-digit dividend (4-digit at `hard`) and 1-digit divisor. `medium` is the 4AEP sheet's range. |
 
 ### Difficulty
+
+The bracket table above is the outer envelope; each cell below narrows it. Where the two seem to differ, the cell wins.
 
 | | `easy` | `medium` | `hard` |
 |---|---|---|---|
 | `3-5` | divisor 2, dividend ≤ 8 | divisor 2–3, dividend ≤ 12 | adds divisor 4 (dividends 8, 12) |
-| `6-8` | exact only, divisor 2–3 | remainders in about half the levels, divisor 2–5 | remainder in most levels, `euclid` finale |
+| `6-8` | exact only, divisor 2–3, all four levels `facts` | remainders in about half the levels, divisor 2–5, `euclid` finale | remainder in most levels, divisor 2–5, `euclid` finale |
 | `9-11` | exact `facts`; `shift` by 10/100; `long` with first digit ≥ divisor and no zero in the quotient | sheet-like mix, remainders, `shift` by 1000 | `long` with a first digit below the divisor or a zero in the quotient, 4-digit dividends; `euclid` gap unmarked |
 
 ### Anti-mirroring and variety rules (generator invariants, all tested)
 
 - Never the trivial case: quotient ≥ 2 and divisor ≥ 2 in every generated level (one token per plate, or one plate, teaches nothing).
 - No two consecutive levels with the same `(mode, dividend, divisor)`.
-- A level set never repeats the same divisor in all of its `facts` levels.
+- A level set never uses the same divisor in all of its `facts` levels, **except** in a cell that allows only one divisor (`3-5` `easy`), where the dividends must all differ instead.
 - **Solvable by construction**: the generator picks `(b, q, r)` with `0 ≤ r < b` first and derives `a = b × q + r`. There are no distractor pieces in this cartridge; the "plausible wrong paths" are the over-shoot, the over-shift, and the non-Euclidean equality, each of which gets its own hint.
 
 ## 5. Feedback and scaffolding principles
@@ -126,5 +128,5 @@ Meaningful differentiation, never just bigger numbers (AGENTS.md §4). Custom le
 - The HUD instruction is **live**: it restates the current state in words and numbers after every action.
 - Hints name the rule, never the answer.
 - A mistake is a failed Check or a rejected step entry. Undo is never a mistake.
-- On success there is a settle window of about 0.6 s in which the solved state stays on screen with the full equality written out (`27 ÷ 3 = 9`, `78 = (8 × 9) + 6`), so the child sees why it worked before the celebration.
+- On success there is a settle window of about 0.6 s in which the solved state stays on screen with the full equality written out (`27 ÷ 3 = 9`, `78 = (8 × 9) + 6`; in the symbol-free presentation, the result sentence instead), so the child sees why it worked before the celebration.
 - Number formatting follows the locale: `60 000` in `fr`, `60,000` in `en`.

@@ -1,7 +1,7 @@
 # 07 — Platform Integration (Lesson Generator → `levels`)
 
 > Part of the [`number-workshop` plan](README.md). Status: 🗺️ Planned.
-> Audience: whoever builds the lesson-generator platform ("candidate C1"). ⚠️ We only know that platform as a general idea: a file, image, or text prompt goes to an LLM behind a queue, which returns a gamified lesson grounded in the input. Everything below is this repo's side of the contract; nothing here assumes how the platform is built.
+> Audience: whoever builds the external lesson-generator platform. ⚠️ We only know that platform as a general idea: a file, image, or text prompt goes to an LLM behind a queue, which returns a gamified lesson grounded in the input. Everything below is this repo's side of the contract; nothing here assumes how the platform is built.
 
 ## 1. The division of labour ("Reading A")
 
@@ -68,9 +68,11 @@ The platform is free to recompute answers itself for its own records; `a = b × 
 Existing behaviour to know ✅ (see [docs/ARCHITECTURE.md](../../ARCHITECTURE.md)):
 
 - Prefer the `levels` **property** over the attribute. Once the property is set it wins over the attribute until it is set back to `null`.
-- Events bubble and cross the shadow boundary; `game:progress` fires once per solved level with `{ step, total, detail }`.
+- Events bubble and cross the shadow boundary.
 - Supported locales are `en` and `fr`. Anything else renders in English.
 - The library is not on npm; load the built ES bundle or use a git dependency (AGENTS.md §8.4). In SSR frameworks import it client-side only (§8.6).
+Planned behaviour of this cartridge 🗺️ ([03-architecture.md](03-architecture.md) §5): `game:progress` and `game:score` once per solved level, `game:complete` once at the end.
+
 - The `game` attribute should always be a constant chosen by the platform's own code, never text taken from the LLM or from a user.
 
 ## 5. What the platform does not get (yet)
@@ -81,7 +83,7 @@ Existing behaviour to know ✅ (see [docs/ARCHITECTURE.md](../../ARCHITECTURE.md
 | A signal that custom levels were rejected | None | same |
 | A catalogue of level schemas for all cartridges, so the LLM can pick the best game for a worksheet | Each cartridge documents its own shape in its README | [TODO.md](../../../TODO.md) Theme 6 |
 | Arithmetic beyond division | Not built | after `number-workshop` 1.0.0 |
-| Arabic UI | Not supported by the core | [docs/VISION.md](../../VISION.md) |
+| Arabic UI | Not supported by the core (`en`/`fr` only) | not on the roadmap yet; needs an owner decision and core work (locale + RTL) |
 
 ## 6. Safety position
 

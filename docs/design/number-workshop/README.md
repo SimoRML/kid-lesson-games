@@ -83,7 +83,7 @@ Other corrections made during review: the sheet item `3 400 ÷ 100` is exact (34
 | Pedagogy is grounded in **one** worksheet | Progressions are standard arithmetic and all facts are machine-checked in tests; wider curriculum coverage stays ⚠️ until the owner or a teacher reviews it |
 | Four UIs in one cartridge is a lot | Mode plug-ins, shared widgets, one mode per PR, each PR shippable |
 | An LLM produces garbage levels | Strict parser, per-level skip, procedural fallback, answers never trusted |
-| Shared files conflict (`index.html`, `README.md`, `TODO.md`, `docs/VISION.md`, `CHANGELOG.md`) | Only WP2 and WP6 touch more than `CHANGELOG.md`; rebase right before each PR |
+| Shared files conflict (`index.html`, `README.md`, `TODO.md`, `docs/VISION.md`, `CHANGELOG.md`) | WP2–WP6 each touch `index.html` (preset), one status row in root `README.md` and in `docs/VISION.md`, and `CHANGELOG.md`; WP2 and WP6 also touch `TODO.md`, and WP2 `AGENTS.md`. Edits are one-line and localized; rebase right before each PR |
 | Rollback | Every WP is one squash-merged PR; revert with `git revert` in a new PR |
 
 ## 6. Hand-off rules for implementing agents

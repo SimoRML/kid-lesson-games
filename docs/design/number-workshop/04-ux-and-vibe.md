@@ -21,7 +21,7 @@
 
 - HUD follows the house standard (AGENTS.md §5): title and level badge left, live instruction centre, score, sound toggle, and reset right. On narrow screens the instruction wraps to its own row.
 - The stage must be fully usable at 375 px width and at the host's minimum height of 400 px ✅ (`:host { min-height: 400px }`), without scrolling inside the game.
-- The equation line is the constant anchor: every mode shows the exercise in symbols there (except ages 3–5, where it is hidden; see [01-pedagogy-and-modes.md](01-pedagogy-and-modes.md) §4).
+- The equation line is the constant anchor: every mode shows the exercise in symbols there (except `facts` levels at age 3–5, where it is replaced by a sentence; see the symbol-free presentation in [01-pedagogy-and-modes.md](01-pedagogy-and-modes.md) §4).
 
 ## 2. Visual system
 

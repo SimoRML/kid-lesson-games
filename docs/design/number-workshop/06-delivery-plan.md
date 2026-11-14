@@ -48,12 +48,12 @@ Rules common to every WP:
 
 **Goal**: all maths, parsing, generation, and session scoring exist and are proven, with no game registered.
 
-**Touches** (all new, under `games/number-workshop/`): `division.ts`, `levels.ts`, `session.ts`, `modes/types.ts` (mode ids, `BUILT_MODES = []`, and the interfaces), `levels.schema.json`, and `division.test.ts`, `levels.test.ts`, `session.test.ts`. Plus `CHANGELOG.md`.
+**Touches** (all new, under `games/number-workshop/`): `division.ts`, `levels.ts`, `session.ts`, `modes/types.ts` (only the `ModeId` type, `ALL_MODES`, and `BUILT_MODES = []`; the controller interfaces arrive in WP2 because they depend on `i18n.ts`), `levels.schema.json`, and `division.test.ts`, `levels.test.ts`, `session.test.ts`. Plus `CHANGELOG.md`.
 
 **Must not add**: `game.json`, `index.ts` (decision D2). Do not run `npm run create-game` in this WP: it creates both.
 
 **Notes**
-- `parseCustomLevels(raw, modes = BUILT_MODES)` and `generateLevelsForAge(age, difficulty, rng, modes = BUILT_MODES)` take the enabled-mode list as a last optional parameter so tests can exercise all four modes while none is built.
+- `parseCustomLevels(raw, modes = BUILT_MODES)` and `generateLevelsForAge(age, difficulty, rng, modes = BUILT_MODES)` take the enabled-mode list as a last optional parameter so tests can exercise all four modes while none is built. With an empty list the parser returns `null` and the generator returns `[]`; nothing calls them that way in WP1.
 - Spec: [02-level-schema.md](02-level-schema.md); tests: [05-test-plan.md](05-test-plan.md) §3 (`division`, `levels`, `session`).
 
 **Acceptance**
@@ -68,7 +68,7 @@ Rules common to every WP:
 
 **Goal**: a complete, polished, honest game with one mode. This PR sets the quality bar and the visual language for everything after it.
 
-**Touches** (cartridge): `game.json` (`0.1.0`, category `numbers`, all three age groups, skills `division`, `equal-sharing`), `assets/thumb.svg`, `index.ts`, `i18n.ts`, `styles.ts`, `modes/index.ts`, `modes/types.ts` (`BUILT_MODES = ['facts']`), `modes/facts.ts`, `widgets/drag.ts`, `widgets/group-builder.ts`, `README.md`, tests for each. May start from `npm run create-game number-workshop` and then replace the generated files, keeping the WP1 files intact.
+**Touches** (cartridge): `game.json` (`0.1.0`, category `numbers`, all three age groups, skills `division`, `equal-sharing`), `assets/thumb.svg`, `index.ts`, `i18n.ts`, `styles.ts`, `modes/index.ts`, `modes/types.ts` (`BUILT_MODES = ['facts']`, plus the `ModeHost` and `ModeController` interfaces), `modes/facts.ts`, `widgets/drag.ts`, `widgets/group-builder.ts`, `README.md`, tests for each. Do **not** run `npm run create-game number-workshop`: the script refuses when the directory already exists, and WP1 created it. Write the files by hand, using `scripts/create-game.js` and an existing cartridge only as reading material for the lifecycle pattern.
 
 **Touches** (shared, minimal): `index.html` (static `<option>` and a `customPresetsByGame` entry with a `facts`-only preset), root `README.md` (game table row labelled 🚧, counts), `docs/VISION.md` (catalogue row and gap table), `TODO.md`, `AGENTS.md` (cold-start "6 games" count and list), `CHANGELOG.md`.
 
@@ -88,7 +88,7 @@ Rules common to every WP:
 
 ## WP3 — `euclid`
 
-**Touches**: `modes/euclid.ts`, `widgets/keypad.ts`, tests for both, `modes/types.ts` + `modes/index.ts` (register), `i18n.ts`, `styles.ts`, `game.json` (`0.2.0`, add skill `euclidean-division`), cartridge `README.md`, `index.html` preset (add `euclid` levels), `CHANGELOG.md`.
+**Touches**: `modes/euclid.ts`, `widgets/keypad.ts`, tests for both, `modes/types.ts` + `modes/index.ts` (register), `i18n.ts`, `styles.ts`, `game.json` (`0.2.0`, add skill `euclidean-division`), cartridge `README.md`, `index.html` preset (add `euclid` levels), the cartridge's status row in root `README.md` and `docs/VISION.md` ("2 of 4 modes"), `CHANGELOG.md`.
 
 **Acceptance**
 - [ ] Reuses `group-builder` unchanged or with a backward-compatible extension (no fork).
@@ -100,7 +100,7 @@ Rules common to every WP:
 
 ## WP4 — `shift`
 
-**Touches**: `modes/shift.ts` + test, register, `i18n.ts`, `styles.ts`, `game.json` (`0.3.0`, add skill `place-value`), cartridge `README.md`, `index.html` preset, `CHANGELOG.md`.
+**Touches**: `modes/shift.ts` + test, register, `i18n.ts`, `styles.ts`, `game.json` (`0.3.0`, add skill `place-value`), cartridge `README.md`, `index.html` preset, the status row in root `README.md` and `docs/VISION.md` ("3 of 4 modes"), `CHANGELOG.md`.
 
 **Acceptance**
 - [ ] Digit strip moves by drag and by button; a non-zero digit cannot leave the table.
@@ -114,7 +114,7 @@ Rules common to every WP:
 
 The largest mode; plan it as its own careful PR.
 
-**Touches**: `modes/long.ts` + test, register, `i18n.ts`, `styles.ts`, `game.json` (`0.4.0`, add skill `long-division`), cartridge `README.md`, `index.html` preset, `CHANGELOG.md`.
+**Touches**: `modes/long.ts` + test, register, `i18n.ts`, `styles.ts`, `game.json` (`0.4.0`, add skill `long-division`), cartridge `README.md`, `index.html` preset, the status row in root `README.md` and `docs/VISION.md` ("4 of 4 modes, finishing"), `CHANGELOG.md`.
 
 **Acceptance**
 - [ ] Walks the computed trace step by step in the potence layout; the three difficulty levels differ exactly as in [01-pedagogy-and-modes.md](01-pedagogy-and-modes.md) §2.4.

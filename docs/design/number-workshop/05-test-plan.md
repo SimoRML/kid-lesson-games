@@ -74,23 +74,25 @@ One test file beside each module. Deterministic: inject `rng`, use fake timers, 
 - Returns `null` for: `null`, `undefined`, numbers, `''`, invalid JSON, `{}`, `[]`, an all-invalid array, `{ version: 2, levels: [...] }`, a string over 20 000 characters.
 - Skips (keeps the rest): unknown mode; a mode not in the enabled list; `"27"` as a string; `27.5`; `NaN`; `Infinity`; `-27`; `2**53`; divisor `0` and `1`; each limit of [02-level-schema.md](02-level-schema.md) §2 at one past its bound, and accepts each at its bound; `shift` with `3400 ÷ 1000`; `facts` with `100 ÷ 2` (quotient 50).
 - Ignores extra keys: a level with `"answer": 999`, `"quotient"`, `"remainder"`, `"instruction": "<img src=x onerror=alert(1)>"` parses to an object with only the known fields.
-- Prototype safety: an item created with `JSON.parse('{"__proto__": {"mode": "facts"}, "dividend": 6, "divisor": 2}')` is skipped; output objects have no inherited data.
+- Prototype safety: an item created with `JSON.parse('{"__proto__": {"mode": "facts"}, "dividend": 6, "divisor": 2}')` is skipped (it has no `mode` of its own); an item built with `Object.create({ mode: 'facts', dividend: 6, divisor: 2 })` is skipped too, because only own properties are read; output objects have no inherited data.
 - Truncation: 31 valid levels → 30; an array of 10 000 junk items returns quickly and yields `null`.
 - Never throws: run the parser over a table of hostile values inside `expect(() => …).not.toThrow()`.
 - `levelsSignature`: equal for equal sets, different when any operand, mode, or order differs.
 - Generator, for each of the 9 age × difficulty cells and several seeds: level count; allowed modes; every rule of [01-pedagogy-and-modes.md](01-pedagogy-and-modes.md) §4; anti-mirroring invariants; every level passes `parseCustomLevels`; ages `3-5` always exact; same seed → same set.
-- `levels.schema.json` bounds equal `LIMITS`; `BUILT_MODES` matches the keys of the mode registry.
+- `levels.schema.json` bounds equal `LIMITS`.
+- With an empty `modes` list: parser → `null`, generator → `[]`.
 
 ### `session.test.ts`
 - Score (100 / 150), streak, stars thresholds at their boundaries, `timeElapsed` excluding paused time (fake timers).
 
 ### `index.test.ts` (shell, jsdom)
+- `BUILT_MODES` matches the keys of the mode registry (from WP2 on).
 - `createGame` and the default export both return a game; `generateLevelsForAge` and `parseCustomLevels` are re-exported.
 - `mount` → `start` renders the HUD with level badge `1/N`, in `en` and in `fr`.
 - Mount does not throw when `ResizeObserver`, `matchMedia`, and `PointerEvent` are undefined (the jsdom default).
 - Hostile config: `customLevels` garbage → procedural set, no throw; `locale: '<bad>'` → English, no throw.
 - `updateConfig({ sound: false, customLevels: null })` mid-level does **not** restart the level or the score; neither does a locale change; the visible text switches language.
-- `updateConfig` with a changed age, difficulty, or level set restarts at level 1 with score 0; resending the **same** custom set does not.
+- One test per row of the restart table in [03-architecture.md](03-architecture.md) §6.1: a different custom set restarts; the same custom set resent does not; a difficulty change restarts in both custom and procedural play; an age change restarts procedural play but not a custom set.
 - Solving every level emits `game:progress` and `game:score` per level and `game:complete` exactly once, with a valid `stars` value; no automatic restart afterwards; "Play again" starts a new run.
 - `pause()` blocks input and freezes the pending advance; `resume()` continues.
 - `destroy()`: container empty; no pending timers (`vi.getTimerCount() === 0`); a `pointermove` dispatched on `window` afterwards has no effect; `context.audio.close` was not called (spy).

@@ -137,7 +137,17 @@ Only the existing typed events are used ✅ (`GameEventPayloads` in `src/core/ty
 ### 6.1 The host resends the whole config on every attribute change
 `KidGameElement.propagateConfigUpdate()` calls `updateConfig` with `ageGroup`, `difficulty`, `sound`, `locale`, `customLevels`, `audio`, `i18n`, `t` whenever **any** observed attribute changes, and `customLevels` is `null`, never `undefined`, when no levels are set. A sound toggle therefore arrives with `customLevels: null`.
 
-Rule: in `updateConfig`, merge fields into `this.context` (never replace it: `emit` is not resent), then compute `levelsSignature` of the newly resolved set **only when age, difficulty, or the raw `customLevels` value changed**, and restart the set only if the custom signature differs from the current one. Toggling sound or locale must never reset the child's progress. This is a required test.
+Rule: in `updateConfig`, merge fields into `this.context` (never replace it: `emit` is not resent), then decide exactly as follows. "Restart" means level 1, score 0, new run.
+
+| Situation after the update | Action |
+|---|---|
+| Custom levels parse to a set whose `levelsSignature` differs from the active set's, or the game switches between a custom set and procedural levels | Load the new set and restart |
+| Same custom set, `difficulty` changed | Restart the same set (modes behave differently per difficulty) |
+| Same custom set, only `ageGroup` changed | No restart; re-render the current level if its presentation depends on age |
+| Procedural levels active, `ageGroup` or `difficulty` changed | Generate a new set and restart |
+| Anything else (sound, locale, identical values resent) | Never restart; apply sound/locale in place |
+
+Toggling sound or locale must never reset the child's progress. Each row is a required test.
 
 ### 6.2 Never throw from `mount`, never put external data in an `Error`
 An error thrown while mounting replaces the game with the host's error screen, and its message is displayed there. The cartridge must not throw during `mount`/`start`, and must never build an error message from `levels`, `locale`, or any other external value. Invalid input always degrades to procedural levels.
