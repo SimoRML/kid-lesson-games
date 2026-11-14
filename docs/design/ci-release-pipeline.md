@@ -111,7 +111,7 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 - [x] ✅ **T-17** SSR guard in `src/core/KidGameElement.ts` (separate, explicitly approved `src/` PR; prerequisite of T-16).
 
 ### P3: release
-- [ ] **T-15** `release.yml` with verify + approval-gated OIDC publish + GitHub Release, dry-run only ([§7.1](#71-releaseyml)).
+- [x] ✅ **T-15** `release.yml` with verify + approval-gated OIDC publish + GitHub Release, dry-run only ([§7.1](#71-releaseyml)).
 - [x] ✅ **T-18** Harden `deploy-pages.yml` ([§7.2](#72-deploy-pagesyml)).
 - [ ] **T-16** Remove `"private": true`, update AGENTS.md §0/§9, first `rc` publish, configure Trusted Publisher on npmjs.com, promote to `latest`.
 
