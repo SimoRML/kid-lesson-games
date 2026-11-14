@@ -368,8 +368,8 @@ this.context.emit('game:complete', {
    - `@simorml/kid-lesson-games` is not published on the public npm registry yet (🗺️ Planned). Do not instruct users to run `npm install @simorml/kid-lesson-games`; use git dependency (`npm i github:simorml/kid-lesson-games`), local path, or built `./dist/kid-games.es.js`.
 5. ✅ **TypeScript Declarations in `dist/` (`tsconfig.build.json`)**:
    - `build:types` compiles `.d.ts` declaration bundles into `dist/` using `tsconfig.build.json` (excluding tests), and `package.json` points `"types"` and `exports["."].types` to `./dist/index.d.ts`.
-6. ⚠️ **Node.js SSR Import Throws `ReferenceError: HTMLElement is not defined`**:
-   - `src/core/KidGameElement.ts` declares `export class KidGameElement extends HTMLElement` at module top-level. In SSR frameworks (Next.js, Nuxt), import the library dynamically inside `useEffect` / `onMounted` or with `{ ssr: false }`.
+6. ✅ **Node.js SSR Safe Import**:
+   - `src/core/KidGameElement.ts` guards the base class (`BaseElement = typeof HTMLElement !== 'undefined' ? HTMLElement : class {}`) and constructor attachShadow calls. Importing the package in Node/SSR runtimes succeeds without throwing `ReferenceError: HTMLElement is not defined`.
 7. ⚠️ **`KidGameElement` Property vs. Attribute Quirks**:
    - The getter for the `game` attribute is `el.gameId` (there is no `el.game` property).
    - Only `el.levels` has a JS property setter (`el.levels = [...]`). Once `el.levels` is set to a non-null value via JS property, `this._customLevels` takes precedence over `el.setAttribute('levels', ...)` until `el.levels = null` is assigned.
