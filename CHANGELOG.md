@@ -7,6 +7,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ## [Unreleased]
 
 ### Added
+- Added repository `LICENSE` file under the MIT license, copyright Simo (@SimoRML) (T-09).
 - Completed Phase P1 of CI & Security Pipeline: verified Gitleaks scanner detection and push protection behavior, completed live CI/security workflows validation, and marked all P1 tasks (T-04..T-08) complete.
 - Repository hygiene and security policy files (T-07):
   - `.github/dependabot.yml` configured for weekly grouped dependency updates across `npm` and `github-actions`.
