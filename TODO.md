@@ -50,6 +50,7 @@
 - [x] ✅ **`balance-scale` — Balance the Scale / Balance Lab** (*Ages 3–5, 6–8, 9–11*): Equal-arm metric weight equality (`g`/`kg`), additive decomposition ($500\text{g} + 500\text{g} = 1\text{ kg}$), and Archimedes lever torque ($\tau = m \times d$).
 - [x] ✅ **`pendulum-rhythm` — Pendulum Rhythm Lab** (*Ages 3–5, 6–8, 9–11*): Wrecking-ball momentum knockdown, Galileo's mass-invariance & BPM metronome sync, and square-root law ($T \propto \sqrt{L}$) harmonic polyrhythms ($2:1, 3:1, 3:2$).
 - [ ] 🗺️ **`number-line` — Number Line Hopper** (*Ages 3–5, 6–8, 9–11*): Frog/fennec jumping along positive/negative number lines to solve addition, subtraction, and relative integers.
+- [ ] 🗺️ **`number-workshop` — Division Workshop / ورشة القسمة** (*Ages 3–5, 6–8, 9–11*): LLM-friendly arithmetic cartridge, division first: sharing/tables, `a = b × q + r`, ÷10/100/1000 place value, written long division. Draft plan: [docs/design/number-workshop-plan.md](file:///home/simo/Documents/www/kid-lesson-games/docs/design/number-workshop-plan.md) (delivered as 6 small PRs).
 - [ ] 🗺️ **`fraction-feast` — Fraction Slices & Equal Shares / أجزاء وكسور** (*Ages 6–8, 9–11*): Circular/rectangular visual part-whole fractions, equivalence ($2/4 = 1/2$), and common-denominator operations.
 - [ ] 🗺️ **`money-market` — Souk & Dirham Counter / متجر النقود والدرهم** (*Ages 3–5, 6–8, 9–11*): Moroccan currency counting (1, 2, 5, 10 DH coins, 20, 50, 100, 200 DH banknotes, and 10, 20, 50 centimes), additive payment composition, and calculating change returned.
   - [ ] 🗺️ *(Low Priority)* Add switchable multi-currency support (`EUR`, `USD`, `MAD`) to `money-market`.
@@ -91,3 +92,13 @@
 - [ ] 🚧 Not verified: exact 360px and 620px card widths; miss/stall paths in `marble-run-angles` are unit-tested only (browser pane throttles rAF).
 - [ ] 🚧 Score still carries across the automatic restart after the final level in some games; gear-trains does not reset score when `customLevels` changes.
 - [ ] 🗺️ Decide whether auto-restart after `game:complete` (3–3.5 s in gear-trains, pendulum-rhythm, pulley-lift) is desired.
+
+---
+
+## 🔌 Theme 6: External Lesson-Generator Integration (LLM → `levels` JSON)
+
+- [x] ✅ Decision: **Reading A**. An external platform's LLM generates `levels` JSON for existing cartridges; it never generates or runs game code (games are discovered at build time and must stay inside the cartridge contract).
+- [ ] 🗺️ Build `number-workshop` so division-style school exercises have a matching cartridge (see Theme 3 and the plan doc).
+- [ ] 🗺️ Decide where the math/solvability verifier for LLM-made levels lives (cartridge-side recompute is the plan; a core `src/` verify API would need explicit approval and its own PR).
+- [ ] 🗺️ Document a per-cartridge `levels` JSON schema that a platform can feed to an LLM (today each cartridge has its own shape, e.g. `balance-scale` vs `pulley-lift`).
+- [ ] 🗺️ Delivery rule for all of the above: small chunks, one concern per branch/PR, small Conventional Commits, following AGENTS.md §0 (plan, branch, verify, docs, independent review).
