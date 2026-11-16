@@ -7,6 +7,7 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 ## [Unreleased]
 
 ### Changed
+- Restricted test coverage to `.ts` sources so vitest 5 no longer tries (and warns) to parse cartridge `README.md` files.
 - Bumped vitest, @vitest/coverage-v8 and jsdom to latest majors; added Node types to `tsconfig.json` and typed test mocks to satisfy vitest 5.
 
 ## [0.3.0] - 2026-11-14
