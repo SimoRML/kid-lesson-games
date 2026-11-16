@@ -6,6 +6,9 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 
 ## [Unreleased]
 
+### Fixed
+- GitHub Pages playground showed an empty game area: `sideEffects` in `package.json` omitted `./src/index.ts`, so the pages build tree-shook the game registration and the `<kid-game>` element definition. Added it to `sideEffects`.
+
 ### Changed
 - Restricted test coverage to `.ts` sources so vitest 5 no longer tries (and warns) to parse cartridge `README.md` files.
 - Bumped vitest, @vitest/coverage-v8 and jsdom to latest majors; added Node types to `tsconfig.json` and typed test mocks to satisfy vitest 5.

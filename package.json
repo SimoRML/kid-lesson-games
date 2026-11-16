@@ -14,6 +14,7 @@
     }
   },
   "sideEffects": [
+    "./src/index.ts",
     "./dist/kid-games.es.js",
     "./dist/kid-games.umd.cjs"
   ],
