@@ -516,7 +516,8 @@ describe('Balance Scale Game & Helpers', () => {
         });
 
         it('#5 destroy during the win window leaves no pending timers', () => {
-          vi.useFakeTimers();
+          // jsdom 31 schedules setImmediate when <style> is inserted; faking it would show up as a leaked timer.
+          vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
           try {
             const game = winLevel();
             forceWin(game);

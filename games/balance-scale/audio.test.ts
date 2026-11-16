@@ -37,7 +37,7 @@ describe('SoundFx Audio Synthesizer', () => {
       close: vi.fn().mockResolvedValue(undefined)
     };
 
-    (globalThis as any).AudioContext = vi.fn().mockReturnValue(mockAudioContext);
+    (globalThis as any).AudioContext = vi.fn(function () { return mockAudioContext; });
   });
 
   it('plays procedural sounds when enabled', () => {

@@ -71,7 +71,8 @@ const settleAndAdvance = () => vi.advanceTimersByTime(SETTLE_MS + CELEBRATE_MS);
 
 describe('number-workshop shell', () => {
   let s: Setup;
-  beforeEach(() => vi.useFakeTimers());
+  // jsdom 31 schedules setImmediate when <style> is inserted; faking it would show up as a leaked timer.
+  beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] }));
   afterEach(() => {
     s?.game.destroy();
     s?.container.remove();
@@ -243,8 +244,14 @@ describe('number-workshop shell', () => {
     });
 
     it('mounts without ResizeObserver, matchMedia or PointerEvent (jsdom defaults)', () => {
-      expect(typeof (globalThis as { PointerEvent?: unknown }).PointerEvent).toBe('undefined');
-      expect(() => (s = setup())).not.toThrow();
+      // jsdom 31 ships PointerEvent; remove it to exercise the fallback path.
+      vi.stubGlobal('PointerEvent', undefined);
+      try {
+        expect(typeof (globalThis as { PointerEvent?: unknown }).PointerEvent).toBe('undefined');
+        expect(() => (s = setup())).not.toThrow();
+      } finally {
+        vi.unstubAllGlobals();
+      }
     });
 
     it('falls back to procedural levels for garbage customLevels and English for a bad locale', () => {
