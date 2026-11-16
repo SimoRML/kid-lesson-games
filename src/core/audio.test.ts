@@ -37,7 +37,7 @@ describe('SoundEngine Core Utility', () => {
       close: vi.fn().mockResolvedValue(undefined)
     };
 
-    (globalThis as any).AudioContext = vi.fn().mockReturnValue(mockAudioContext);
+    (globalThis as any).AudioContext = vi.fn(function () { return mockAudioContext; });
   });
 
   it('initializes with default enabled state and volume', () => {

@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { createKeypad, type Keypad } from './keypad.js';
 
 describe('keypad', () => {
   let abort: AbortController;
   let parent: HTMLElement;
   let enabled: boolean;
-  let onChange: ReturnType<typeof vi.fn>;
+  let onChange: Mock<(value: string) => void>;
   let pad: Keypad;
 
   const keys = () => Array.from(parent.querySelectorAll<HTMLButtonElement>('button'));
@@ -16,7 +16,7 @@ describe('keypad', () => {
     parent = document.createElement('div');
     document.body.appendChild(parent);
     enabled = true;
-    onChange = vi.fn();
+    onChange = vi.fn<(value: string) => void>();
     pad = createKeypad(parent, {
       signal: abort.signal,
       isEnabled: () => enabled,

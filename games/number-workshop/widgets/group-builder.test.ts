@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { createGroupBuilder, type GroupBuilder } from './group-builder.js';
 
 const LABELS = { add: '+ group', remove: '− group', groupsLabel: 'Rows of 4' };
@@ -7,7 +7,7 @@ describe('group builder', () => {
   let abort: AbortController;
   let parent: HTMLElement;
   let enabled: boolean;
-  let onChange: ReturnType<typeof vi.fn>;
+  let onChange: Mock<(groups: number, delta: -1 | 1) => void>;
   let gb: GroupBuilder;
 
   const buttons = () => {
@@ -21,7 +21,7 @@ describe('group builder', () => {
     parent = document.createElement('div');
     document.body.appendChild(parent);
     enabled = true;
-    onChange = vi.fn();
+    onChange = vi.fn<(groups: number, delta: -1 | 1) => void>();
     gb = createGroupBuilder(parent, {
       unit: 4,
       maxGroups: 3,
