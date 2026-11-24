@@ -6,6 +6,8 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-24
+
 ### Fixed
 - GitHub Pages playground showed an empty game area: `sideEffects` in `package.json` omitted `./src/index.ts`, so the pages build tree-shook the game registration and the `<kid-game>` element definition. Added it to `sideEffects`.
 
