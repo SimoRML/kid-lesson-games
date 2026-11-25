@@ -7,7 +7,7 @@
 1. **Purpose**: Pluggable collection of interactive educational mini-games (Ages `3-5`, `6-8`, `9-11`) embedded via a framework-agnostic `<kid-game>` Web Component.
 2. **Tech Stack**: TypeScript (strict), Vite 8, HTML5 Canvas 2D / SVG / CSS, procedural Web Audio API (`SoundEngine`), `canvas-confetti`, Vitest + `jsdom`.
 3. **Core Engine (`src/`)**: `src/index.ts` (auto-discovery via `import.meta.glob`), `src/core/KidGameElement.ts` (`<kid-game>` Shadow DOM host), `registry.ts`, `audio.ts`, `i18n.ts`, `types.ts`.
-4. **Game Cartridges (`games/<game-id>/`)**: Isolated modules (`game.json`, `index.ts`, `i18n.ts`, `index.test.ts`, `README.md`). Currently 7 games: `balance-scale`, `buoyancy-tank`, `gear-trains`, `marble-run-angles`, `number-workshop`, `pendulum-rhythm`, `pulley-lift`.
+4. **Game Cartridges (`games/<game-id>/`)**: Isolated modules (`game.json`, `index.ts`, `i18n.ts`, `index.test.ts`, `README.md`). Currently 8 games: `balance-scale`, `buoyancy-tank`, `candy-factory`, `gear-trains`, `marble-run-angles`, `number-workshop`, `pendulum-rhythm`, `pulley-lift`.
 5. **Zero Core Edits Rule**: Never modify `src/` when creating or updating a game cartridge; Vite discovers `games/*/{game,meta}.json` and `games/*/index.ts` automatically.
 6. **Scaffold a Game**: Run `npm run create-game <game-id>` (generates all 6 files: `game.json`, `assets/thumb.svg`, `i18n.ts`, `index.ts`, `index.test.ts`, `README.md`; verified in `scripts/create-game.js`).
 7. **Run Dev Playground**: `npm run dev` (starts Vite server on `http://localhost:3000/kid-lesson-games/`, serving `index.html`).
@@ -359,9 +359,9 @@ this.context.emit('game:complete', {
 ## 8. Known Gotchas & Discrepancies (⚠️)
 
 1. ⚠️ **Metadata Filename (`game.json` vs `meta.json`)**:
-   - Old README text mentioned `meta.json`. In fact, `scripts/create-game.js` generates `game.json`, and all 7 cartridges use `game.json`. `src/index.ts` globs both `game.json` and `meta.json`, so **always use `game.json`** as the canonical filename.
+   - Old README text mentioned `meta.json`. In fact, `scripts/create-game.js` generates `game.json`, and all 8 cartridges use `game.json`. `src/index.ts` globs both `game.json` and `meta.json`, so **always use `game.json`** as the canonical filename.
 2. ⚠️ **UMD Bundle Cannot Code-Split (`dist/kid-games.umd.cjs`)**:
-   - ES module builds (`dist/kid-games.es.js`, ~14.0 kB) split each cartridge into its own on-demand chunk (`dist/<game-id>-*.js`). However, UMD format does not support code-splitting dynamic imports, so `dist/kid-games.umd.cjs` (~343 kB) bundles all 7 games into a single CommonJS-compatible UMD file.
+   - ES module builds (`dist/kid-games.es.js`, ~15.3 kB) split each cartridge into its own on-demand chunk (`dist/<game-id>-*.js`). However, UMD format does not support code-splitting dynamic imports, so `dist/kid-games.umd.cjs` (~405 kB) bundles all 8 games into a single CommonJS-compatible UMD file.
 3. ⚠️ **Library Build vs. Playground Build (`vite.config.ts`)**:
    - Default `npm run build` runs Vite in library mode (`build.lib`), which outputs JS bundles to `dist/` and ignores `index.html`. To build the interactive playground static site (`dist/index.html` + `dist/assets/`), use `npm run build:pages` (`vite build --mode pages`).
 4. ✅ **Published to npm Registry (`@simorml/kid-lesson-games`)**:
@@ -374,9 +374,9 @@ this.context.emit('game:complete', {
    - The getter for the `game` attribute is `el.gameId` (there is no `el.game` property).
    - Only `el.levels` has a JS property setter (`el.levels = [...]`). Once `el.levels` is set to a non-null value via JS property, `this._customLevels` takes precedence over `el.setAttribute('levels', ...)` until `el.levels = null` is assigned.
 8. ✅ **`context.difficulty` Wiring (resolved)**:
-   - `<kid-game difficulty="easy|medium|hard">` is parsed and passed in `context.difficulty`. All 7 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(ageGroup, difficulty)` and reload on `updateConfig`.
+   - `<kid-game difficulty="easy|medium|hard">` is parsed and passed in `context.difficulty`. All 8 cartridges modulate distractor counts, physical parameters, and tolerances via `generateLevelsForAge(ageGroup, difficulty)` and reload on `updateConfig`.
 9. ✅ **`src/index.ts` Preserves `author` and `thumbnail` & Thumbnails Present (resolved)**:
-   - `src/index.ts` registers `GameMetadata` with `raw.author` and `raw.thumbnail`, and all 7 games feature on-theme `assets/thumb.svg` vector badges.
+   - `src/index.ts` registers `GameMetadata` with `raw.author` and `raw.thumbnail`, and all 8 games feature on-theme `assets/thumb.svg` vector badges.
 10. ✅ **`games/balance-scale` Lifecycle (resolved)**:
     - Fixed in PR #27: `AbortController` window-listener cleanup, tracked timeouts cleared in `destroy()`, `pause()`/`resume()`, no `audio.close()`, and a `README.md` was added.
 11. ✅ **Zero Unused Physics Dependencies**:

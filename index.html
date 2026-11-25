@@ -301,6 +301,7 @@
             <option value="pendulum-rhythm">Pendulum Rhythm Lab</option>
             <option value="pulley-lift">Pulley Lift &amp; Mechanical Advantage</option>
             <option value="number-workshop">Division Workshop</option>
+            <option value="candy-factory">Candy Factory</option>
           </select>
         </div>
 
@@ -361,6 +362,31 @@
       const metaSkills = document.getElementById('meta-skills');
 
       const customPresetsByGame = {
+        'candy-factory': {
+          'auto': { label: 'Auto-Generate (Default)', value: null },
+          'custom-textbook': {
+            label: 'Custom: Textbook sheet (all modes)',
+            value: /*cf-textbook-preset*/ [
+              { "mode": "count", "target": 7 },
+              { "mode": "compare", "values": [29, 31], "ask": "more" },
+              { "mode": "add", "terms": [27, 15], "view": "physical" },
+              { "mode": "add", "terms": [5684, 2473, 98], "view": "written" },
+              { "mode": "add", "terms": [815, 99, 478], "view": "written", "story": "bill" },
+              { "mode": "mystery", "terms": [2571, 4271], "term": 0, "column": 1 },
+              { "mode": "robot", "terms": [5972, 2956] },
+              { "mode": "estimate", "terms": [2878, 1289] }
+            ] /*end-cf-textbook-preset*/
+          },
+          'custom-written': {
+            label: 'Custom: Written addition with carries',
+            value: /*cf-written-preset*/ [
+              { "mode": "add", "terms": [4952, 1878], "view": "written" },
+              { "mode": "add", "terms": [3928, 760, 15], "view": "written" },
+              { "mode": "add", "terms": [2583, 4576], "view": "written" },
+              { "mode": "add", "terms": [3986, 634, 1620], "view": "written" }
+            ] /*end-cf-written-preset*/
+          }
+        },
         'number-workshop': {
           'auto': { label: 'Auto-Generate (Default)', value: null },
           'custom-sheet': {

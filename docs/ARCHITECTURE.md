@@ -51,8 +51,8 @@ flowchart TD
 When [src/index.ts](../src/index.ts) is imported:
 1. **Eager Metadata Discovery** (lines 6–9):
    - Uses `import.meta.glob(['../games/*/game.json', '../games/*/meta.json'], { eager: true })`.
-   - ⚠️ **Known discrepancy**: Earlier README sections referred to `meta.json` while `balance-scale` used `game.json`. In reality, [scripts/create-game.js](../scripts/create-game.js) generates `game.json` and all 7 cartridges in `games/*/` use `game.json`. `src/index.ts` accepts both `game.json` (canonical) and `meta.json` (fallback alias).
-   - ✅ **Resolved**: `src/index.ts` (lines 19–29) preserves `author` and `thumbnail` when constructing `GameMetadata`, and all 7 games feature `assets/thumb.svg` vector badges on disk.
+   - ⚠️ **Known discrepancy**: Earlier README sections referred to `meta.json` while `balance-scale` used `game.json`. In reality, [scripts/create-game.js](../scripts/create-game.js) generates `game.json` and all 8 cartridges in `games/*/` use `game.json`. `src/index.ts` accepts both `game.json` (canonical) and `meta.json` (fallback alias).
+   - ✅ **Resolved**: `src/index.ts` (lines 19–29) preserves `author` and `thumbnail` when constructing `GameMetadata`, and all 8 games feature `assets/thumb.svg` vector badges on disk.
 2. **Lazy Cartridge Code-Splitting** (lines 12–48):
    - Uses `import.meta.glob('../games/*/index.ts')` (lazy by default).
    - Registers an async factory with `registry.register(meta, async () => ...)` that resolves `mod.createGame || mod.default || mod.createBalanceScaleGame`.
@@ -87,10 +87,10 @@ When [src/index.ts](../src/index.ts) is imported:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `game` | `el.gameId` (⚠️ not `el.game`) | *(use `setAttribute('game', id)`)* | `string` | `""` | ✅ Changing `game` increments `currentLoadToken`, tears down the active game, and mounts the new cartridge. |
 | `age` | `el.age` | *(use `setAttribute('age', val)`)* | `'3-5' \| '6-8' \| '9-11'` | `'6-8'` | ✅ Invalid values fall back to `'6-8'`. Updates running game via `updateConfig()`. |
-| `difficulty` | `el.difficulty` | *(use `setAttribute('difficulty', val)`)* | `'easy' \| 'medium' \| 'hard'` | `'medium'` | ✅ Parsed and forwarded in `context.difficulty`. All 7 cartridges scale distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)`. |
+| `difficulty` | `el.difficulty` | *(use `setAttribute('difficulty', val)`)* | `'easy' \| 'medium' \| 'hard'` | `'medium'` | ✅ Parsed and forwarded in `context.difficulty`. All 8 cartridges scale distractor counts, physical parameters, and tolerances via `generateLevelsForAge(age, difficulty)`. |
 | `sound` | `el.sound` | *(use `setAttribute('sound', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ Updates `el.audio.enabled` and calls `updateConfig()`. |
 | `autostart` | `el.autostart` | *(use `setAttribute('autostart', val)`)* | `boolean` (`attr !== 'false'`) | `true` | ✅ When `true`, automatically calls `game.start()` and emits `game:start` after `mount()`. |
-| `locale` | `el.locale` | *(use `setAttribute('locale', val)`)* | `string` | `'en'` | ✅ Updates `el.i18n.locale` and calls `updateConfig()`. Core & all 7 games bundle `'en'` and `'fr'`. |
+| `locale` | `el.locale` | *(use `setAttribute('locale', val)`)* | `string` | `'en'` | ✅ Updates `el.i18n.locale` and calls `updateConfig()`. Core & all 8 games bundle `'en'` and `'fr'`. |
 | `levels` | `el.levels` | `el.levels = [...]` | `unknown` | `null` | ✅ Accepts a JS value via property `el.levels = [...]` or a JSON string via `setAttribute('levels', '...')`. ⚠️ Once `el.levels` is set to a non-null value via property, it takes precedence over the HTML attribute until `el.levels = null` is set. |
 
 #### Public Element Methods
@@ -179,8 +179,9 @@ All events are dispatched as standard DOM `CustomEvent` instances on the `<kid-g
      - `dist/buoyancy-tank-*.js` (~43 kB)
      - `dist/pendulum-rhythm-*.js` (~48 kB)
      - `dist/marble-run-angles-*.js` (~50 kB)
+     - `dist/candy-factory-*.js` (~70 kB)
      - Shared chunks: `dist/i18n-*.js` (~1.5 kB), `dist/audio-*.js` (~3.3 kB), `dist/confetti.module-*.js` (~13.7 kB)
-   - **UMD format (`dist/kid-games.umd.js`, ~343 kB)**: ⚠️ Because the UMD module format does not support code-splitting dynamic `import()` statements, Vite bundles the core engine, all 7 games, and `canvas-confetti` into a single 343 kB file.
+   - **UMD format (`dist/kid-games.umd.js`, ~405 kB)**: ⚠️ Because the UMD module format does not support code-splitting dynamic `import()` statements, Vite bundles the core engine, all 8 games, and `canvas-confetti` into a single ~405 kB file.
 2. **Playground Static Site Build (`npm run build:pages` $\rightarrow$ `tsc && vite build --mode pages`)**:
    - ✅ Builds `index.html` and code-split `dist/assets/*.js` chunks configured with `base: '/kid-lesson-games/'` for deployment to GitHub Pages via `.github/workflows/deploy-pages.yml`.
 
