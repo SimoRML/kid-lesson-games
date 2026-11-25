@@ -6,6 +6,10 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-25
+
+Released through npm trusted publishing (OIDC) as a staged publish approved with 2FA. It also ships the 0.3.2 changes below, since 0.3.2 never reached npm.
+
 ### Changed
 - `release.yml` now stages each release with `npm stage publish` instead of `npm publish`. The npm trusted publisher (OIDC) is allowed only staged publishes, so a released version stays private on npm until a maintainer approves it with 2FA on npmjs.com or with `npm stage approve`. The job summary says what to approve. This is in addition to the existing GitHub `npm-publish` environment approval.
 
