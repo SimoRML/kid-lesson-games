@@ -173,6 +173,31 @@ describe('Candy Factory cartridge', () => {
     game.destroy();
   });
 
+  it('the written-mode banner still goes away when the order is reset while it shows', () => {
+    ctx = makeContext({
+      ageGroup: '9-11',
+      customLevels: [
+        { mode: 'add', terms: [358, 467] },
+        { mode: 'add', terms: [129, 293] },
+        { mode: 'add', terms: [2458, 3795] }
+      ]
+    });
+    const game = new CandyFactoryGame();
+    game.mount(container, ctx);
+    game.start();
+    for (let i = 0; i < 2; i++) {
+      solveCurrent(game, container);
+      vi.advanceTimersByTime(SETTLE_MS + CELEBRATE_MS + 10);
+    }
+    const banner = q(container, '.cf-banner');
+    expect(banner.classList.contains('show')).toBe(true);
+    q<HTMLButtonElement>(container, '.cf-reset').click();
+    vi.advanceTimersByTime(5_000);
+    expect(banner.classList.contains('show')).toBe(false);
+    expect(game.debugState.addView).toBe('written');
+    game.destroy();
+  });
+
   describe('pack view (carry made physical)', () => {
     function mountAdd(terms: number[], age: GameContext['ageGroup'] = '6-8'): { game: CandyFactoryGame; view: PackView } {
       ctx = makeContext({ ageGroup: age, customLevels: [{ mode: 'add', terms, view: 'physical' }] });

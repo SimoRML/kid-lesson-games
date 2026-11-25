@@ -515,6 +515,9 @@ export class CandyFactoryGame implements KidGame {
   private teardownLevel(): void {
     this.levelAbort?.abort();
     this.levelAbort = null;
+    // The written-mode banner's timer lives in levelTimers, cleared just below:
+    // hide that banner here so a reset or config change never leaves it stuck.
+    this.hud?.banner.classList.remove('show', 'cf-banner-info');
     this.levelTimers.clear();
     this.view = null;
     this.hud?.stage.replaceChildren();
