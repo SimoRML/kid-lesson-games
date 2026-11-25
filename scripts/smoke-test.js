@@ -76,8 +76,8 @@ try {
 
     console.log('Testing game registry population...');
     const games = registry.list();
-    if (games.length !== 7) {
-      throw new Error(\`Expected 7 registered games, got \${games.length}\`);
+    if (games.length !== 8) {
+      throw new Error(\`Expected 8 registered games, got \${games.length}\`);
     }
 
     console.log(\`Successfully verified \${games.length} registered games in tarball!\`);
