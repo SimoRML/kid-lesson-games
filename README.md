@@ -5,11 +5,20 @@
 [![TypeScript](https://img.shields.io/badge/language-TypeScript-3178C6.svg)](https://www.typescriptlang.org/)
 [![Web Component](https://img.shields.io/badge/element-%3Ckid--game%3E-f97316.svg)](https://developer.mozilla.org/en-US/docs/Web/API/Web_components)
 
-**`kid-lesson-games`** is a pluggable collection of interactive educational mini-games for youngsters (ages 3–11), packaged as a framework-agnostic **`<kid-game>` Web Component**. Each game is an isolated cartridge teaching grounded European math and physical laws across three age brackets with zero external runtime assets.
+**`kid-lesson-games`** is a drop-in **`<kid-game>` web component** with **8 interactive math and physics mini-games for ages 3–11**. It works offline, in **English and French**, with **no tracking, no ads and no external assets**. Each game is an isolated cartridge with three age brackets (3–5, 6–8, 9–11), and it embeds in any stack (React, Vue, Svelte, Angular, Next.js or plain HTML) with zero friction.
 
-A pluggable collection of interactive mini-games designed for **kids' learning platforms** (Numbers, Letters, Logic, and Spatial awareness). Built specifically for seamless embedding via a standard **`<kid-game>` Web Component**—drop it into **any** frontend stack (React, Vue, Svelte, Angular, Next.js, or plain HTML) with zero friction. Designed with an **AI-first contributor vibe**: developers or AI coding agents can generate and drop in brand-new games in minutes with zero modifications to the core engine.
+🌐 **Try it now, no install**: [**simorml.github.io/kid-lesson-games**](https://simorml.github.io/kid-lesson-games/)
 
-🌐 **Live Interactive Playground**: [**https://simorml.github.io/kid-lesson-games/**](https://simorml.github.io/kid-lesson-games/) *(🚧 auto-deploys via GitHub Actions once Pages is enabled in repository settings)*
+**Use it in any web page** (no npm or build step; verified loading from jsDelivr):
+
+```html
+<kid-game game="balance-scale" age="6-8" locale="en"></kid-game>
+<script type="module">
+  import 'https://cdn.jsdelivr.net/npm/@simorml/kid-lesson-games@0.4.0/dist/kid-games.es.js';
+</script>
+```
+
+Teachers, parents and developers are welcome: tell us what works and what doesn't in [GitHub Issues](https://github.com/simorml/kid-lesson-games/issues/new). The project also has an **AI-first contributor workflow**: developers or AI coding agents can drop in a brand-new game in minutes with zero changes to the core engine (see [AGENTS.md](AGENTS.md)).
 
 > 📸 **TODO (Screenshot / Demo GIF)**: Capture and embed a screenshot or animated GIF of the `<kid-game>` playground switching between cartridges here (e.g., `docs/assets/playground-demo.gif`).
 
