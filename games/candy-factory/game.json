@@ -1,0 +1,11 @@
+{
+  "id": "candy-factory",
+  "title": "Candy Factory",
+  "version": "1.0.0",
+  "description": "Fill customers' candy orders: count and compare candies, then pack 10 candies into a bag, 10 bags into a box and 10 boxes into a crate. The packing machine is the carry of column addition, and at ages 9-11 the factory switches to written mode, with torn labels, a robot packer's mistakes and truck-size estimation.",
+  "author": "Contributor",
+  "category": "numbers",
+  "ageGroups": ["3-5", "6-8", "9-11"],
+  "skills": ["counting", "comparing-numbers", "place-value", "regrouping", "addition-with-carrying", "written-addition", "missing-digit", "error-analysis", "estimation"],
+  "thumbnail": "assets/thumb.svg"
+}
