@@ -1,6 +1,6 @@
 {
   "name": "@simorml/kid-lesson-games",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Pluggable mini web games collection for youngsters",
   "type": "module",
   "main": "./dist/kid-games.umd.cjs",
