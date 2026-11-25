@@ -81,7 +81,7 @@
 - [x] ✅ Configure `package.json` entrypoints (`main`, `module`, `types`, `exports`, `files`, `prepack`) for local and git-based installation (`npm i github:simorml/kid-lesson-games`).
 - [x] ✅ Add GitHub Pages deployment workflow ([.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)) and `npm run build:pages` with `base: '/kid-lesson-games/'`.
 - [x] ✅ Emit standalone TypeScript declaration files (`dist/index.d.ts`) during build (`tsconfig.build.json` in PR #58).
-- [x] ✅ Publish `@simorml/kid-lesson-games` to the public npm registry (remove `"private": true`, provenance, release workflow). ⚠️ Publishes with an environment-scoped `NPM_TOKEN`; Trusted Publisher OIDC is still pending (T-03, T-16).
+- [x] ✅ Publish `@simorml/kid-lesson-games` to the public npm registry (remove `"private": true`, provenance, release workflow). 🚧 Trusted Publisher OIDC configured 2026-11-25 but not yet used by a release; 0.3.0 and 0.3.1 were published with an environment-scoped `NPM_TOKEN` (T-16).
 - [ ] 🗺️ Add additional European locales (`es`, `de`, `it`, `nl`) to core `I18nManager` and cartridge dictionaries.
 
 ---
@@ -90,11 +90,11 @@
 
 Full plan, decisions and per-task detail: [docs/design/ci-release-pipeline.md](docs/design/ci-release-pipeline.md) (priority P0 → P3).
 
-- [ ] 🚧 **P0** Repo settings: secret scanning + push protection, read-only token, `npm-publish` Environment ✅; npm 2FA ⚠️ not enabled yet ([T-01..03](docs/design/ci-release-pipeline.md#p0-settings-owner-action-no-pr)).
+- [x] ✅ **P0** Repo settings: secret scanning + push protection, read-only token, `npm-publish` Environment, npm 2FA (enabled 2026-11-25) ([T-01..03](docs/design/ci-release-pipeline.md#p0-settings-owner-action-no-pr)).
 - [x] ✅ **P1** PR CI with `verify` aggregate check + `main` ruleset ([T-04, T-05](docs/design/ci-release-pipeline.md#p1-ci--security-prs-start-here)).
 - [x] ✅ **P1** gitleaks, CodeQL, Dependency Review, audit gate, Dependabot, `SECURITY.md`, `CODEOWNERS`, PR template ([T-06..08](docs/design/ci-release-pipeline.md#p1-ci--security-prs-start-here)).
 - [x] ✅ **P2** Publishable package: `LICENSE`, `.d.ts`, trimmed `files`, `prepack`, rename to `@simorml/kid-lesson-games`, publint/attw, remove `matter-js`, SSR guard ([T-09..14, T-17](docs/design/ci-release-pipeline.md#p2-publishable-package)).
-- [ ] 🚧 **P3** Tag-triggered release with provenance, Pages deploy hardening, un-private + first `rc`, release workflow hardening ✅; OIDC trusted publishing ⚠️ pending npm 2FA, `v*` tag ruleset 🗺️ ([T-15, T-16, T-18..T-20](docs/design/ci-release-pipeline.md#p3-release)).
+- [ ] 🚧 **P3** Tag-triggered release with provenance, Pages deploy hardening, un-private + first `rc`, release workflow hardening ✅; OIDC trusted publishing 🚧 configured, awaiting first OIDC release; `v*` tag ruleset 🗺️ ([T-15, T-16, T-18..T-20](docs/design/ci-release-pipeline.md#p3-release)).
 
 ---
 
