@@ -185,21 +185,33 @@ jobs:
           # The .sha512 file is attached to the GitHub Release, so it must match too.
           sha512sum --check --strict "${TARBALL}.sha512"
 
-      - name: Publish to npm
+      # Staged publishing: the trusted publisher (OIDC) is allowed only `npm stage publish`.
+      # The version stays private on npm until a maintainer approves it with 2FA, either on
+      # npmjs.com (package → Staged Packages) or with `npm stage approve <stage-id>`.
+      - name: Stage release on npm (needs maintainer 2FA approval)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           TARBALL: ${{ needs.verify-and-pack.outputs.tarball }}
+          VERSION: ${{ needs.verify-and-pack.outputs.version }}
           IS_DRY_RUN: ${{ needs.verify-and-pack.outputs.is_dry_run }}
         run: |
           cd release-artifacts
           if [ "$IS_DRY_RUN" = "true" ]; then
-            echo "DRY RUN MODE: Skipping npm publish."
-            echo "Would publish: $TARBALL with provenance."
+            echo "DRY RUN MODE: Skipping npm stage publish."
+            echo "Would stage: $TARBALL with provenance."
           else
-            echo "Publishing $TARBALL to npm registry with provenance..."
-            npm publish "$TARBALL" --access public --provenance
+            echo "Staging $TARBALL on the npm registry with provenance..."
+            npm stage publish "$TARBALL" --access public --provenance
+            {
+              echo "### npm: @simorml/kid-lesson-games@${VERSION} is staged, not public yet"
+              echo
+              echo "Approve it with 2FA on npmjs.com (package → Staged Packages),"
+              echo "or run \`npm stage list @simorml/kid-lesson-games\` then \`npm stage approve <stage-id>\`."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      # Created as soon as the version is staged; the npm package becomes installable only
+      # after the maintainer approves the staged version.
       - name: Create GitHub Release
         if: needs.verify-and-pack.outputs.is_dry_run != 'true'
         env:
