@@ -670,7 +670,12 @@
         const entry = document.createElement('div');
         entry.className = 'log-entry';
         const now = new Date().toLocaleTimeString();
-        entry.innerHTML = `<span class="log-time">[${now}]</span> <strong>${type}</strong> ${JSON.stringify(detail)}`;
+        const time = document.createElement('span');
+        time.className = 'log-time';
+        time.textContent = `[${now}]`;
+        const label = document.createElement('strong');
+        label.textContent = String(type);
+        entry.append(time, ' ', label, ' ', JSON.stringify(detail));
         log.appendChild(entry);
         log.scrollTop = log.scrollHeight;
       }
@@ -686,9 +691,13 @@
           metaCategory.setAttribute('data-category', meta.category || 'numbers');
         }
         if (metaSkills) {
-          metaSkills.innerHTML = (meta.skills || [])
-            .map((s) => `<span class="skill-tag">${s}</span>`)
-            .join('');
+          metaSkills.textContent = '';
+          for (const skill of meta.skills || []) {
+            const tag = document.createElement('span');
+            tag.className = 'skill-tag';
+            tag.textContent = String(skill);
+            metaSkills.appendChild(tag);
+          }
         }
       }
 

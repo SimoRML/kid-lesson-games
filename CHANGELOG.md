@@ -6,6 +6,9 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 
 ## [Unreleased]
 
+### Security
+- Playground (`index.html`): the event log and the skill tags are now built with DOM APIs and `textContent` instead of `innerHTML`, so event details derived from `customLevels` cannot inject markup (CodeQL `js/xss-through-dom`). `scripts/smoke-test.js` installs the tarball with `execFileSync` (no shell) instead of an interpolated `execSync` string (CodeQL `js/shell-command-injection-from-environment`). No `src/` change, nothing in the published package changes.
+
 ## [0.4.0] - 2026-11-25
 
 ### Added

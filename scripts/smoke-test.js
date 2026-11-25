@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -48,7 +48,7 @@ try {
   );
 
   console.log('3. Installing tarball into consumer workspace...');
-  execSync(`npm install ./${tarballName}`, { cwd: tempDir, stdio: 'inherit' });
+  execFileSync('npm', ['install', `./${tarballName}`], { cwd: tempDir, stdio: 'inherit' });
 
   console.log('4. Testing Node.js ESM import & SSR safety...');
   const testScript = `
