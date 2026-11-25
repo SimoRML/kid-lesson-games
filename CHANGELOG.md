@@ -6,7 +6,12 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 
 ## [Unreleased]
 
+### Changed
+- `release.yml` now stages each release with `npm stage publish` instead of `npm publish`. The npm trusted publisher (OIDC) is allowed only staged publishes, so a released version stays private on npm until a maintainer approves it with 2FA on npmjs.com or with `npm stage approve`. The job summary says what to approve. This is in addition to the existing GitHub `npm-publish` environment approval.
+
 ## [0.3.2] - 2026-11-25
+
+> Tagged on GitHub (`v0.3.2`) but **not published to npm**: the publish job was refused (`OIDC permission denied for this action`) because the trusted publisher allows only staged publishes. These changes ship in the next published version.
 
 ### Security
 - Hardened `.github/workflows/release.yml`: no npm dependency cache in the release build, workflow values passed through `env` instead of interpolated into shell and Python scripts, checkout credentials not persisted, main-branch check now also applies to non-dry-run manual runs, a manual run defaults to dry run unless `dry_run` is exactly `false`, and the tarball SHA-512 is checked before `npm publish` against the digest the verify job passes as a job output, which is stored separately from the uploaded artifact.
