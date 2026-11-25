@@ -6,6 +6,8 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-25
+
 ### Security
 - Hardened `.github/workflows/release.yml`: no npm dependency cache in the release build, workflow values passed through `env` instead of interpolated into shell and Python scripts, checkout credentials not persisted, main-branch check now also applies to non-dry-run manual runs, a manual run defaults to dry run unless `dry_run` is exactly `false`, and the tarball SHA-512 is checked before `npm publish` against the digest the verify job passes as a job output, which is stored separately from the uploaded artifact.
 
