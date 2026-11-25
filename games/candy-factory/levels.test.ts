@@ -220,6 +220,28 @@ describe('parseCustomLevels (hostile input)', () => {
   it('rejects a robot level whose additions need no carry or a non-carry column', () => {
     expect(parseCustomLevels([{ mode: 'robot', terms: [1234, 4321] }])).toBeNull();
     expect(parseCustomLevels([{ mode: 'robot', terms: [5972, 2956], column: 0 }])).toBeNull();
+    // 55 + 45 = 100: the only carried-into column inside the terms shows 0 ("190" would be shown).
+    expect(parseCustomLevels([{ mode: 'robot', terms: [55, 45] }])).toBeNull();
+    expect(parseCustomLevels([{ mode: 'robot', terms: [55, 45], column: 1 }])).toBeNull();
+  });
+
+  it('rejects an estimate that ties between two trucks', () => {
+    expect(parseCustomLevels([{ mode: 'estimate', terms: [1000, 500] }])).toBeNull();
+    expect(parseCustomLevels([{ mode: 'estimate', terms: [2878, 1289] }])).not.toBeNull();
+  });
+
+  it('robot puzzles vary across runs (the fixed fallback is rare)', () => {
+    const seen = new Set<string>();
+    let fallback = 0;
+    for (let i = 0; i < 2000; i++) {
+      const robot = generateLevelsForAge('9-11', 'medium', seededRng(50_000 + i)).find((l) => l.mode === 'robot');
+      if (robot?.mode !== 'robot') continue;
+      const key = robot.terms.join('+');
+      if (key === '2458+3795') fallback++;
+      seen.add(key);
+    }
+    expect(fallback).toBeLessThan(20);
+    expect(seen.size).toBeGreaterThan(1500);
   });
 
   it('caps the level count and the raw string size', () => {

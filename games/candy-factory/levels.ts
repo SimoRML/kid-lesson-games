@@ -250,12 +250,12 @@ function upper(rng: Rng, difficulty: Difficulty): Level[] {
   const bill = termsWithCarries(rng, [3, 2, 3], 1, 3, 9999, [815, 99, 478]);
   const writtenHard = termsWithCarries(rng, [4, 4, 3], 2, 3, 99999, [3986, 634, 1620]);
   const mysteryTerms = termsWithCarries(rng, [width, width], 1, 2, 9999, fallback2);
-  let robotTerms = termsWithCarries(rng, [width, width], 1, 2, 9999, fallback2);
-  let robot = robotFrom(robotTerms);
-  if (!robot) {
-    robotTerms = fallback2;
-    robot = robotFrom(robotTerms) ?? { mode: 'robot', terms: fallback2, column: 1 };
+  // Retry fresh terms before using the fixed fallback, so runs rarely repeat a puzzle.
+  let robot: RobotLevel | null = null;
+  for (let attempt = 0; attempt < 30 && !robot; attempt++) {
+    robot = robotFrom(termsWithCarries(rng, [width, width], 1, 2, 9999, fallback2));
   }
+  robot = robot ?? robotFrom(fallback2) ?? { mode: 'robot', terms: fallback2, column: 1 };
 
   const levels: Level[] = [
     { mode: 'add', terms: physical1 },
@@ -370,7 +370,11 @@ function parseLevel(item: unknown): Level | null {
     case 'robot': {
       const terms = parseTerms(item.terms);
       if (!terms) return null;
-      const targets = carryTargets(terms).filter((c) => c < writtenAddition(terms).termColumns);
+      // Same rule as the generator: a column inside the terms whose digit is not 0,
+      // so "one less" is a real forgotten-carry trace (55 + 45 must not show 190).
+      const { termColumns, sum } = writtenAddition(terms);
+      const sumDigits = toDigits(sum);
+      const targets = carryTargets(terms).filter((c) => c < termColumns && sumDigits[c] > 0);
       if (targets.length === 0) return null;
       if (item.column === undefined) return { mode: 'robot', terms, column: targets[0] };
       const column = intIn(item.column, 0, 9);
@@ -380,7 +384,8 @@ function parseLevel(item: unknown): Level | null {
       const terms = parseTerms(item.terms);
       if (!terms) return null;
       const sum = terms.reduce((a, b) => a + b, 0);
-      return sum >= 1000 ? { mode: 'estimate', terms } : null;
+      // A sum ending in exactly 500 is equally close to two trucks: no single answer.
+      return sum >= 1000 && sum % 1000 !== 500 ? { mode: 'estimate', terms } : null;
     }
     default:
       return null;

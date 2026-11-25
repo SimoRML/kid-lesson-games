@@ -84,8 +84,8 @@ An array (or JSON string) of up to 20 levels. Invalid entries are skipped; if no
 | `compare` | `values` two different numbers 1–999, `ask` `"more"` (default) or `"fewer"` |
 | `add` | `terms`; optional `view` `"physical"` / `"written"` (omitted: auto, written after 2 hand-packed orders at 9–11; sums above 9 999 are always written); optional `story: "bill"` |
 | `mystery` | `terms`, `term` (index of the torn term), `column` (0 = units, must be a digit of that term) |
-| `robot` | `terms` (must need a carry); optional `column` = a column that receives a carry (default: the first one) |
-| `estimate` | `terms` with a sum of at least 1 000 |
+| `robot` | `terms` (must need a carry into a column of the terms whose sum digit is not 0); optional `column` = such a column (default: the first one) |
+| `estimate` | `terms` with a sum of at least 1 000, not ending in exactly 500 (that would tie two trucks) |
 
 This example is the playground's *Custom: Textbook sheet* preset in `index.html` (a test checks that it parses).
 
