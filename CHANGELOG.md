@@ -6,6 +6,12 @@ Feature PRs add entries under `[Unreleased]` only; the Merger moves them into a 
 
 ## [Unreleased]
 
+### Security
+- Hardened `.github/workflows/release.yml`: no npm dependency cache in the release build, workflow values passed through `env` instead of interpolated into shell and Python scripts, checkout credentials not persisted, main-branch check now also applies to non-dry-run manual runs, a manual run defaults to dry run unless `dry_run` is exactly `false`, and the tarball SHA-512 is checked before `npm publish` against the digest the verify job passes as a job output, which is stored separately from the uploaded artifact.
+
+### Changed
+- Corrected release-pipeline status labels in `docs/design/ci-release-pipeline.md`, `TODO.md` and `docs/VISION.md`: 0.3.0 and 0.3.1 were published with an environment-scoped `NPM_TOKEN`, not OIDC. npm 2FA and a GitHub Actions trusted publisher were set up on 2026-11-25; OIDC publishing is not yet exercised by a release.
+
 ## [0.3.1] - 2026-11-24
 
 ### Fixed

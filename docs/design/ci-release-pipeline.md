@@ -32,7 +32,7 @@
 2. Default workflow `GITHUB_TOKEN` permission: **read-only**; do not allow Actions to approve PRs.
 3. **Ruleset on `main`**: PR required; required check `ci / verify` (added after P1 merges); linear history; block force-push and deletion; dismiss stale approvals; no direct pushes.
 4. **Environment `npm-publish`** (created now, used in P3): required reviewer = owner; deployment restricted to `v*` tags.
-5. npm account: 2FA enforced (auth-and-writes).
+5. npm account: 2FA enforced. Found missing on 2026-11-24; enabled by the owner on 2026-11-25 (see T-03).
 
 Verification: `gh api repos/SimoRML/kid-lesson-games --jq .security_and_analysis` shows `enabled`; a direct push to `main` is rejected.
 
@@ -76,6 +76,7 @@ Verification: `ci.yml` and `security.yml` syntax and workflows verified 100% gre
 - Trigger: tag `v*.*.*` (+ `workflow_dispatch` with `dry_run`).
 - **verify job**: full P1 pipeline on the tagged commit; assert tag == `package.json` version, tag commit is reachable from `main`, `CHANGELOG.md` has that version section.
 - **publish job** (`needs: verify`, `environment: npm-publish` → human approval): `permissions: contents: write, id-token: write`; **npm Trusted Publishing (OIDC), no `NPM_TOKEN`**; publish the exact tarball that was smoke-tested, `npm publish --provenance --access public`.
+- ⚠️ **Current state (2026-11-25)**: the owner has enabled npm 2FA and configured a GitHub Actions trusted publisher (`release.yml`, environment `npm-publish`) on npmjs.com, but no release has published through OIDC yet. The publish job still sets `NODE_AUTH_TOKEN` from the environment-scoped `NPM_TOKEN`; npm "automatically detects OIDC environments and uses them for authentication before falling back to traditional tokens" ([npm docs](https://docs.npmjs.com/trusted-publishers)), so the next release should use OIDC, with the token as fallback. Per those docs a new trusted publisher must complete its first successful publish within 2 days or it expires, and its config cannot be edited (delete and re-create). GitHub says it is "targeting January 2027" for limiting 2FA-bypass tokens to staged publishes that a maintainer approves with 2FA ([GitHub changelog, 2026-07-31](https://github.blog/changelog/2026-07-31-restricting-npm-bypass-2fa-granular-access-tokens/)), so the token must not be relied on after that.
 - **Bootstrap caveat**: trusted publishing can only be configured on npmjs.com for an existing package. First publish may need a short-lived granular token stored only in the Environment, deleted right after the first release, then switch to OIDC.
 - GitHub Release from the CHANGELOG section with the tarball + SHA-512 attached.
 - Rollback: `npm deprecate` and ship a patch; `unpublish` only inside 72 h; never move or delete a tag.
@@ -92,7 +93,7 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 ### P0: settings (owner action, no PR)
 - [x] ✅ **T-01** Enable secret scanning + push protection + Dependabot security updates ([§4](#4-phase-p0-repo-settings-no-code-owner-approves-each)).
 - [x] ✅ **T-02** Read-only default `GITHUB_TOKEN`; create `npm-publish` Environment (reviewer + `v*` tag rule).
-- [x] ✅ **T-03** npm 2FA enforced on the publishing account.
+- [x] ✅ **T-03** npm 2FA enforced on the publishing account. Found not enabled on 2026-11-24; enabled by the owner on 2026-11-25 (owner-confirmed; account settings are not visible to CI or this repo).
 
 ### P1: CI + security (PRs; start here)
 - [x] ✅ **T-04** `ci.yml` with `verify` aggregate job, SHA-pinned actions, `.nvmrc`, `engines.node` ([§5.1](#51-ciyml)).
@@ -111,9 +112,11 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 - [x] ✅ **T-17** SSR guard in `src/core/KidGameElement.ts` (separate, explicitly approved `src/` PR; prerequisite of T-16).
 
 ### P3: release
-- [x] ✅ **T-15** `release.yml` with verify + approval-gated OIDC publish + GitHub Release, dry-run only ([§7.1](#71-releaseyml)).
+- [ ] 🚧 **T-15** `release.yml` with verify + approval-gated publish + GitHub Release ([§7.1](#71-releaseyml)). Used for 0.3.0 and 0.3.1 with `NPM_TOKEN`; OIDC is configured but not yet exercised (T-16).
 - [x] ✅ **T-18** Harden `deploy-pages.yml` ([§7.2](#72-deploy-pagesyml)).
-- [x] ✅ **T-16** Remove `"private": true`, update AGENTS.md §0/§9, first `rc` publish, configure Trusted Publisher on npmjs.com, promote to `latest`.
+- [ ] 🚧 **T-16** Remove `"private": true`, update AGENTS.md §0/§9, first `rc` publish, configure Trusted Publisher on npmjs.com, promote to `latest`. Trusted Publisher configured by the owner on 2026-11-25; remaining: a release that publishes through OIDC, then set the package to "Require two-factor authentication and disallow tokens", delete `NPM_TOKEN`, and remove it from `release.yml`.
+- [x] ✅ **T-19** Harden `release.yml`: no dependency cache, workflow values passed via `env` instead of interpolated into scripts, no persisted checkout credentials, main-ancestry check for every non-dry-run (manual runs too), fail-safe dry-run default, tarball SHA-512 checked before publish against the digest passed as a `verify-and-pack` job output (stored apart from the artifact).
+- [ ] 🗺️ **T-20** Tag ruleset protecting `v*` tags from creation, update and deletion by non-admins (owner setting, no PR).
 
 ## 9. Risks and rollback
 
@@ -124,4 +127,4 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 
 ## 10. Not verifiable until live
 
-Real OIDC publish, Environment approval prompt, and ruleset enforcement against admins. They are exercised only by the first `rc` release.
+Real OIDC publish (configured, not yet exercised, T-16), Environment approval prompt (verified on the 0.3.0 and 0.3.1 releases), and ruleset enforcement against admins. They are exercised only by the first `rc` release.
