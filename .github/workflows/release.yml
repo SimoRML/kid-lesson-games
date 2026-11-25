@@ -23,6 +23,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       tarball: ${{ steps.pack.outputs.TARBALL }}
+      tarball_sha512: ${{ steps.pack.outputs.SHA512 }}
       is_dry_run: ${{ steps.check_dry_run.outputs.DRY_RUN }}
     steps:
       - name: Checkout repository with full history
@@ -119,6 +120,9 @@ jobs:
           TARBALL=$(npm pack | tail -n 1)
           echo "TARBALL=$TARBALL" >> "$GITHUB_OUTPUT"
           sha512sum "$TARBALL" > "${TARBALL}.sha512"
+          # The digest also travels as a job output, stored apart from the artifact, so the
+          # publish job can detect an artifact whose tarball and .sha512 were both replaced.
+          echo "SHA512=$(cut -d' ' -f1 "${TARBALL}.sha512")" >> "$GITHUB_OUTPUT"
           mkdir -p release-artifacts
           cp "$TARBALL" "${TARBALL}.sha512" release-artifacts/
           ls -la release-artifacts/
@@ -163,11 +167,22 @@ jobs:
           name: release-package
           path: release-artifacts
 
-      - name: Verify tarball checksum
+      - name: Verify tarball checksum against the verify job's digest
         env:
           TARBALL: ${{ needs.verify-and-pack.outputs.tarball }}
+          EXPECTED_SHA512: ${{ needs.verify-and-pack.outputs.tarball_sha512 }}
         run: |
           cd release-artifacts
+          if ! printf '%s' "$EXPECTED_SHA512" | grep -Eq '^[0-9a-f]{128}$'; then
+            echo "::error::Missing or malformed SHA-512 output from verify-and-pack"
+            exit 1
+          fi
+          ACTUAL_SHA512=$(sha512sum "$TARBALL" | cut -d' ' -f1)
+          if [ "$ACTUAL_SHA512" != "$EXPECTED_SHA512" ]; then
+            echo "::error::Tarball SHA-512 does not match the digest computed in verify-and-pack"
+            exit 1
+          fi
+          # The .sha512 file is attached to the GitHub Release, so it must match too.
           sha512sum --check --strict "${TARBALL}.sha512"
 
       - name: Publish to npm

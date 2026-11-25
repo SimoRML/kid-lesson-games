@@ -76,7 +76,7 @@ Verification: `ci.yml` and `security.yml` syntax and workflows verified 100% gre
 - Trigger: tag `v*.*.*` (+ `workflow_dispatch` with `dry_run`).
 - **verify job**: full P1 pipeline on the tagged commit; assert tag == `package.json` version, tag commit is reachable from `main`, `CHANGELOG.md` has that version section.
 - **publish job** (`needs: verify`, `environment: npm-publish` → human approval): `permissions: contents: write, id-token: write`; **npm Trusted Publishing (OIDC), no `NPM_TOKEN`**; publish the exact tarball that was smoke-tested, `npm publish --provenance --access public`.
-- ⚠️ **Current state (2026-11-24)**: trusted publishing is not configured yet (T-03, T-16), so the publish job still uses a granular `NPM_TOKEN` (bypass 2FA) stored only in the `npm-publish` Environment, with `--provenance`. npm plans to stop direct publishing with 2FA-bypass tokens around January 2027, so OIDC must be in place before then.
+- ⚠️ **Current state (2026-11-24)**: trusted publishing is not configured yet (T-03, T-16), so the publish job still uses a granular `NPM_TOKEN` (bypass 2FA) stored only in the `npm-publish` Environment, with `--provenance`. GitHub says it is "targeting January 2027" for limiting 2FA-bypass tokens to staged publishes that a maintainer approves with 2FA ([GitHub changelog, 2026-07-31](https://github.blog/changelog/2026-07-31-restricting-npm-bypass-2fa-granular-access-tokens/)), so OIDC must be in place before then.
 - **Bootstrap caveat**: trusted publishing can only be configured on npmjs.com for an existing package. First publish may need a short-lived granular token stored only in the Environment, deleted right after the first release, then switch to OIDC.
 - GitHub Release from the CHANGELOG section with the tarball + SHA-512 attached.
 - Rollback: `npm deprecate` and ship a patch; `unpublish` only inside 72 h; never move or delete a tag.
@@ -115,7 +115,7 @@ Priority: **P0** = do first, blocks everything; **P1** = high; **P2** = packagin
 - [ ] 🚧 **T-15** `release.yml` with verify + approval-gated publish + GitHub Release ([§7.1](#71-releaseyml)). Used for 0.3.0 and 0.3.1, but it publishes with `NPM_TOKEN`, not OIDC, until T-16 is finished.
 - [x] ✅ **T-18** Harden `deploy-pages.yml` ([§7.2](#72-deploy-pagesyml)).
 - [ ] 🚧 **T-16** Remove `"private": true`, update AGENTS.md §0/§9, first `rc` publish, configure Trusted Publisher on npmjs.com, promote to `latest`. All done except the Trusted Publisher (blocked by T-03). After it works: set the package to "Require two-factor authentication and disallow tokens", delete `NPM_TOKEN`, and remove it from `release.yml`.
-- [x] ✅ **T-19** Harden `release.yml`: no dependency cache, workflow values passed via `env` instead of interpolated into scripts, no persisted checkout credentials, main-ancestry check for every non-dry-run (manual runs too), fail-safe dry-run default, tarball SHA-512 check before publish.
+- [x] ✅ **T-19** Harden `release.yml`: no dependency cache, workflow values passed via `env` instead of interpolated into scripts, no persisted checkout credentials, main-ancestry check for every non-dry-run (manual runs too), fail-safe dry-run default, tarball SHA-512 checked before publish against the digest passed as a `verify-and-pack` job output (stored apart from the artifact).
 - [ ] 🗺️ **T-20** Tag ruleset protecting `v*` tags from creation, update and deletion by non-admins (owner setting, no PR).
 
 ## 9. Risks and rollback
