@@ -29,54 +29,68 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
+      # Workflow values are passed through env, never interpolated into the script text.
       - name: Determine run mode
         id: check_dry_run
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "DRY_RUN=${{ github.event.inputs.dry_run }}" >> $GITHUB_OUTPUT
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DRY_RUN_INPUT" != "false" ]; then
+            echo "DRY_RUN=true" >> "$GITHUB_OUTPUT"
           else
-            echo "DRY_RUN=false" >> $GITHUB_OUTPUT
+            echo "DRY_RUN=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Read .nvmrc
         id: nvm
-        run: echo "NODE_VERSION=$(cat .nvmrc | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+        run: echo "NODE_VERSION=$(tr -d '[:space:]' < .nvmrc)" >> "$GITHUB_OUTPUT"
 
+      # No dependency cache in the release job: a poisoned cache must never reach a published build.
       - name: Setup Node.js ${{ steps.nvm.outputs.NODE_VERSION }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
       - name: Validate release metadata & version consistency
         id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TAG_REF: ${{ github.ref_name }}
+          DRY_RUN: ${{ steps.check_dry_run.outputs.DRY_RUN }}
         run: |
           PKG_VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$PKG_VERSION" >> $GITHUB_OUTPUT
+          if ! printf '%s' "$PKG_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::package.json version '$PKG_VERSION' is not a valid semver version"
+            exit 1
+          fi
+          echo "VERSION=$PKG_VERSION" >> "$GITHUB_OUTPUT"
 
-          if [ "${{ github.event_name }}" = "push" ]; then
-            TAG_REF="${{ github.ref_name }}"
+          if [ "$EVENT_NAME" = "push" ]; then
             EXPECTED_TAG="v${PKG_VERSION}"
             if [ "$TAG_REF" != "$EXPECTED_TAG" ]; then
               echo "::error::Tag mismatch: tag is '$TAG_REF' but package.json version is '$PKG_VERSION' (expected '$EXPECTED_TAG')"
               exit 1
             fi
+          fi
 
-            # Verify tag commit is on main branch
-            git fetch origin main
+          # Every real (non-dry-run) release, tag push or manual run, must come from a commit on main.
+          if [ "$DRY_RUN" != "true" ]; then
+            git fetch --no-tags origin main
             if ! git merge-base --is-ancestor HEAD origin/main; then
-              echo "::error::Release tag commit must be reachable from main branch!"
+              echo "::error::Release commit must be reachable from main branch!"
               exit 1
             fi
           fi
 
           # Verify CHANGELOG has heading for this version
-          if ! grep -q "## \[${PKG_VERSION}\]" CHANGELOG.md; then
-            if [ "${{ steps.check_dry_run.outputs.DRY_RUN }}" = "true" ]; then
+          if ! grep -qF "## [${PKG_VERSION}]" CHANGELOG.md; then
+            if [ "$DRY_RUN" = "true" ]; then
               echo "::warning::CHANGELOG.md does not yet have section '## [${PKG_VERSION}]' (acceptable for dry run)"
             else
               echo "::error::CHANGELOG.md missing release section '## [${PKG_VERSION}]'!"
@@ -103,7 +117,7 @@ jobs:
         id: pack
         run: |
           TARBALL=$(npm pack | tail -n 1)
-          echo "TARBALL=$TARBALL" >> $GITHUB_OUTPUT
+          echo "TARBALL=$TARBALL" >> "$GITHUB_OUTPUT"
           sha512sum "$TARBALL" > "${TARBALL}.sha512"
           mkdir -p release-artifacts
           cp "$TARBALL" "${TARBALL}.sha512" release-artifacts/
@@ -130,10 +144,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Read .nvmrc
         id: nvm
-        run: echo "NODE_VERSION=$(cat .nvmrc | tr -d '[:space:]')" >> $GITHUB_OUTPUT
+        run: echo "NODE_VERSION=$(tr -d '[:space:]' < .nvmrc)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js ${{ steps.nvm.outputs.NODE_VERSION }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -147,14 +163,20 @@ jobs:
           name: release-package
           path: release-artifacts
 
+      - name: Verify tarball checksum
+        env:
+          TARBALL: ${{ needs.verify-and-pack.outputs.tarball }}
+        run: |
+          cd release-artifacts
+          sha512sum --check --strict "${TARBALL}.sha512"
+
       - name: Publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TARBALL: ${{ needs.verify-and-pack.outputs.tarball }}
+          IS_DRY_RUN: ${{ needs.verify-and-pack.outputs.is_dry_run }}
         run: |
           cd release-artifacts
-          TARBALL="${{ needs.verify-and-pack.outputs.tarball }}"
-          IS_DRY_RUN="${{ needs.verify-and-pack.outputs.is_dry_run }}"
-
           if [ "$IS_DRY_RUN" = "true" ]; then
             echo "DRY RUN MODE: Skipping npm publish."
             echo "Would publish: $TARBALL with provenance."
@@ -167,22 +189,22 @@ jobs:
         if: needs.verify-and-pack.outputs.is_dry_run != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.verify-and-pack.outputs.version }}
+          TARBALL: ${{ needs.verify-and-pack.outputs.tarball }}
         run: |
-          VERSION="${{ needs.verify-and-pack.outputs.version }}"
           TAG="v${VERSION}"
           cd release-artifacts
-          TARBALL="${{ needs.verify-and-pack.outputs.tarball }}"
 
-          # Extract changelog section for release notes if available
-          python3 -c "
-          import re, sys
-          content = open('../CHANGELOG.md').read()
-          match = re.search(r'## \[${VERSION}\][^\n]*\n(.*?)(?=\n## \[|\Z)', content, re.DOTALL)
-          if match:
-              open('release-notes.md', 'w').write(match.group(1).strip())
-          else:
-              open('release-notes.md', 'w').write('Release ${VERSION}')
-          " || echo "Release ${VERSION}" > release-notes.md
+          # Extract changelog section for release notes if available (VERSION read from env, regex-escaped)
+          python3 -c '
+          import os, re
+          version = os.environ["VERSION"]
+          content = open("../CHANGELOG.md", encoding="utf-8").read()
+          match = re.search(r"## \[" + re.escape(version) + r"\][^\n]*\n(.*?)(?=\n## \[|\Z)", content, re.DOTALL)
+          notes = match.group(1).strip() if match else "Release " + version
+          open("release-notes.md", "w", encoding="utf-8").write(notes)
+          ' || echo "Release ${VERSION}" > release-notes.md
 
           gh release create "$TAG" "$TARBALL" "${TARBALL}.sha512" \
             --title "$TAG" \
