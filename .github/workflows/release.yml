@@ -188,9 +188,9 @@ jobs:
       # Staged publishing: the trusted publisher (OIDC) is allowed only `npm stage publish`.
       # The version stays private on npm until a maintainer approves it with 2FA, either on
       # npmjs.com (package → Staged Packages) or with `npm stage approve <stage-id>`.
+      # Authentication is OIDC only (id-token: write); no npm token is stored or used.
       - name: Stage release on npm (needs maintainer 2FA approval)
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           TARBALL: ${{ needs.verify-and-pack.outputs.tarball }}
           VERSION: ${{ needs.verify-and-pack.outputs.version }}
           IS_DRY_RUN: ${{ needs.verify-and-pack.outputs.is_dry_run }}
